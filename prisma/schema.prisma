@@ -1,0 +1,119 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum CampaignRole {
+  CAMPAIGN_MANAGER
+  SUPERVISOR
+  EXECUTOR
+  BRAND_VIEWER
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+}
+
+model Organization {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  type      String
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now()) @db.Timestamptz
+  updatedAt DateTime  @default(now()) @db.Timestamptz
+
+  users     User[]
+  campaigns Campaign[]
+}
+
+model User {
+  id              String    @id @default(uuid()) @db.Uuid
+  organizationId  String    @db.Uuid
+
+  firstName       String
+  lastName        String
+  phone           String
+  email           String
+  isActive        Boolean   @default(true)
+  lastLoginAt     DateTime? @db.Timestamptz
+  createdAt       DateTime  @default(now()) @db.Timestamptz
+  updatedAt       DateTime  @default(now()) @db.Timestamptz
+
+  organization    Organization @relation(fields: [organizationId], references: [id])
+
+  campaignMembers CampaignMember[]
+  assignedMembers CampaignMember[] @relation("AssignedBy")
+  tasks            Task[]
+}
+
+model Campaign {
+  id              String    @id @default(uuid()) @db.Uuid
+  organizationId  String    @db.Uuid
+
+  name            String
+  description     String
+  status          String    @default("ACTIVE")
+  latitude        Float?
+  longitude       Float?
+  address         String?
+  startDate       DateTime?
+  endDate         DateTime?
+  createdAt       DateTime  @default(now()) @db.Timestamptz
+  updatedAt       DateTime  @default(now()) @db.Timestamptz
+
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  members         CampaignMember[]
+  tasks           Task[]
+}
+
+model CampaignMember {
+  id             String        @id @default(uuid()) @db.Uuid
+  campaignId     String        @db.Uuid
+  userId         String        @db.Uuid
+  assignedBy     String        @db.Uuid
+
+  role           CampaignRole
+  assignedAt     DateTime      @default(now()) @db.Timestamptz
+  active         Boolean       @default(true)
+
+  campaign       Campaign @relation(fields: [campaignId], references: [id])
+  user           User     @relation(fields: [userId], references: [id])
+  assignedByUser User     @relation("AssignedBy", fields: [assignedBy], references: [id])
+
+  @@unique([campaignId, userId, role])
+}
+
+model Task {
+  id              String      @id @default(uuid()) @db.Uuid
+  campaignId      String      @db.Uuid
+  executorUserId  String      @db.Uuid
+
+  status          TaskStatus  @default(PENDING)
+  assignedAt      DateTime    @default(now()) @db.Timestamptz
+  startedAt       DateTime?
+  completedAt     DateTime?
+  rejectionReason String?
+  flagged         Boolean     @default(false)
+  notes           String?
+  metadata        Json?
+  createdAt       DateTime    @default(now()) @db.Timestamptz
+  updatedAt       DateTime    @default(now()) @db.Timestamptz
+
+  campaign        Campaign @relation(fields: [campaignId], references: [id])
+  executor        User     @relation(fields: [executorUserId], references: [id])
+}
+
+
+
