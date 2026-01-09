@@ -1,0 +1,150 @@
+.side-menu {
+  width: 250px;
+  height: 100vh;
+  background-color: #ffffff;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+  padding: 24px 0;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 100;
+  overflow-y: auto;
+
+  .company-info {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 20px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    margin-bottom: 24px;
+    height: 77px;
+
+
+    .logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background-color: #f5f5f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+      flex-shrink: 0;
+      overflow: hidden;
+
+      .logo-image {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+    }
+
+    .company-name {
+      font-size:24px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
+  /* Navigation */
+  .navigation {
+    margin-top: 2rem;
+    overflow-y: auto;
+    max-height: calc(100vh - 200px); 
+    padding: 0 8px;
+
+    .menu-section {
+      margin-bottom: 20px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    .section-heading {
+      font-size: 11px;
+      font-weight: 600;
+      color: #000;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0 12px;
+      margin: 16px 0 8px 0;
+      
+      &:first-child {
+        margin-top: 0;
+      }
+    }
+
+    .nav-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .nav-item {
+      margin-bottom: 4px;
+      position: relative;
+
+      &:first-child {
+        margin-top: 4px;
+      }
+
+      &.active {
+        .nav-link {
+          background-color: #f3f4f6;
+          color: #1f2937;
+          font-weight: 500;
+          position: relative;
+
+          &::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 4px;
+            bottom: 4px;
+            width: 3px;
+            background-color: #3b82f6;
+            border-radius: 0 3px 3px 0;
+          }
+        }
+      }
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      padding: 10px 16px;
+      color: #4b5563;
+      text-decoration: none;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      font-size: 14px;
+
+      &:hover {
+        background-color: #f3f4f6;
+        color: #1f2937;
+      }
+
+      .nav-icon {
+        margin-right: 12px;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+      }
+
+      .nav-text {
+        flex: 1;
+      }
+    }
+  }
+
+  /* Removed old report and executor section styles as they're now part of the navigation */
+}
