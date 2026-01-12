@@ -1,5 +1,6 @@
 'use client';
 import Image from 'next/image';
+import TaskOverview from '../../components/task_overview/task_overview';
 import { 
   FiEdit2, 
   FiFileText, 
@@ -12,7 +13,7 @@ import {
 } from 'react-icons/fi';
 import Link from 'next/link';
 import styles from './page.module.scss';
-
+import TeamMemberTable from '../../components/team_member_table/TeamMemberTable';
 const CampaignDetailsPage = ({ params }: { params: { id: string } }) => {
   // Mock data - replace with actual data fetching
   const campaign = {
@@ -66,33 +67,13 @@ const CampaignDetailsPage = ({ params }: { params: { id: string } }) => {
           </button>
         </div>
       </div>
-      <div className={styles.taskOverview}>
-        <h2>Task Overview</h2>
-        <div className={styles.taskStats}>
-          <div className={styles.statCard}>
-            <span className={styles.statValue}>12</span>
-            <span className={styles.statLabel}>Total Tasks</span>
-          </div>
-          <div className={styles.statCard}>
-            <span className={styles.statValue}>8</span>
-            <span className={styles.statLabel}>Completed</span>
-          </div>
-          <div className={styles.statCard}>
-            <span className={styles.statValue}>4</span>
-            <span className={styles.statLabel}>Remaining</span>
-          </div>
-          <div className={styles.statCard}>
-            <div className={styles.progressCircle}>
-              <span>67%</span>
-            </div>
-            <span className={styles.statLabel}>Progress</span>
-          </div>
-          <div className={styles.statCard}>
-            <span className={styles.statValue}>2</span>
-            <span className={styles.statLabel}>Flagged</span>
-          </div>
-        </div>
-      </div>
+<TaskOverview 
+  totalTasks={12}
+  completedTasks={8}
+  remainingTasks={4}
+  progress={67}
+  flaggedTasks={2}
+/>
 
       <div className={styles.campaignInfoSection}>
         <h2>Campaign Information</h2>
@@ -178,6 +159,37 @@ const CampaignDetailsPage = ({ params }: { params: { id: string } }) => {
       </button>
     </div>
   </div>
+<div className={styles.teamMemberSection}>
+  <TeamMemberTable members={[
+    {
+      id: '1',
+      name: 'John Doe',
+      contactNumber: '+1 (555) 123-4567',
+      role: 'Manager',
+      location: 'New York, USA',
+      assignedBy: 'Admin',
+      status: 'active'
+    },
+    {
+      id: '2',
+      name: 'Jane Smith',
+      contactNumber: '+1 (555) 987-6543',
+      role: 'Supervisor',
+      location: 'Los Angeles, USA',
+      assignedBy: 'John Doe',
+      status: 'active'
+    },
+    {
+      id: '3',
+      name: 'Mike Johnson',
+      contactNumber: '+1 (555) 456-7890',
+      role: 'Executor',
+      location: 'Chicago, USA',
+      assignedBy: 'Jane Smith',
+      status: 'pending'
+    }
+  ]} />
+</div>
 </div>
 </div>
   );
