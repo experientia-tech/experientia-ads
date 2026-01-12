@@ -49,7 +49,11 @@ body {
   background-color: #f9fafb;
   margin-left: 0;
   
-  @media (min-width: 1025px) {
+  @media (min-width: 1024px) {
     margin-left: 250px;
   } 
+  
+  @media (min-width: 768px) {
+    margin-left: 250px;
+  }
 }

@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
-import BrandCard from '../../components/brand_card/BrandCard';
-import CampaignCard from '../../components/campaign_card/CampaignCard';
+import BrandCard from '../components/brand_card/BrandCard';
+import CampaignCard from '../components/campaign_card/CampaignCard';
 import './page.scss';
 
 // Mock data - replace with actual data from your API
