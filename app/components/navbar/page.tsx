@@ -14,25 +14,97 @@ const CreateCampaignForm = dynamic(
 const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCampaignFormOpen, setIsCampaignFormOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Close dropdown when clicking outside
+  
+  // Toggle mobile menu
+  const toggleMenu = () => {
+    const newMenuState = !isMenuOpen;
+    setIsMenuOpen(newMenuState);
+    
+    // Toggle body class and scroll
+    if (newMenuState) {
+      document.body.classList.add('menu-open');
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.classList.remove('menu-open');
+      document.body.style.overflow = '';
+    }
+  };
+  
+  // Handle click outside for dropdown and mobile menu
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      
+      // Handle dropdown close
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
         setIsDropdownOpen(false);
       }
-    }
+      
+      // Handle mobile menu close
+      if (isMenuOpen) {
+        // Don't close if clicking inside menu, menu items, or hamburger button
+        if (target.closest('.side-menu') || 
+            target.closest('.hamburger-menu') ||
+            target.closest('a') ||
+            target.closest('button')) {
+          return;
+        }
+        
+        // Close menu when clicking anywhere else
+        setIsMenuOpen(false);
+        document.body.classList.remove('menu-open');
+        document.body.style.overflow = '';
+      }
+    };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
+  }, [isMenuOpen]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Reset body styles when component unmounts
+      document.body.classList.remove('menu-open');
+      document.body.style.overflow = '';
+    };
   }, []);
 
   return (
-    <nav className="navbar">
-      <div className="navbar-container">
+    <>
+      <nav className="navbar">
+        <div className="navbar-container">
+          {/* Hamburger Menu Button - Mobile Only */}
+          <button 
+            className="hamburger-menu"
+            onClick={toggleMenu}
+            aria-label="Toggle menu"
+          >
+            <div className={`hamburger-icon ${isMenuOpen ? 'open' : ''}`}>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </button>
+          
+          {/* Company Logo and Name - Hidden on mobile */}
+          <div className="company-brand">
+            <div className="logo">
+              <Image 
+                src="/experentia.png" 
+                alt="Experientia Logo" 
+                width={40} 
+                height={40} 
+                className="logo-image"
+              />
+            </div>
+            <h1 className="company-name">Experientia</h1>
+          </div>
+
         {/* Search Bar */}
         <div className="search-container">
           <div className="search-icon">
@@ -94,12 +166,16 @@ const Navbar = () => {
           </div>
         </div>
       </div>
+      </nav>
+      
+      {/* Mobile Menu Overlay */}
+      <div className={`mobile-menu-overlay ${isMenuOpen ? 'open' : ''}`} onClick={toggleMenu}></div>
 
       {/* Campaign Form Modal */}
       {isCampaignFormOpen && (
         <CreateCampaignForm onClose={() => setIsCampaignFormOpen(false)} />
       )}
-    </nav>
+    </>
   );
 };
 

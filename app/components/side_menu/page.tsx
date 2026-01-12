@@ -13,7 +13,7 @@ const SideMenu = () => {
       items: [
         { name: 'Overview', path: '/dashboard', icon: '📊' },
         { name: 'My Campaigns', path: '/my-campaigns', icon: '📢' },
-        { name: 'Assigned Campaigns', path: '/assigned-campaigns', icon: '📋' },
+        { name: 'Assigned Campaigns', path: '/experientia/assigned_campaigns', icon: '📋' },
         { name: 'Team Management', path: '/team-management', icon: '👥' },
       ]
     },
@@ -34,19 +34,6 @@ const SideMenu = () => {
 
   return (
     <div className="side-menu">
-      <div className="company-info">
-        <div className="logo">
-          <Image 
-            src="/experentia.png" 
-            alt="Company Logo" 
-            width={40} 
-            height={40} 
-            className="logo-image"
-          />
-        </div>
-        <h2 className="company-name">Experientia</h2>
-      </div>
-      
       <nav className="navigation">
         {menuSections.map((section) => (
           <div key={section.title} className="menu-section">
