@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import SideMenu from "./components/side_menu/page";
+import Navbar from "./components/navbar/page";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Multi-Domain App",
-  description: "Experientia & Executor",
+  title: "Experientia",
+  description: "devloped by Dealberg",
 };
 
 export default function RootLayout({
@@ -24,10 +26,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <div className="app-layout">
+          <SideMenu />
+          <Navbar />
+          <main className="main-content">
+            {children}
+          </main>
+        </div>
       </body>
     </html>
   );

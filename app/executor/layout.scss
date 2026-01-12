@@ -1,0 +1,110 @@
+:root {
+  --executor-primary: #1e88e5;
+  --executor-bg: #f8f9fa;
+  --executor-surface: #ffffff;
+  --executor-text-main: #1a1a1a;
+  --executor-text-muted: #64748b;
+  --executor-border: #e2e8f0;
+  --executor-radius: 16px;
+
+  /* Status Colors */
+  --status-pending-bg: #fff3e0;
+  --status-pending-text: #ef6c00;
+  --status-progress-bg: #e3f2fd;
+  --status-progress-text: #1e88e5;
+  --status-scheduled-bg: #f5f5f5;
+  --status-scheduled-text: #616161;
+}
+
+.executor-app-container {
+  display: flex;
+  justify-content: center;
+  height: 100vh;
+  height: 100dvh;
+  background: var(--executor-bg);
+  font-family: inherit;
+  overflow: hidden;
+
+  .executor-mobile-frame {
+    width: 100%;
+    max-width: 480px;
+    background: var(--executor-surface);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.05);
+  }
+
+  .executor-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    -webkit-overflow-scrolling: touch;
+
+    &.login-view {
+      padding: 0;
+    }
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+}
+
+/* Global Card style from screenshots */
+.design-card {
+  background: var(--executor-surface);
+  border-radius: var(--executor-radius);
+  border: 1px solid var(--executor-border);
+  padding: 16px;
+  margin-bottom: 16px;
+  transition: transform 0.2s ease;
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+
+  &.pending {
+    background: var(--status-pending-bg);
+    color: var(--status-pending-text);
+  }
+  &.in-progress {
+    background: var(--status-progress-bg);
+    color: var(--status-progress-text);
+  }
+  &.scheduled {
+    background: var(--status-scheduled-bg);
+    color: var(--status-scheduled-text);
+  }
+}
+
+.primary-button {
+  background: var(--executor-primary);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 24px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: opacity 0.2s;
+
+  &:active {
+    opacity: 0.8;
+  }
+}

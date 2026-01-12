@@ -1,0 +1,45 @@
+.bottom-nav {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 10px 10px 10px; /* Extra bottom padding for safe area feel */
+  z-index: 1000;
+
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-decoration: none;
+    color: #94a3b8;
+    transition: all 0.2s ease;
+    flex: 1;
+
+    .icon {
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .label {
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    &.active {
+      color: #1e88e5;
+
+      .icon {
+        /* You could swap to filled icons here if using a library that supports it */
+      }
+    }
+  }
+}

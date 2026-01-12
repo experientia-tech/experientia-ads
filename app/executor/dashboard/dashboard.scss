@@ -1,0 +1,83 @@
+.dashboard-page {
+  padding: 0 20px 100px 20px; /* 100px bottom to clear nav */
+
+  .stats-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 32px;
+
+    .stat-card {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 20px;
+      margin-bottom: 0;
+
+      .icon-box {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &.green {
+          background: #e8f5e9;
+          color: #4ade80;
+        }
+        &.blue {
+          background: #e3f2fd;
+          color: #1e88e5;
+        }
+      }
+
+      .data {
+        .value {
+          font-size: 32px;
+          font-weight: 800;
+          color: #1a1a1a;
+          margin: 0;
+          line-height: 1;
+        }
+
+        .label {
+          font-size: 14px;
+          color: #64748b;
+          font-weight: 500;
+          margin: 4px 0 0 0;
+        }
+      }
+    }
+  }
+
+  .list-section {
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+
+      .section-title {
+        font-size: 22px;
+        font-weight: 800;
+        color: #1a1a1a;
+        margin: 0;
+      }
+
+      .see-all {
+        background: none;
+        border: none;
+        color: #1e88e5;
+        font-weight: 700;
+        font-size: 15px;
+        cursor: pointer;
+      }
+    }
+
+    .campaign-list {
+      display: flex;
+      flex-direction: column;
+    }
+  }
+}

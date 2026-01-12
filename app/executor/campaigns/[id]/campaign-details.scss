@@ -1,0 +1,212 @@
+.campaign-details-page {
+  padding: 0 20px 100px 20px;
+
+  .details-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+
+    .back-btn,
+    .menu-btn {
+      background: none;
+      border: none;
+      padding: 8px;
+      cursor: pointer;
+      color: #1a1a1a;
+    }
+
+    .header-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin: 0;
+    }
+  }
+
+  .campaign-banner {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 24px 0;
+    margin-bottom: 24px;
+
+    .client-logo {
+      width: 72px;
+      height: 72px;
+      background: #ffffff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+      font-size: 32px;
+    }
+
+    .banner-info {
+      .client-name {
+        font-size: 12px;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin: 0 0 4px 0;
+      }
+
+      .campaign-name {
+        font-size: 26px;
+        font-weight: 800;
+        color: #1a1a1a;
+        margin: 0 0 8px 0;
+      }
+
+      .meta-row {
+        display: flex;
+        gap: 16px;
+        color: #64748b;
+        font-size: 14px;
+        font-weight: 500;
+
+        .meta-item {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+      }
+    }
+  }
+
+  .tab-switcher {
+    display: flex;
+    background: #e2e8f0;
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 32px;
+
+    .tab-btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: #64748b;
+      background: transparent;
+
+      &.active {
+        background: #ffffff;
+        color: #1a1a1a;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      }
+    }
+  }
+
+  .task-list-section {
+    .section-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #1a1a1a;
+      margin-bottom: 20px;
+    }
+
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+
+      .task-card {
+        margin-bottom: 0;
+        position: relative;
+        overflow: hidden;
+
+        &.active-border {
+          &::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            background: #1e88e5;
+          }
+        }
+
+        .task-card-content {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+
+          .task-icon {
+            width: 48px;
+            height: 48px;
+            background: #f1f5f9;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1a1a1a;
+            flex-shrink: 0;
+          }
+
+          .task-info {
+            flex: 1;
+
+            .task-header {
+              display: flex;
+              align-items: center;
+              gap: 12px;
+              margin-bottom: 4px;
+
+              .task-id {
+                font-size: 18px;
+                font-weight: 700;
+                color: #1a1a1a;
+              }
+            }
+
+            .task-address {
+              font-size: 15px;
+              font-weight: 600;
+              color: #64748b;
+              margin: 0 0 2px 0;
+            }
+
+            .task-meta {
+              font-size: 13px;
+              color: #94a3b8;
+              font-weight: 500;
+              margin: 0;
+            }
+          }
+
+          .action-btn {
+            padding: 10px 24px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: opacity 0.2s;
+
+            &.start {
+              background: #1e88e5;
+              color: #ffffff;
+            }
+
+            &.resume {
+              background: #f8faf8;
+              color: #1a1a1a;
+              border: 1px solid #e2e8f0;
+            }
+
+            &:active {
+              opacity: 0.8;
+            }
+          }
+        }
+      }
+    }
+  }
+}
