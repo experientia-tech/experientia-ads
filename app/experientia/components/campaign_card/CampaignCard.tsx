@@ -2,6 +2,7 @@ import React from 'react';
 import Image from 'next/image';
 import { FiChevronRight, FiCheckCircle, FiClock } from 'react-icons/fi';
 import styles from './CampaignCard.module.scss';
+import Link from 'next/link';
 
 interface CampaignCardProps {
   campaign: {
@@ -24,6 +25,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, brandLogo, brandN
   };
 
   return (
+    <Link href={`/experientia/campaigns/${campaign.id}`} className={styles.campaignCardLink}>
     <div className={styles.campaignCard}>
       <div className={styles.campaignHeader}>
         <div className={styles.campaignLogo}>
@@ -82,6 +84,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, brandLogo, brandN
         </div>
       </div>
     </div>
+    </Link>
   );
 };
 
