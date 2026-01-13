@@ -61,10 +61,13 @@ const CampaignDetailsPage = ({ params }: { params: { id: string } }) => {
             <FiEdit2 size={16} />
             <span>Edit Campaign</span>
           </button>
-          <button className={styles.reportButton}>
-            <FiFileText size={16} />
-            <span>View Full Report</span>
-          </button>
+            <Link 
+             href={`/experientia/reports/${campaign.id}`} 
+            className={styles.reportButton}
+            >
+             <FiFileText size={16} />
+                <span>View Full Report</span>
+            </Link>
         </div>
       </div>
 <TaskOverview 
