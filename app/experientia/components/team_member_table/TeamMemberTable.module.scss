@@ -50,6 +50,11 @@
     font-size: 14px;
     transition: all 0.2s;
 
+    &::placeholder {
+      color: #9ca3af;
+      opacity: 1;
+    }
+
     &:focus {
       outline: none;
       border-color: #4a90e2;
@@ -131,7 +136,8 @@
   width: 100%;
   border-collapse: collapse;
 
-  th, td {
+  th,
+  td {
     padding: 16px;
     text-align: left;
     border-bottom: 1px solid #eee;

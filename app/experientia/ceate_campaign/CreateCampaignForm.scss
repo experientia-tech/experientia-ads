@@ -78,6 +78,11 @@ form {
     font-size: 14px;
     transition: border-color 0.2s, box-shadow 0.2s;
 
+    &::placeholder {
+      color: #9ca3af;
+      opacity: 1;
+    }
+
     &:focus {
       outline: none;
       border-color: #3b82f6;

@@ -1,4 +1,4 @@
- .navbar {
+.navbar {
   background-color: #ffffff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   height: 70px; /* Reduced height for mobile */
@@ -8,7 +8,7 @@
   left: 0;
   z-index: 100; /* Ensure navbar is above other elements */
   padding: 0 16px;
-  
+
   @media (min-width: 769px) {
     height: 100px;
     padding: 0 24px;
@@ -35,11 +35,11 @@
     margin-right: 12px;
     cursor: pointer;
     z-index: 101;
-    
+
     @media (min-width: 1025px) {
       display: none;
     }
-    
+
     .hamburger-icon {
       display: flex;
       flex-direction: column;
@@ -47,7 +47,7 @@
       width: 24px;
       height: 18px;
       position: relative;
-      
+
       span {
         display: block;
         width: 100%;
@@ -57,24 +57,24 @@
         transition: all 0.3s ease;
         transform-origin: left center;
       }
-      
+
       &.open {
         span:first-child {
           transform: rotate(45deg) translate(4px, -1px);
         }
-        
+
         span:nth-child(2) {
           opacity: 0;
           width: 0;
         }
-        
+
         span:last-child {
           transform: rotate(-45deg) translate(4px, 1px);
         }
       }
     }
   }
-  
+
   .company-brand {
     display: none; /* Hidden by default on mobile */
     align-items: center;
@@ -98,7 +98,7 @@
       margin: 0;
       white-space: nowrap;
     }
-    
+
     @media (min-width: 769px) {
       display: flex; /* Show on tablet and up */
     }
@@ -109,29 +109,29 @@
     align-items: center;
     gap: 15px;
     margin-left: auto;
-    
+
     @media (max-width: 768px) {
       .create-campaign-btn {
         display: flex; /* Show create campaign button on mobile */
         padding: 8px 12px;
         font-size: 14px;
         margin-right: 10px;
-        
+
         .plus-icon {
           margin-right: 4px;
         }
       }
-      
+
       .profile-section {
         display: none; /* Keep profile section hidden on mobile */
       }
-      
+
       /* Show profile section on larger screens */
       @media (min-width: 1025px) {
         .profile-section {
           display: block;
           margin-left: auto;
-          
+
           .profile-image {
             width: 36px;
             height: 36px;
@@ -191,6 +191,11 @@
       font-size: 14px;
       transition: all 0.2s ease;
       background-color: #f9fafb;
+
+      &::placeholder {
+        color: #9ca3af;
+        opacity: 1;
+      }
 
       &:focus {
         outline: none;
@@ -277,7 +282,7 @@
         text-align: left;
         border-bottom: 1px solid #e5e7eb;
         margin-bottom: 4px;
-        
+
         .profile-name {
           font-size: 14px;
           font-weight: 500;
@@ -368,12 +373,12 @@
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.3s ease, visibility 0.3s ease;
-  
+
   &.open {
     opacity: 1;
     visibility: visible;
   }
-  
+
   @media (min-width: 1025px) {
     display: none;
   }
