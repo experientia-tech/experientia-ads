@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Experientia",
-  description: "devloped by Dealberg",
+  title: "Multi-Domain App",
+  description: "Experientia & Executor",
 };
 
 export default function RootLayout({
@@ -26,14 +26,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <div className="app-layout">
-          <SideMenu />
-          <Navbar />
-          <main className="main-content">
-            {children}
-          </main>
-        </div>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        {children}
       </body>
     </html>
   );

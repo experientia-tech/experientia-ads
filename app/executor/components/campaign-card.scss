@@ -1,0 +1,78 @@
+.campaign-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  .card-top {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+
+    .icon-box {
+      width: 52px;
+      height: 52px;
+      background: #edf2f7;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .content {
+      flex: 1;
+
+      .title-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+
+        .name {
+          font-size: 18px;
+          font-weight: 700;
+          color: #1a1a1a;
+          margin: 0;
+        }
+      }
+
+      .location-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #64748b;
+        font-size: 14px;
+        font-weight: 500;
+      }
+    }
+  }
+
+  .card-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid #f1f5f9;
+
+    .due-text {
+      font-size: 14px;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    .details-link {
+      color: #1e88e5;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+
+      &:hover {
+        opacity: 0.8;
+      }
+    }
+  }
+}
