@@ -43,9 +43,17 @@ body {
 
 .main-content {
   flex: 1;
-  margin-left: 250px; 
   height: 100vh;
   overflow-y: auto;
   padding: 20px;
-  background-color: #f9fafb; 
+  background-color: #f9fafb;
+  margin-left: 0;
+  
+  @media (min-width: 1024px) {
+    margin-left: 250px;
+  } 
+  
+  @media (min-width: 768px) {
+    margin-left: 250px;
+  }
 }

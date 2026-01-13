@@ -68,6 +68,7 @@ model Campaign {
   latitude        Float?
   longitude       Float?
   address         String?
+  serviceType     String?
   startDate       DateTime?
   endDate         DateTime?
   createdAt       DateTime  @default(now()) @db.Timestamptz
