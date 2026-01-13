@@ -6,6 +6,7 @@ import Link from 'next/link';
 import TaskOverview from '@/app/experientia/components/task_overview/task_overview';
 import styles from './page.module.scss';
 import ReportCard from '@/app/experientia/components/report_card/Report_card';
+import TaskDetail from '@/app/experientia/components/taskdetail/TaskDetail';
 
 const ReportContent = ({ campaignId, campaign }: { campaignId: string; campaign: any }) => {
   const [filters, setFilters] = useState({
@@ -18,6 +19,7 @@ const ReportContent = ({ campaignId, campaign }: { campaignId: string; campaign:
     stateBackground: '',
     geofenced: false
   });
+  const [selectedTask, setSelectedTask] = useState<any>(null);
 
   const executors = [
     { id: 'all', name: 'All Executors' },
@@ -175,44 +177,90 @@ const ReportContent = ({ campaignId, campaign }: { campaignId: string; campaign:
         </div>
       </div>
 <div className={styles.reportGrid}>
-  <ReportCard
-    productName="Product Name"
-    productImage="/path/to/product-image.jpg"
-    taskId="TASK-12345"
-    date="Oct 25, 2023"
-    time="14:30"
-    location="123 Main St, New York, NY"
-    inGeofence={true}
-    distance="28m"
-    timeLater="36s"
-    executorName="John Doe"
-  />
-  <ReportCard
-    productName="Product Name"
-    productImage="/path/to/product-image.jpg"
-    taskId="TASK-12345"
-    date="Oct 25, 2023"
-    time="14:30"
-    location="123 Main St, New York, NY"
-    inGeofence={true}
-    distance="28m"
-    timeLater="36s"
-    executorName="John Doe"
-  />
-  <ReportCard
-    productName="Product Name"
-    productImage="/path/to/product-image.jpg"
-    taskId="TASK-12345"
-    date="Oct 25, 2023"
-    time="14:30"
-    location="123 Main St, New York, NY"
-    inGeofence={true}
-    distance="28m"
-    timeLater="36s"
-    executorName="John Doe"
-  />
-  {/* Add more cards as needed */}
+<ReportCard
+  productName="Product Name"
+  productImage="/path/to/product-image.jpg"
+  taskId="TASK-12345"
+  date="Oct 25, 2023"
+  time="14:30"
+  location="123 Main St, New York, NY"
+  inGeofence={true}
+  distance="28m"
+  timeLater="36s"
+  executorName="executor 1"
+  onClick={() => setSelectedTask({
+    taskId: "TASK-12345",
+    executorName: "executor 1",
+    date: "Oct 25, 2023",
+    time: "14:30",
+    location: "123 Main St, New York, NY",
+    inGeofence: true,
+    distance: "28m",
+    timeLater: "36s"
+  })}
+/>
+
+<ReportCard
+  productName="Product Name"
+  productImage="/path/to/product-image.jpg"
+  taskId="TASK-12345"
+  date="Oct 25, 2023"
+  time="14:30"
+  location="123 Main St, New York, NY"
+  inGeofence={true}
+  distance="28m"
+  timeLater="36s"
+  executorName="executor 2"
+  onClick={() => setSelectedTask({
+    taskId: "TASK-12345",
+    executorName: "executor 2",
+    date: "Oct 25, 2023",
+    time: "14:30",
+    location: "123 Main St, New York, NY",
+    inGeofence: true,
+    distance: "28m",
+    timeLater: "36s"
+  })}
+/>
+
+<ReportCard
+  productName="Product Name"
+  productImage="/path/to/product-image.jpg"
+  taskId="TASK-12345"
+  date="Oct 25, 2023"
+  time="14:30"
+  location="123 Main St, New York, NY"
+  inGeofence={true}
+  distance="28m"
+  timeLater="36s"
+  executorName="executor 3"
+  onClick={() => setSelectedTask({
+    taskId: "TASK-12345",
+    executorName: "executor 3",
+    date: "Oct 25, 2023",
+    time: "14:30",
+    location: "123 Main St, New York, NY",
+    inGeofence: true,
+    distance: "28m",
+    timeLater: "36s"
+  })}
+/>
 </div>
+{selectedTask && (
+  <TaskDetail
+    task={{
+      id: selectedTask.taskId,
+      executorName: selectedTask.executorName,
+      completedOn: `${selectedTask.date} at ${selectedTask.time}`,
+      isFlagged: false, // You might want to add this to your data
+      distance: selectedTask.distance,
+      timeFromPrevious: selectedTask.timeLater,
+      inGeofence: selectedTask.inGeofence,
+      location: selectedTask.location
+    }}
+    onClose={() => setSelectedTask(null)}
+  />
+)}
     </div>
   );
 };

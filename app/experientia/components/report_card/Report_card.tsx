@@ -14,6 +14,7 @@ interface ReportCardProps {
   distance: string;
   timeLater: string;
   executorName: string;
+  onClick?: () => void;
 }
 
 const ReportCard: React.FC<ReportCardProps> = ({
@@ -27,9 +28,10 @@ const ReportCard: React.FC<ReportCardProps> = ({
   distance,
   timeLater,
   executorName,
+  onClick,
 }) => {
   return (
-    <div className={styles.reportCard}>
+    <div className={styles.reportCard} onClick={onClick}>
       <div className={styles.productImageContainer}>
         <img 
           src={productImage} 
