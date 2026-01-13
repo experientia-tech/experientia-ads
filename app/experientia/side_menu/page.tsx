@@ -14,7 +14,7 @@ const SideMenu = () => {
         { name: 'Overview', path: '/experientia/dashboard', icon: '📊' },
         { name: 'My Campaigns', path: '/my-campaigns', icon: '📢' },
         { name: 'Assigned Campaigns', path: '/experientia/campaigns', icon: '📋' },
-        { name: 'Team Management', path: '/team-management', icon: '👥' },
+        { name: 'Team Management', path: '/experientia/team_management', icon: '👥' },
       ]
     },
     {
