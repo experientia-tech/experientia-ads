@@ -37,7 +37,7 @@ const SubmitTask = () => {
             </button>
             <div className="photo-label">
               <FiCheck className="check-icon" />
-              <span>Photo 1: Wiring Detail</span>
+              <span>Photo 1 : Wiring Detail</span>
             </div>
           </div>
 

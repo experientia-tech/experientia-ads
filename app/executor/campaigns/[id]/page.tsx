@@ -75,6 +75,22 @@ const CampaignDetails = () => {
         </div>
       </div>
 
+      <div className="task-cta-section">
+        <div className="cta-content">
+          <h3 className="cta-title">Complete a task</h3>
+          <p className="cta-description">
+            Start working on your assigned
+            <br className="mobile-break" /> tasks to earn rewards
+          </p>
+        </div>
+        <button
+          className="add-task-btn"
+          onClick={() => router.push("/executor/tasks/capture")}
+        >
+          <span>+</span>
+        </button>
+      </div>
+
       <div className="tab-switcher">
         <button
           className={`tab-btn ${activeTab === "tasks" ? "active" : ""}`}
@@ -124,9 +140,7 @@ const CampaignDetails = () => {
                   className={`action-btn ${
                     task.status === "In Progress" ? "resume" : "start"
                   }`}
-                  onClick={() =>
-                    router.push(`/executor/tasks/${task.id}/capture`)
-                  }
+                  onClick={() => router.push("/executor/tasks/capture")}
                 >
                   {task.status === "In Progress" ? "Resume" : "Start"}
                 </button>

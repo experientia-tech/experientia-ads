@@ -27,13 +27,17 @@
 
   .executor-mobile-frame {
     width: 100%;
-    max-width: 480px;
     background: var(--executor-surface);
     height: 100%;
     display: flex;
     flex-direction: column;
     position: relative;
     box-shadow: 0 0 40px rgba(0, 0, 0, 0.05);
+
+    // Only apply max-width on mobile devices (below tablet size)
+    @media (max-width: 767px) {
+      max-width: 480px;
+    }
   }
 
   .executor-content {

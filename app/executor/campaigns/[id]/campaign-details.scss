@@ -76,6 +76,70 @@
     }
   }
 
+  .task-cta-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+
+    .cta-content {
+      flex: 1;
+
+      .cta-title {
+        font-size: 20px;
+        font-weight: 800;
+        color: #ffffff;
+        margin: 0 0 6px 0;
+      }
+
+      .cta-description {
+        font-size: 14px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0;
+        line-height: 1.4;
+
+        .mobile-break {
+          display: inline;
+
+          @media (min-width: 768px) {
+            display: none;
+          }
+        }
+      }
+    }
+
+    .add-task-btn {
+      width: 48px;
+      height: 48px;
+      background: rgba(255, 255, 255, 0.25);
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+
+      span {
+        font-size: 28px;
+        font-weight: 300;
+        color: #ffffff;
+        line-height: 1;
+      }
+
+      &:active {
+        background: rgba(255, 255, 255, 0.35);
+        transform: scale(0.95);
+      }
+    }
+  }
+
   .tab-switcher {
     display: flex;
     background: #e2e8f0;
