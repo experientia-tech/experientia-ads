@@ -7,7 +7,7 @@ import './page.scss';
 
 // Dynamically import the CreateCampaignForm component to avoid SSR issues with modals
 const CreateCampaignForm = dynamic(
-  () => import('../campaign/CreateCampaignForm'),
+  () => import('../ceate_campaign/CreateCampaignForm'),
   { ssr: false }
 );
 
