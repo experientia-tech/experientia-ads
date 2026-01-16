@@ -1,5 +1,4 @@
 "use client";
-import Image from 'next/image';
 import './page.scss';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -11,11 +10,11 @@ const SideMenu = () => {
     {
       title: 'NAVIGATION',
       items: [
-        { name: 'Overview', path: '/dashboard', icon: '📊' },
-        { name: 'My Campaigns', path: '/my-campaigns', icon: '📢' },
+        { name: 'Overview', path: '/experientia/dashboard', icon: '📊' },
+        { name: 'My Campaigns', path: '/experientia/coming-soon', icon: '📢' },
         { name: 'Assigned Campaigns', path: '/experientia/campaigns', icon: '📋' },
-        { name: 'Team Management', path: '/team-management', icon: '👥' },
-      ]
+        { name: 'Team Management', path: '/experientia/team_management', icon: '👥' },
+      ] 
     },
     {
       title: 'REPORT',

@@ -4,8 +4,6 @@ import Image from 'next/image';
 import { FiSearch, FiChevronDown, FiLogOut, FiUser, FiSettings, FiBell } from 'react-icons/fi';
 import dynamic from 'next/dynamic';
 import './page.scss';
-
-// Dynamically import the CreateCampaignForm component to avoid SSR issues with modals
 const CreateCampaignForm = dynamic(
   () => import('../ceate_campaign/CreateCampaignForm'),
   { ssr: false }
@@ -21,8 +19,6 @@ const Navbar = () => {
   const toggleMenu = () => {
     const newMenuState = !isMenuOpen;
     setIsMenuOpen(newMenuState);
-    
-    // Toggle body class and scroll
     if (newMenuState) {
       document.body.classList.add('menu-open');
       document.body.style.overflow = 'hidden';
@@ -94,13 +90,13 @@ const Navbar = () => {
           {/* Company Logo and Name - Hidden on mobile */}
           <div className="company-brand">
             <div className="logo">
-              <Image 
+                <Image 
                 src="/experentia.png" 
-                alt="Experientia Logo" 
-                width={40} 
-                height={40} 
-                className="logo-image"
-              />
+                  alt="Experientia Logo" 
+                  width={40} 
+                  height={40} 
+                  className="logo-image"
+                />
             </div>
             <h1 className="company-name">Experientia</h1>
           </div>
