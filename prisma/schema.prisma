@@ -6,6 +6,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../app/generated/prisma"
 }
 
 datasource db {
@@ -67,7 +68,6 @@ model Campaign {
   latitude        Float?
   longitude       Float?
   address         String?
-  serviceType     String?
   startDate       DateTime?
   endDate         DateTime?
   serviceType     String?
