@@ -44,8 +44,7 @@ model User {
 
   firstName       String
   lastName        String
-  phone           String
-  email           String
+  phone           String    @unique
   isActive        Boolean   @default(true)
   lastLoginAt     DateTime? @db.Timestamptz
   createdAt       DateTime  @default(now()) @db.Timestamptz
@@ -71,6 +70,8 @@ model Campaign {
   serviceType     String?
   startDate       DateTime?
   endDate         DateTime?
+  serviceType     String?
+  isActive        Boolean   @default(true)
   createdAt       DateTime  @default(now()) @db.Timestamptz
   updatedAt       DateTime  @default(now()) @db.Timestamptz
 
