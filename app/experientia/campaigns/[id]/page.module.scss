@@ -1,0 +1,303 @@
+.campaignDetailsPage {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+
+  .header {
+    margin-bottom: 24px;
+
+    .backButton {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #4a90e2;
+      text-decoration: none;
+      font-weight: 500;
+      margin-bottom: 16px;
+      
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+
+  .campaignHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-bottom: 24px;
+
+    .campaignInfo {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+
+      .logoContainer {
+        width: 80px;
+        height: 80px;
+        border-radius: 12px;
+        overflow: hidden;
+        flex-shrink: 0;
+        border: 1px solid #eee;
+        
+        .logo {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+      }
+
+      .campaignText {
+        h1 {
+          font-size: 24px;
+          font-weight: 600;
+          margin: 0 0 8px 0;
+          color: #1a1a1a;
+        }
+
+        .serviceBadge {
+          display: inline-block;
+          background: #f0f7ff;
+          color: #1a73e8;
+          padding: 4px 12px;
+          border-radius: 16px;
+          font-size: 14px;
+          font-weight: 500;
+          margin-bottom: 12px;
+        }
+
+        .description {
+          color: #666;
+          margin: 0 0 16px 0;
+          max-width: 600px;
+          line-height: 1.5;
+        }
+
+        .metaInfo {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          color: #666;
+          font-size: 14px;
+          
+          span {
+            display: flex;
+            align-items: center;
+          }
+        }
+      }
+    }
+
+    .actionButtons {
+      display: flex;
+      gap: 12px;
+      
+      button {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+        
+        &:hover {
+          transform: translateY(-1px);
+        }
+      }
+
+      .editButton {
+        background: white;
+        border: 1px solid #e0e0e0;
+        color: #333;
+        
+        &:hover {
+          background: #f5f5f5;
+        }
+      }
+
+      .reportButton {
+        background: #4a90e2;
+        color: white;
+        border: none;
+        
+        &:hover {
+          background: #3a7bc8;
+        }
+      }
+    }
+  }
+
+  .campaignInfoSection {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+    h2 {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0 0 20px 0;
+      color: #1a1a1a;
+    }
+
+    .infoGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+
+      .infoItem {
+        .infoLabel {
+          display: block;
+          font-size: 14px;
+          color: #666;
+          margin-bottom: 4px;
+        }
+
+        .infoValue {
+          font-size: 16px;
+          font-weight: 500;
+          color: #1a1a1a;
+        }
+      }
+    }
+  }
+}
+.teamOverview {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-top: 24px;
+  margin-bottom: 24px;
+
+  h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 20px 0;
+    color: #1a1a1a;
+  }
+
+  .teamGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .teamCard {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s ease;
+    border: 1px solid #eee;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .teamContent {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .teamIcon {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      background: #e3f2fd;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #1976d2;
+    }
+
+    .teamInfo {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .teamCount {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+
+    .teamLabel {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .addButton {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 1px dashed #ddd;
+      background: white;
+      color: #666;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover {
+        background: #f0f0f0;
+        color: #1976d2;
+        border-color: #1976d2;
+      }
+    }
+  }
+  .teamMemberSection {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-top: 24px;
+  overflow: hidden;
+}
+}
+
+@media (max-width: 768px) {
+  .campaignHeader {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .actionButtons {
+    width: 100%;
+    
+    button {
+      flex: 1;
+      justify-content: center;
+    }
+  }
+
+  .taskStats {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .infoGrid {
+    grid-template-columns: 1fr !important;
+  }
+}
+@media (max-width: 768px) {
+  .teamGrid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .teamGrid {
+    grid-template-columns: 1fr !important;
+  }
+}

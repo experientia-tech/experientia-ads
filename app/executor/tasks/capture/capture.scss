@@ -1,0 +1,181 @@
+.task-capture-page {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 0 0 100px 0;
+
+  .capture-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: var(--executor-surface);
+    border-bottom: 1px solid var(--executor-border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+
+    .back-btn {
+      background: none;
+      border: none;
+      padding: 8px;
+      cursor: pointer;
+      color: #1a1a1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .header-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin: 0;
+    }
+  }
+
+  .capture-content {
+    flex: 1;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+
+    .instructions {
+      margin-bottom: 32px;
+      text-align: center;
+
+      .instructions-title {
+        font-size: 28px;
+        font-weight: 800;
+        color: #1a1a1a;
+        margin: 0 0 8px 0;
+      }
+
+      .instructions-text {
+        font-size: 15px;
+        color: #64748b;
+        font-weight: 500;
+        margin: 0;
+      }
+    }
+
+    .photo-sections {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 32px;
+
+      .photo-section {
+        background: var(--executor-surface);
+        border: 2px dashed var(--executor-border);
+        border-radius: 16px;
+        padding: 32px 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        min-height: 180px;
+        justify-content: center;
+
+        &:hover {
+          border-color: #8b5cf6;
+          background: #faf5ff;
+        }
+
+        &:active {
+          transform: scale(0.98);
+        }
+
+        &.captured {
+          border-style: solid;
+          border-color: #10b981;
+          background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+
+          .photo-icon-wrapper {
+            background: #10b981;
+
+            .check-icon {
+              color: #ffffff;
+            }
+          }
+
+          .photo-title {
+            color: #065f46;
+          }
+
+          .photo-status {
+            color: #059669;
+          }
+        }
+
+        .photo-icon-wrapper {
+          width: 96px;
+          height: 96px;
+          background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+          border-radius: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.3s ease;
+          box-shadow: 0 8px 16px rgba(139, 92, 246, 0.3);
+
+          .camera-icon {
+            color: #ffffff;
+          }
+        }
+
+        .photo-info {
+          text-align: center;
+
+          .photo-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: #1a1a1a;
+            margin: 0 0 4px 0;
+          }
+
+          .photo-status {
+            font-size: 14px;
+            font-weight: 600;
+            color: #8b5cf6;
+            margin: 0;
+          }
+        }
+      }
+    }
+
+    .continue-btn {
+      width: 100%;
+      margin-top: auto;
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  .footer-action {
+    padding: 20px;
+    padding-bottom: 100px; // Extra padding to account for bottom nav
+    background: var(--executor-surface);
+    border-top: 1px solid var(--executor-border);
+
+    .continue-btn {
+      width: 100%;
+    }
+  }
+}
+
+// Responsive adjustments
+@media (min-width: 768px) {
+  .task-capture-page {
+    .capture-content {
+      max-width: 600px;
+      margin: 0 auto;
+      width: 100%;
+    }
+  }
+}

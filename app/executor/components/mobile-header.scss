@@ -1,0 +1,76 @@
+.mobile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 20px;
+  background: transparent;
+
+  .header-text {
+    .title {
+      font-size: 28px;
+      font-weight: 800;
+      color: #1a1a1a;
+      margin: 0;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: #64748b;
+      margin: 4px 0 0 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      &::before {
+        content: "📅"; /* In the screenshot there's a calendar icon */
+        font-size: 14px;
+      }
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    .avatar-wrapper {
+      .avatar {
+        position: relative;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        overflow: visible; /* To allow online dot to overflow */
+        border: 2px solid #ffffff;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+
+        img {
+          border-radius: 50%;
+          object-fit: cover;
+        }
+
+        .online-indicator {
+          position: absolute;
+          bottom: 2px;
+          right: 2px;
+          width: 10px;
+          height: 10px;
+          background: #4ade80;
+          border: 2px solid #ffffff;
+          border-radius: 50%;
+        }
+      }
+    }
+
+    .menu-btn {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      color: #1a1a1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+}

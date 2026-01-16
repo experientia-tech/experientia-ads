@@ -1,0 +1,89 @@
+.brandSummary {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+  border: 1px solid #eeeeee;
+  cursor: pointer;
+
+  &:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.brandInfo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.brandLogo {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.brandDetails {
+  h3 {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+}
+
+.campaignStats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #666666;
+}
+
+.divider {
+  color: #dddddd;
+}
+
+.active {
+  color: #10b981;
+  font-weight: 500;
+}
+
+.expandBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+  color: #666666;
+
+  &:hover {
+    color: #1a1a1a;
+  }
+
+  &.expanded {
+    transform: rotate(180deg);
+  }
+}
+
+@media (min-width: 769px) {
+  .brandSummary {
+    padding: 20px;
+  }
+  
+  .brandDetails {
+    h3 {
+      font-size: 18px;
+    }
+  }
+}
