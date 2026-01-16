@@ -10,16 +10,22 @@
   },
   "dependencies": {
     "@prisma/client": "^7.2.0",
+    "@types/leaflet": "^1.9.21",
+    "@types/mapbox-gl": "^3.4.1",
     "babel-plugin-react-compiler": "^1.0.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.2.3",
     "jsonwebtoken": "^9.0.3",
+    "leaflet": "^1.9.4",
+    "mapbox-gl": "^3.17.0",
     "next": "16.0.8",
     "prisma": "^7.2.0",
     "react": "19.2.1",
     "react-dom": "19.2.1",
-    "react-icons": "^5.5.0"
+    "react-icons": "^5.5.0",
+    "react-leaflet": "^5.0.0",
+    "react-map-gl": "^8.1.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

@@ -67,6 +67,7 @@ model Campaign {
   latitude        Float?
   longitude       Float?
   address         String?
+  serviceType     String?
   startDate       DateTime?
   endDate         DateTime?
   serviceType     String?
