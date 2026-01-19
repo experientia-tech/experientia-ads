@@ -39,15 +39,6 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const data: CreateCampaignInput = await request.json();
-    
-    // Validate required fields
-    if (!data.createdBy) {
-      return NextResponse.json(
-        { error: 'createdBy is required' },
-        { status: 400 }
-      );
-    }
-
     const campaign = await campaignService.createCampaign(data);
 
     return NextResponse.json(campaign);

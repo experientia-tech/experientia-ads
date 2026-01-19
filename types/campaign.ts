@@ -28,7 +28,6 @@ export interface CreateCampaignInput {
   members?: CampaignMemberInput[];
   tasks?: CampaignTaskInput[];
   totalTasks?: number;
-  createdBy: string;
 }
 
 export interface CampaignTaskResponse {

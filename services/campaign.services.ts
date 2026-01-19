@@ -87,6 +87,7 @@ export class CampaignService {
     const result = await prisma.$transaction(async (prisma) => {
       const taskCount = data.totalTasks !== undefined ? data.totalTasks : (data.tasks?.length || 0);
       
+      // 1. Create the campaign
       const campaign = await prisma.campaign.create({
         data: {
           name: data.name,
@@ -103,6 +104,7 @@ export class CampaignService {
         },
       });
 
+      // 2. Add campaign members
       if (data.members && data.members.length > 0) {
         await Promise.all(
           data.members.map(member => 
@@ -110,7 +112,7 @@ export class CampaignService {
               data: {
                 campaignId: campaign.id,
                 userId: member.userId,
-                assignedBy: data.createdBy,
+                assignedBy: member.userId, // Use the member's own ID as assignedBy
                 role: member.role,
               },
             })
@@ -164,17 +166,17 @@ export class CampaignService {
       throw new Error('Failed to create campaign');
     }
 
-    return this.formatCampaignResponse(result, data.createdBy);
+    return this.formatCampaignResponse(result);
   }
 
-  private formatCampaignResponse(campaign: any, createdBy: string = ''): CampaignResponse {
+  private formatCampaignResponse(campaign: any): CampaignResponse {
     return {
       id: campaign.id,
       name: campaign.name,
       description: campaign.description,
       organizationId: campaign.organizationId,
       status: campaign.status as CampaignStatus,
-      createdBy: createdBy,
+      createdBy: '',
       latitude: campaign.latitude || undefined,
       longitude: campaign.longitude || undefined,
       address: campaign.address || undefined,
