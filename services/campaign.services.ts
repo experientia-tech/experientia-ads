@@ -29,9 +29,7 @@ export class CampaignService {
       limit = 10,
       sortBy = 'createdAt',
       sortOrder = 'desc',
-    } = params;
-
-    // Build the where clause for filtering
+    } = params;    
     const where: any = {};
     
     if (search) {
@@ -86,9 +84,9 @@ export class CampaignService {
   }
 
   async createCampaign(data: CreateCampaignInput): Promise<CampaignResponse> {
-    // Use a transaction to ensure all operations succeed or fail together
     const result = await prisma.$transaction(async (prisma) => {
-      // 1. Create the campaign
+      const taskCount = data.totalTasks !== undefined ? data.totalTasks : (data.tasks?.length || 0);
+      
       const campaign = await prisma.campaign.create({
         data: {
           name: data.name,
@@ -101,11 +99,10 @@ export class CampaignService {
           serviceType: data.serviceType,
           startDate: data.startDate ? new Date(data.startDate) : null,
           endDate: data.endDate ? new Date(data.endDate) : null,
+          totalTasks: taskCount,
         },
       });
 
-      
-      // 3. Add other members if provided
       if (data.members && data.members.length > 0) {
         await Promise.all(
           data.members.map(member => 
@@ -121,7 +118,6 @@ export class CampaignService {
         );
       }
       
-      // 4. Add tasks if provided
       if (data.tasks && data.tasks.length > 0) {
         await Promise.all(
           data.tasks.map(task => 
@@ -143,7 +139,7 @@ export class CampaignService {
         );
       }
 
-      // Return the complete campaign with relations
+      // 4. Fetch the campaign with all its relations
       return prisma.campaign.findUnique({
         where: { id: campaign.id },
         include: {
@@ -171,23 +167,21 @@ export class CampaignService {
     return this.formatCampaignResponse(result, data.createdBy);
   }
 
-  private formatCampaignResponse(campaign: any, createdBy?: string): CampaignResponse {
-    // Find the creator (first campaign manager)
-    const creator = campaign.members.find((m: any) => m.role === 'CAMPAIGN_MANAGER');
-    
+  private formatCampaignResponse(campaign: any, createdBy: string = ''): CampaignResponse {
     return {
       id: campaign.id,
       name: campaign.name,
       description: campaign.description,
       organizationId: campaign.organizationId,
       status: campaign.status as CampaignStatus,
-      createdBy: createdBy || creator?.userId || '',
+      createdBy: createdBy,
       latitude: campaign.latitude || undefined,
       longitude: campaign.longitude || undefined,
       address: campaign.address || undefined,
       serviceType: campaign.serviceType || undefined,
       startDate: campaign.startDate,
       endDate: campaign.endDate,
+      totalTasks: campaign.totalTasks,
       members: campaign.members.map((member: any) => ({
         id: member.id,
         campaignId: member.campaignId,

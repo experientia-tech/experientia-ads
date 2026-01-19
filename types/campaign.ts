@@ -27,7 +27,8 @@ export interface CreateCampaignInput {
   endDate?: Date | string;
   members?: CampaignMemberInput[];
   tasks?: CampaignTaskInput[];
-  createdBy: string; // ID of the user creating the campaign (will be the first campaign manager)
+  totalTasks?: number;
+  createdBy: string;
 }
 
 export interface CampaignTaskResponse {
@@ -81,6 +82,7 @@ export interface CampaignResponse {
   endDate: Date | null;
   members: CampaignMemberResponse[];
   tasks: CampaignTaskResponse[];
+  totalTasks: number;
   createdAt: Date;
   updatedAt: Date;
 }
