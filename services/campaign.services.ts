@@ -231,4 +231,35 @@ export class CampaignService {
       updatedAt: campaign.updatedAt,
     };
   }
+  async getCampaignById(id: string): Promise<CampaignResponse | null> {
+  try {
+    const campaign = await prisma.campaign.findUnique({
+      where: { id },
+      include: {
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                phone: true,
+              },
+            },
+          },
+        },
+        tasks: true,
+      },
+    });
+
+    if (!campaign) {
+      return null;
+    }
+
+    return this.formatCampaignResponse(campaign);
+  } catch (error) {
+    console.error('Error in getCampaignById:', error);
+    throw error;
+  }
+}
 }
