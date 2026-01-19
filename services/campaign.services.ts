@@ -112,7 +112,7 @@ export class CampaignService {
               data: {
                 campaignId: campaign.id,
                 userId: member.userId,
-                assignedBy: member.userId, // Use the member's own ID as assignedBy
+                assignedBy: member.userId,
                 role: member.role,
               },
             })
@@ -259,6 +259,59 @@ export class CampaignService {
     return this.formatCampaignResponse(campaign);
   } catch (error) {
     console.error('Error in getCampaignById:', error);
+    throw error;
+  }
+}
+async updateCampaign(
+  id: string, 
+  data: Partial<CreateCampaignInput>
+): Promise<CampaignResponse> {
+  try {
+    const existingCampaign = await prisma.campaign.findUnique({
+      where: { id },
+      include: { members: true, tasks: true }
+    });
+
+    if (!existingCampaign) {
+      throw new Error('Campaign not found');
+    }
+
+    const updateData: any = {
+      name: data.name,
+      description: data.description,
+      status: data.status,
+      latitude: data.latitude,
+      longitude: data.longitude,
+      address: data.address,
+      serviceType: data.serviceType,
+      startDate: data.startDate ? new Date(data.startDate) : null,
+      endDate: data.endDate ? new Date(data.endDate) : null,
+      totalTasks: data.totalTasks,
+    };
+
+    const updatedCampaign = await prisma.campaign.update({
+      where: { id },
+      data: updateData,
+      include: {
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                phone: true,
+              },
+            },
+          },
+        },
+        tasks: true,
+      },
+    });
+
+    return this.formatCampaignResponse(updatedCampaign);
+  } catch (error) {
+    console.error('Error updating campaign:', error);
     throw error;
   }
 }
