@@ -72,7 +72,6 @@ export interface CampaignResponse {
   description: string;
   organizationId: string;
   status: string;
-  createdBy: string;
   latitude?: number;
   longitude?: number;
   address?: string;

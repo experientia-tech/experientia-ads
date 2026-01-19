@@ -176,7 +176,6 @@ export class CampaignService {
       description: campaign.description,
       organizationId: campaign.organizationId,
       status: campaign.status as CampaignStatus,
-      createdBy: '',
       latitude: campaign.latitude || undefined,
       longitude: campaign.longitude || undefined,
       address: campaign.address || undefined,
