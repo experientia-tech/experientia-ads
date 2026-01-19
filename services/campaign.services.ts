@@ -314,4 +314,35 @@ async updateCampaign(
     throw error;
   }
 }
+async deleteCampaign(id: string): Promise<{ success: boolean; message: string }> {
+  try {
+    const existingCampaign = await prisma.campaign.findUnique({
+      where: { id }
+    });
+
+    if (!existingCampaign) {
+      throw new Error('Campaign not found');
+    }
+
+    await prisma.campaignMember.deleteMany({
+      where: { campaignId: id }
+    });
+
+    await prisma.task.deleteMany({
+      where: { campaignId: id }
+    });
+
+    await prisma.campaign.delete({
+      where: { id }
+    });
+
+    return { 
+      success: true, 
+      message: 'Campaign deleted successfully' 
+    };
+  } catch (error) {
+    console.error('Error deleting campaign:', error);
+    throw new Error(error instanceof Error ? error.message : 'Failed to delete campaign');
+  }
+}
 }

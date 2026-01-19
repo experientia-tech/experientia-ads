@@ -69,3 +69,30 @@ export async function PUT(
     );
   }
 }
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Campaign ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const result = await campaignService.deleteCampaign(id);
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error('Error deleting campaign:', error);
+    return NextResponse.json(
+      { 
+        error: 'Failed to delete campaign',
+        details: error instanceof Error ? error.message : String(error)
+      },
+      { status: error instanceof Error && error.message === 'Campaign not found' ? 404 : 500 }
+    );
+  }
+}
