@@ -1,4 +1,4 @@
-.executor-login-container {
+.signin-container {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -32,7 +32,7 @@
   }
 }
 
-.executor-login-header {
+.signin-header {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -75,7 +75,7 @@
   }
 }
 
-.executor-login-content {
+.signin-content {
   flex: 1;
   display: flex;
   align-items: center;
@@ -85,7 +85,7 @@
   z-index: 10;
 }
 
-.executor-login-card {
+.signin-card {
   background: #ffffff;
   border: 1px solid rgba(139, 92, 246, 0.1);
   border-radius: 20px;
@@ -111,7 +111,7 @@
   }
 }
 
-.executor-login-step {
+.signin-step {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -129,7 +129,7 @@
   color: #ffffff;
 }
 
-.executor-login-title {
+.signin-title {
   font-size: 1.875rem;
   font-weight: 700;
   color: #1f2937;
@@ -138,7 +138,7 @@
   letter-spacing: -0.02em;
 }
 
-.executor-login-subtitle {
+.signin-subtitle {
   font-size: 0.95rem;
   color: #6b7280;
   text-align: center;
@@ -151,7 +151,7 @@
   }
 }
 
-.executor-login-form {
+.signin-form {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -371,7 +371,7 @@
   }
 }
 
-.executor-login-footer {
+.signin-footer {
   padding: 1.5rem 3rem;
   text-align: center;
   position: relative;
@@ -390,11 +390,11 @@
 
 // Responsive adjustments
 @media (max-width: 480px) {
-  .executor-login-title {
+  .signin-title {
     font-size: 1.5rem;
   }
 
-  .executor-login-subtitle {
+  .signin-subtitle {
     font-size: 0.875rem;
   }
 

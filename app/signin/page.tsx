@@ -1,9 +1,10 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import "./login.scss";
+import { sendOtp, verifyOtp } from "@/app/experientia/store/Auth";
+import "./page.scss";
 
-const ExecutorLogin = () => {
+const SignIn = () => {
   const router = useRouter();
 
   // Local state
@@ -39,17 +40,19 @@ const ExecutorLogin = () => {
     }
 
     setLoading(true);
+    const result = await sendOtp(phoneNumber);
+    setLoading(false);
 
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
+    if (result.success) {
       setStep("otp");
-      setResendTimer(45);
+      setResendTimer(30);
       // Auto-focus first OTP input
       setTimeout(() => {
         otpInputRefs.current[0]?.focus();
       }, 100);
-    }, 1000);
+    } else {
+      setError(result.error || "Failed to send OTP");
+    }
   };
 
   const handleOtpChange = (index: number, value: string) => {
@@ -110,17 +113,15 @@ const ExecutorLogin = () => {
     }
 
     setLoading(true);
+    const result = await verifyOtp(phoneNumber, otpValue);
+    setLoading(false);
 
-    // Simulate API call - check for hardcoded credentials
-    setTimeout(() => {
-      setLoading(false);
-      // Accept 123456 for any phone number to make testing easier
-      if (otpValue === "123456") {
-        router.push("/executor/dashboard");
-      } else {
-        setError("Invalid OTP. Try 123456");
-      }
-    }, 1000);
+    if (result.success) {
+      // Navigate to dashboard on success
+      router.push("/experientia/dashboard");
+    } else {
+      setError(result.error || "Invalid OTP");
+    }
   };
 
   const handleResendOtp = async () => {
@@ -129,11 +130,16 @@ const ExecutorLogin = () => {
     setError("");
     setOtpState(["", "", "", "", "", ""]);
 
-    // Simulate API call
-    setResendTimer(45);
-    setTimeout(() => {
-      otpInputRefs.current[0]?.focus();
-    }, 100);
+    const result = await sendOtp(phoneNumber);
+
+    if (result.success) {
+      setResendTimer(30);
+      setTimeout(() => {
+        otpInputRefs.current[0]?.focus();
+      }, 100);
+    } else {
+      setError(result.error || "Failed to resend OTP");
+    }
   };
 
   const handleBackToPhone = () => {
@@ -143,28 +149,25 @@ const ExecutorLogin = () => {
   };
 
   return (
-    <div className="executor-login-container">
-      <header className="executor-login-header">
+    <div className="signin-container">
+      {/* Header */}
+      <header className="signin-header">
         <div className="logo">
-          <span className="logo-text">Executor</span>
+          <span className="logo-text">Experientia</span>
         </div>
       </header>
 
       {/* Main Content */}
-      <div className="executor-login-content">
-        <div className="executor-login-card">
+      <div className="signin-content">
+        <div className="signin-card">
           {step === "phone" ? (
-            <div className="executor-login-step">
-              <h1 className="executor-login-title">Welcome Back Executor</h1>
-              <p className="executor-login-subtitle">
-                Enter your registered phone number to receive a verification
-                code.
+            <div className="signin-step">
+              <h1 className="signin-title">Welcome Back Admin</h1>
+              <p className="signin-subtitle">
+                Enter your phone number to receive a secure login code.
               </p>
 
-              <form
-                onSubmit={handlePhoneSubmit}
-                className="executor-login-form"
-              >
+              <form onSubmit={handlePhoneSubmit} className="signin-form">
                 <div className="input-group">
                   <label htmlFor="phone" className="input-label">
                     Phone Number
@@ -216,7 +219,7 @@ const ExecutorLogin = () => {
               </form>
             </div>
           ) : (
-            <div className="executor-login-step">
+            <div className="signin-step">
               <div className="otp-icon">
                 <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
                   <path
@@ -229,15 +232,15 @@ const ExecutorLogin = () => {
                 </svg>
               </div>
 
-              <h1 className="executor-login-title">Verify Code</h1>
-              <p className="executor-login-subtitle">
+              <h1 className="signin-title">Verify Code</h1>
+              <p className="signin-subtitle">
                 We've sent a 6-digit code to{" "}
                 <strong>
                   +91 {phoneNumber.replace(/(\d{3})(\d{3})(\d{4})/, "$1 $2 $3")}
                 </strong>
               </p>
 
-              <form onSubmit={handleOtpSubmit} className="executor-login-form">
+              <form onSubmit={handleOtpSubmit} className="signin-form">
                 <div className="otp-input-group">
                   {otp.map((digit, index) => (
                     <input
@@ -268,7 +271,7 @@ const ExecutorLogin = () => {
                     <span className="loading-spinner"></span>
                   ) : (
                     <>
-                      Verify & Login
+                      Verify OTP
                       <svg
                         width="20"
                         height="20"
@@ -332,11 +335,11 @@ const ExecutorLogin = () => {
       </div>
 
       {/* Footer */}
-      <footer className="executor-login-footer">
+      <footer className="signin-footer">
         <p>© 2024 Experientia Technologies Inc. All rights reserved.</p>
       </footer>
     </div>
   );
 };
 
-export default ExecutorLogin;
+export default SignIn;
