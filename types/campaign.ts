@@ -26,10 +26,7 @@ export interface CreateCampaignInput {
   serviceType?: string;
   startDate?: Date | string;
   endDate?: Date | string;
-  members?: Omit<CampaignMemberInput, 'assignedBy'>[];
-  tasks?: CampaignTaskInput[];
   totalTasks?: number;
-  assignedBy: string;
 }
 
 export interface CampaignTaskResponse {
@@ -56,7 +53,7 @@ export interface CampaignMemberResponse {
   id: string;
   campaignId: string;
   userId: string;
-  assignedBy: string;
+  assignedBy:string;
   role: 'CAMPAIGN_MANAGER' | 'SUPERVISOR' | 'EXECUTOR' | 'BRAND_VIEWER';
   assignedAt: Date;
   active: boolean;

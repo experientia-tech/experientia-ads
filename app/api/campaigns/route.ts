@@ -38,8 +38,11 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const data: CreateCampaignInput = await request.json();
-    const campaign = await campaignService.createCampaign(data);
+    const body = await request.json();
+    //const { members, tasks, ...campaignData } = body;
+    const campaignData = body;
+    
+    const campaign = await campaignService.createCampaign(campaignData);
 
     return NextResponse.json(campaign);
   } catch (error) {

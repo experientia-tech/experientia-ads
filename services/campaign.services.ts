@@ -69,8 +69,6 @@ export class CampaignService {
         tasks: true,
       },
     });
-
-    // Format the response
     return {
       data: campaigns.map(campaign => this.formatCampaignResponse(campaign)),
       pagination: {
@@ -84,9 +82,6 @@ export class CampaignService {
 
   async createCampaign(data: CreateCampaignInput): Promise<CampaignResponse> {
     const result = await prisma.$transaction(async (prisma) => {
-      const taskCount = data.totalTasks !== undefined ? data.totalTasks : (data.tasks?.length || 0);
-      
-      // 1. Create the campaign
       const campaign = await prisma.campaign.create({
         data: {
           name: data.name,
@@ -99,48 +94,10 @@ export class CampaignService {
           serviceType: data.serviceType,
           startDate: data.startDate ? new Date(data.startDate) : null,
           endDate: data.endDate ? new Date(data.endDate) : null,
-          totalTasks: taskCount,
+          totalTasks: data.totalTasks || 0,
         },
       });
 
-      // 2. Add campaign members
-      if (data.members && data.members.length > 0) {
-        await Promise.all(
-          data.members.map(member => 
-            prisma.campaignMember.create({
-              data: {
-                campaignId: campaign.id,
-                userId: member.userId,
-                assignedBy: data.assignedBy,
-                role: member.role,
-              },
-            })
-          )
-        );
-      }
-      
-      if (data.tasks && data.tasks.length > 0) {
-        await Promise.all(
-          data.tasks.map(task => 
-            prisma.task.create({
-              data: {
-                campaignId: campaign.id,
-                status: task.status || 'PENDING',
-                executorUserId: task.executorUserId,
-                assignedAt: new Date(),
-                metadata: {
-                  title: task.title,
-                  description: task.description,
-                  dueDate: task.dueDate,
-                  priority: task.priority || 'MEDIUM',
-                }
-              },
-            })
-          )
-        );
-      }
-
-      // 4. Fetch the campaign with all its relations
       return prisma.campaign.findUnique({
         where: { id: campaign.id },
         include: {
