@@ -3,6 +3,7 @@ export type CampaignStatus = 'Active' | 'Completed' | 'Cancelled';
 export interface CampaignMemberInput {
   userId: string;
   role: 'CAMPAIGN_MANAGER' | 'SUPERVISOR' | 'EXECUTOR' | 'BRAND_VIEWER';
+  assignedBy: string;
 }
 
 export interface CampaignTaskInput {
@@ -25,9 +26,10 @@ export interface CreateCampaignInput {
   serviceType?: string;
   startDate?: Date | string;
   endDate?: Date | string;
-  members?: CampaignMemberInput[];
+  members?: Omit<CampaignMemberInput, 'assignedBy'>[];
   tasks?: CampaignTaskInput[];
-  createdBy: string; // ID of the user creating the campaign (will be the first campaign manager)
+  totalTasks?: number;
+  assignedBy: string;
 }
 
 export interface CampaignTaskResponse {
@@ -72,7 +74,6 @@ export interface CampaignResponse {
   description: string;
   organizationId: string;
   status: string;
-  createdBy: string;
   latitude?: number;
   longitude?: number;
   address?: string;
@@ -81,6 +82,7 @@ export interface CampaignResponse {
   endDate: Date | null;
   members: CampaignMemberResponse[];
   tasks: CampaignTaskResponse[];
+  totalTasks: number;
   createdAt: Date;
   updatedAt: Date;
 }

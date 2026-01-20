@@ -5,7 +5,7 @@ import { FiSearch, FiChevronDown, FiLogOut, FiUser, FiSettings, FiBell } from 'r
 import dynamic from 'next/dynamic';
 import './page.scss';
 const CreateCampaignForm = dynamic(
-  () => import('../ceate_campaign/CreateCampaignForm'),
+  () => import('../create_campaign/CreateCampaignForm'),
   { ssr: false }
 );
 
