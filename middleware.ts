@@ -14,8 +14,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // If already on /executor or /experientia paths, let them through
-  if (pathname.startsWith("/executor") || pathname.startsWith("/experientia")) {
+  // If already on /executor, /experientia, or /signin paths, let them through
+  if (
+    pathname.startsWith("/executor") ||
+    pathname.startsWith("/experientia") ||
+    pathname.startsWith("/signin")
+  ) {
     return NextResponse.next();
   }
 
@@ -38,19 +42,19 @@ export function middleware(request: NextRequest) {
     hostname.includes("experientia.local") ||
     hostname.includes("localhost")
   ) {
-    // Rewrite root to /experientia
+    // Rewrite root to /signin
     if (pathname === "/") {
-      return NextResponse.rewrite(new URL("/experientia", request.url));
+      return NextResponse.rewrite(new URL("/signin", request.url));
     }
     // Rewrite other paths to /experientia/path
     return NextResponse.rewrite(
-      new URL(`/experientia${pathname}`, request.url)
+      new URL(`/experientia${pathname}`, request.url),
     );
   }
 
-  // Default fallback to experientia
+  // Default fallback to signin
   if (pathname === "/") {
-    return NextResponse.rewrite(new URL("/experientia", request.url));
+    return NextResponse.rewrite(new URL("/signin", request.url));
   }
   return NextResponse.rewrite(new URL(`/experientia${pathname}`, request.url));
 }
