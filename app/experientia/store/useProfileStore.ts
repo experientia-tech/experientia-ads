@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { ProfileResponse } from '@/types/user';
 
-interface ProfileState {
+interface ProfileStore {
   profile: ProfileResponse | null;
   isLoading: boolean;
   error: string | null;
@@ -10,7 +10,7 @@ interface ProfileState {
   clearProfile: () => void;
 }
 
-export const useProfileStore = create<ProfileState>((set) => ({
+export const useProfileStore = create<ProfileStore>((set) => ({
   profile: null,
   isLoading: false,
   error: null,
@@ -22,8 +22,8 @@ export const useProfileStore = create<ProfileState>((set) => ({
       if (!response.ok) {
         throw new Error('Failed to fetch profile');
       }
-      const profile = await response.json();
-      set({ profile, isLoading: false });
+      const data = await response.json();
+      set({ profile: data, isLoading: false });
     } catch (error) {
       set({ 
         error: error instanceof Error ? error.message : 'Failed to fetch profile',
@@ -44,21 +44,17 @@ export const useProfileStore = create<ProfileState>((set) => ({
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to update profile');
+        throw new Error('Failed to update profile');
       }
 
       const updatedProfile = await response.json();
-      set((state) => ({ 
-        profile: { ...state.profile, ...updatedProfile },
-        isLoading: false 
-      }));
+      set({ profile: updatedProfile, isLoading: false });
     } catch (error) {
       set({ 
         error: error instanceof Error ? error.message : 'Failed to update profile',
         isLoading: false 
       });
-      throw error;
+      throw error; // Re-throw to handle in the component if needed
     }
   },
 

@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiUpload, FiX } from 'react-icons/fi';
 import './CreateCampaignForm.scss';
+import { useProfileStore } from '@/app/experientia/store/useProfileStore';
+import { useRouter } from 'next/navigation';
 
 const CreateCampaignForm = ({ onClose }: { onClose: () => void }) => {
   const [brandName, setBrandName] = useState('');
@@ -12,6 +14,14 @@ const CreateCampaignForm = ({ onClose }: { onClose: () => void }) => {
   const [endDate, setEndDate] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [serviceType, setServiceType] = useState('');
+  const {profile} = useProfileStore();
+  const router = useRouter();
+  const [organizationId, setOrganizationId] = useState('');
+  useEffect(() => {
+    if (profile?.organizationId) {
+      setOrganizationId(profile.organizationId);
+    }
+  }, [profile]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -41,6 +51,10 @@ const CreateCampaignForm = ({ onClose }: { onClose: () => void }) => {
         endDate: endDate || null,
         serviceType: serviceType || 'DEFAULT_SERVICE',
         status: 'ACTIVE',
+        organizationId: organizationId,
+        latitude: null,
+        longitude: null,
+        description: '',  
       }),
     });
 
@@ -52,8 +66,7 @@ const CreateCampaignForm = ({ onClose }: { onClose: () => void }) => {
 
     alert('Campaign created successfully!');
     onClose();
-    
-    // TODO refresh the campaigns list
+    router.refresh(); 
 
   } catch (error) {
     console.error('Error creating campaign:', error);
