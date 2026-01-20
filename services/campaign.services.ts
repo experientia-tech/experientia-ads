@@ -44,7 +44,6 @@ export class CampaignService {
       where.status = status;
     }
 
-    // Get total count for pagination
     const total = await prisma.campaign.count({ where });
 
     const campaigns = await prisma.campaign.findMany({
@@ -112,7 +111,7 @@ export class CampaignService {
               data: {
                 campaignId: campaign.id,
                 userId: member.userId,
-                assignedBy: member.userId,
+                assignedBy: data.assignedBy,
                 role: member.role,
               },
             })
@@ -343,6 +342,84 @@ async deleteCampaign(id: string): Promise<{ success: boolean; message: string }>
   } catch (error) {
     console.error('Error deleting campaign:', error);
     throw new Error(error instanceof Error ? error.message : 'Failed to delete campaign');
+  }
+}
+async addCampaignMembers(
+  campaignId: string, 
+  members: Array<{ userId: string; role: string }>,
+  assignedBy: string
+) {
+  try {
+    const campaign = await prisma.campaign.findUnique({
+      where: { id: campaignId }
+    });
+
+    if (!campaign) {
+      throw new Error('Campaign not found');
+    }
+
+    const userIds = members.map(m => m.userId);
+    const existingUsers = await prisma.user.findMany({
+      where: { id: { in: userIds } }
+    });
+
+    if (existingUsers.length !== userIds.length) {
+      const existingUserIds = new Set(existingUsers.map(u => u.id));
+      const missingUserIds = userIds.filter(id => !existingUserIds.has(id));
+      throw new Error(`Users not found: ${missingUserIds.join(', ')}`);
+    }
+
+    const existingMembers = await prisma.campaignMember.findMany({
+      where: {
+        campaignId,
+        userId: { in: userIds }
+      }
+    });
+
+    const existingUserIds = new Set(existingMembers.map(m => m.userId));
+    const newMembers = members.filter(m => !existingUserIds.has(m.userId));
+
+    if (newMembers.length === 0) {
+      return { 
+        success: true, 
+        message: 'All users are already members of this campaign',
+        addedCount: 0
+      };
+    }
+
+    const createdMembers = await prisma.$transaction(
+      newMembers.map(member => 
+        prisma.campaignMember.create({
+          data: {
+            campaignId,
+            userId: member.userId,
+            role: member.role as any,
+            assignedBy
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                phone: true
+              }
+            }
+          }
+        })
+      )
+    );
+
+    return {
+      success: true,
+      message: `Successfully added ${createdMembers.length} member(s) to the campaign`,
+      addedCount: createdMembers.length,
+      members: createdMembers
+    };
+
+  } catch (error) {
+    console.error('Error adding campaign members:', error);
+    throw error;
   }
 }
 }

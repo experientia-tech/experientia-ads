@@ -3,6 +3,7 @@ export type CampaignStatus = 'Active' | 'Completed' | 'Cancelled';
 export interface CampaignMemberInput {
   userId: string;
   role: 'CAMPAIGN_MANAGER' | 'SUPERVISOR' | 'EXECUTOR' | 'BRAND_VIEWER';
+  assignedBy: string;
 }
 
 export interface CampaignTaskInput {
@@ -25,9 +26,10 @@ export interface CreateCampaignInput {
   serviceType?: string;
   startDate?: Date | string;
   endDate?: Date | string;
-  members?: CampaignMemberInput[];
+  members?: Omit<CampaignMemberInput, 'assignedBy'>[];
   tasks?: CampaignTaskInput[];
   totalTasks?: number;
+  assignedBy: string;
 }
 
 export interface CampaignTaskResponse {
