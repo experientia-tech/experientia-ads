@@ -186,6 +186,33 @@ export class CampaignService {
       updatedAt: campaign.updatedAt,
     };
   }
+  async updateCampaignStatus(id: string, status: string): Promise<CampaignResponse> {
+    const updatedCampaign = await prisma.campaign.update({
+      where: { id },
+      data: { 
+        status,
+        updatedAt: new Date() 
+      },
+      include: {
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                phone: true,
+              },
+            },
+          },
+        },
+        tasks: true,
+      },
+    });
+
+    return this.formatCampaignResponse(updatedCampaign);
+  }
+
   async getCampaignById(id: string): Promise<CampaignResponse | null> {
   try {
     const campaign = await prisma.campaign.findUnique({
