@@ -30,10 +30,13 @@ const CampaignDetailsPage = ({ params }: { params: { id: string } }) => {
   return (
     <div className={styles.campaignDetailsPage}>
       <div className={styles.header}>
-        <Link href="/experientia/assigned_campaigns" className={styles.backButton}>
-          <FiArrowLeft size={20} />
-          <span>Back to Campaigns</span>
-        </Link>
+       <button 
+  onClick={() => window.history.back()}
+  className={styles.backButton}
+>
+  <FiArrowLeft size={20} />
+  <span>Back to Campaigns</span>
+</button>
       </div>
 
       <div className={styles.campaignHeader}>
