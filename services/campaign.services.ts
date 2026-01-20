@@ -85,11 +85,11 @@ export class CampaignService {
       const campaign = await prisma.campaign.create({
         data: {
           name: data.name,
-          description: data.description,
+          description: data.description ?? null,
           organizationId: data.organizationId,
           status: data.status || 'Active',
-          latitude: data.latitude,
-          longitude: data.longitude,
+          latitude: data.latitude ?? null,
+          longitude: data.longitude ?? null,
           address: data.address,
           serviceType: data.serviceType,
           startDate: data.startDate ? new Date(data.startDate) : null,

@@ -24,18 +24,42 @@ const CreateCampaignForm = ({ onClose }: { onClose: () => void }) => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle form submission
-    console.log({
-      brandName,
-      campaignLocation,
-      totalTasks,
-      startDate,
-      endDate,
-      serviceType,
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  try {
+    const response = await fetch('/api/campaigns', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: brandName,
+        address: campaignLocation,
+        totalTasks: parseInt(totalTasks, 10) || 0,
+        startDate: startDate || null,
+        endDate: endDate || null,
+        serviceType: serviceType || 'DEFAULT_SERVICE',
+        status: 'ACTIVE',
+      }),
     });
-  };
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to create campaign');
+    }
+
+    alert('Campaign created successfully!');
+    onClose();
+    
+    // TODO refresh the campaigns list
+
+  } catch (error) {
+    console.error('Error creating campaign:', error);
+    alert(error instanceof Error ? error.message : 'Failed to create campaign');
+  }
+};
 
   return (
     <div className="campaign-form-overlay">
