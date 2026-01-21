@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import type { CampaignRole } from '@prisma/client';
+import type { CampaignRole } from '../app/generated/prisma/client';
 
 export class CampaignMemberService {
   async getCampaignMembers(filters: {
