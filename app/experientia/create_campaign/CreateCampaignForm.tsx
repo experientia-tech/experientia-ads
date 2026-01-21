@@ -1,10 +1,9 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import { FiUpload, FiX } from 'react-icons/fi';
 import './CreateCampaignForm.scss';
-import { useProfileStore } from '@/app/experientia/store/useProfileStore';
 import { useRouter } from 'next/navigation';
+import { useProfile } from '@/app/experientia/context/ProfileContext';
 
 const CreateCampaignForm = ({ onClose }: { onClose: () => void }) => {
   const [brandName, setBrandName] = useState('');
@@ -14,7 +13,7 @@ const CreateCampaignForm = ({ onClose }: { onClose: () => void }) => {
   const [endDate, setEndDate] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [serviceType, setServiceType] = useState('');
-  const {profile} = useProfileStore();
+  const { state: { profile } } = useProfile();
   const router = useRouter();
   const [organizationId, setOrganizationId] = useState('');
   useEffect(() => {

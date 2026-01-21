@@ -1,11 +1,8 @@
-// app/experientia/providers/CampaignProvider.tsx
 'use client';
 
 import { ReactNode } from 'react';
-import { useCampaignStore } from '../store/CampaignStore';
+import { CampaignProvider as Provider } from '@/app/experientia/context/CampaignContext';
 
 export function CampaignProvider({ children }: { children: ReactNode }) {
-  // Initialize the store
-  useCampaignStore();
-  return <>{children}</>;
+  return <Provider>{children}</Provider>;
 }

@@ -1,11 +1,10 @@
 .assigned-campaigns {
   padding: 16px;
-  //max-width: 1200px;
-  //min-height: calc(100vh - 70px);
+  max-width: 1200px;
+  margin: 0 auto;
   
   @media (min-width: 769px) {
-    padding: 24px;
-    min-height: calc(100vh - 100px);
+    padding: 24px 32px;
   }
 
   .header {
@@ -65,26 +64,65 @@
       }
     }
   }
-  .campaigns-list {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s ease-in-out;
-  opacity: 0;
-  visibility: hidden;
-
-  &.expanded {
-    max-height: 5000px;
-    opacity: 1;
-    visibility: visible;
-    margin-top: 16px;
+  .brands-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 24px;
   }
 
-  &.collapsed {
+  .brand-campaign-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: all 0.2s ease;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  .campaigns-list {
     max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
     opacity: 0;
     visibility: hidden;
-    margin: 0;
-    padding: 0;
+    padding: 0 16px;
+    background-color: #f9fafb;
+    border-radius: 0 0 8px 8px;
+
+    &.expanded {
+      max-height: 5000px;
+      opacity: 1;
+      visibility: visible;
+      padding: 16px;
+      border-top: 1px solid #eee;
+    }
+
+    &.collapsed {
+      max-height: 0;
+      opacity: 0;
+      visibility: hidden;
+      margin: 0;
+      padding: 0 16px;
+    }
+
+    > * {
+      margin-bottom: 12px;
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
   }
-}
+
+  @media (max-width: 768px) {
+    .filters {
+      .filter-group {
+        min-width: 100%;
+      }
+    }
+  }
 }
