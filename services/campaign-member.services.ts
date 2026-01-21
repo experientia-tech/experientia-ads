@@ -34,8 +34,6 @@ export class CampaignMemberService {
         assignedAt: 'desc'
       }
     });
-
-    // Transform the response to flatten the user object
     return members.map(member => ({
       id: member.id,
       campaignId: member.campaignId,
@@ -44,11 +42,9 @@ export class CampaignMemberService {
       role: member.role,
       assignedAt: member.assignedAt,
       active: member.active,
-      // Flatten user fields
       firstName: member.user.firstName,
       lastName: member.user.lastName,
       phone: member.user.phone,
-      // Include campaign info
       campaignName: member.campaign?.name
     }));
   }

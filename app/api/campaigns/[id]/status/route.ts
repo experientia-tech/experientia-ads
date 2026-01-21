@@ -17,7 +17,7 @@ export async function PATCH(
         { status: 401 }
       );
     }
-
+    
     const resolvedParams = await Promise.resolve(params);
     const campaignId = resolvedParams.id;
     
