@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
+import { response } from "@/utils/response";
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
+// import { sendOtp } from "@/services/auth.services";
 
 export async function POST(req: Request) {
   const { phone, otp } = await req.json();
@@ -23,13 +25,13 @@ export async function POST(req: Request) {
     {
       sub: user.id,
       orgId: user.organizationId,
-      role: "ADMIN",
+      role: "EXECUTOR",
     },
     process.env.JWT_SECRET!,
     { expiresIn: "7d" }
   );
 
-  const res = NextResponse.json({ success: true });
+  const res = NextResponse.json(response(true, 200, token,"Login successful", {}));
 
   // 🔒 HTTP-only cookie
   res.cookies.set("auth_token", token, {

@@ -72,6 +72,7 @@ model Campaign {
   endDate         DateTime?
   serviceType     String?
   isActive        Boolean   @default(true)
+  totalTasks      Int       @default(1)
   createdAt       DateTime  @default(now()) @db.Timestamptz
   updatedAt       DateTime  @default(now()) @db.Timestamptz
 
@@ -84,7 +85,7 @@ model CampaignMember {
   id             String        @id @default(uuid()) @db.Uuid
   campaignId     String        @db.Uuid
   userId         String        @db.Uuid
-  assignedBy     String        @db.Uuid
+  assignedBy     String       @db.Uuid
 
   role           CampaignRole
   assignedAt     DateTime      @default(now()) @db.Timestamptz
