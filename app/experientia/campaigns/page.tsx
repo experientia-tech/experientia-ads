@@ -1,78 +1,84 @@
 'use client';
-import React, { useState } from 'react';
-import BrandCard from '../components/brand_card/BrandCard';
+import React, { useEffect } from 'react';
 import CampaignCard from '../components/campaign_card/CampaignCard';
+import { useCampaign } from '../context/CampaignContext';
 import './page.scss';
 
-// Mock data - replace with actual data from your API
-const brandsData = [
-  {
-    id: 1,
-    logo: '/experentia.png',
-    name: 'Experientia',
-    totalCampaigns: 5,
-    activeCampaigns: 3,
-    campaigns: [
-      {
-        id: 1,
-        name: 'Summer Sale 2023',
-        serviceType: 'Social Media Marketing',
-        role: 'Content Creator',
-        startDate: '2023-06-01',
-        endDate: '2023-08-31',
-        totalTasks: 15,
-        completedTasks: 8,
-      },
-      {
-        id: 2,
-        name: 'Product Launch',
-        serviceType: 'Influencer Marketing',
-        role: 'Campaign Manager',
-        startDate: '2023-07-15',
-        endDate: '2023-09-30',
-        totalTasks: 10,
-        completedTasks: 3,
-      },
-    ]
-  },
-  {
-    id: 2,
-    logo: '/experentia.png',
-    name: 'Nike',
-    totalCampaigns: 3,
-    activeCampaigns: 2,
-    campaigns: [
-      {
-        id: 3,
-        name: 'Just Do It Campaign',
-        serviceType: 'Brand Awareness',
-        role: 'Content Creator',
-        startDate: '2023-08-01',
-        endDate: '2023-10-31',
-        totalTasks: 12,
-        completedTasks: 5,
-      },
-      {
-        id: 4,
-        name: 'Air Max Launch',
-        serviceType: 'Product Launch',
-        role: 'Social Media Manager',
-        startDate: '2023-09-01',
-        endDate: '2023-11-30',
-        totalTasks: 8,
-        completedTasks: 2,
-      }
-    ]
-  }
-];
+const transformCampaigns = (campaigns: any[]) => {
+  const orgsMap = new Map();
+  
+  campaigns.forEach(campaign => {
+    const orgId = campaign.organizationId;
+    if (!orgsMap.has(orgId)) {
+      orgsMap.set(orgId, {
+        id: orgId,
+        logo: '/experentia.png',
+        name: campaign.organization?.name || 'Organization',
+        campaigns: []
+      });
+    }
+    
+    orgsMap.get(orgId).campaigns.push({
+      id: campaign.id,
+      name: campaign.name,
+      serviceType: campaign.serviceType || 'General',
+      role: 'Campaign Member',
+      startDate: campaign.startDate,
+      endDate: campaign.endDate,
+      totalTasks: campaign.tasks?.length || 0,
+      completedTasks: campaign.tasks?.filter((t: any) => t.status === 'completed')?.length || 0,
+    });
+  });
+  
+  return Array.from(orgsMap.values()).map(org => ({
+    ...org,
+    totalCampaigns: org.campaigns.length,
+    activeCampaigns: org.campaigns.filter((c: any) => {
+      const endDate = new Date(c.endDate);
+      const today = new Date();
+      return endDate >= today;
+    }).length
+  }));
+};
 
 const AssignedCampaignsPage = () => {
-  const [expandedBrandId, setExpandedBrandId] = useState<number | null>(null);
+  const { state, fetchCampaigns } = useCampaign();
+  const { campaigns, isLoading, error } = state;
 
-  const toggleBrandExpand = (brandId: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setExpandedBrandId(expandedBrandId === brandId ? null : brandId);
-  };
+  useEffect(() => {
+    fetchCampaigns();
+  }, [fetchCampaigns]);
+
+  const brandsData = transformCampaigns(campaigns);
+  const allCampaigns = brandsData.flatMap(brand => 
+    brand.campaigns.map(campaign => ({
+      ...campaign,
+      brandLogo: brand.logo,
+      brandName: brand.name
+    }))
+  );
+
+  if (isLoading && campaigns.length === 0) {
+    return (
+      <div className="assigned-campaigns">
+        <div className="header">
+          <h1>Assigned Campaigns</h1>
+          <p className="subheading">Loading campaigns...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="assigned-campaigns">
+        <div className="header">
+          <h1>Assigned Campaigns</h1>
+          <p className="subheading error">Error loading campaigns: {error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="assigned-campaigns">
@@ -110,32 +116,21 @@ const AssignedCampaignsPage = () => {
         </div>
       </div>
 
-      <div className="brands-container">
-        {brandsData.map((brand) => (
-          <div key={brand.id} className="brand-campaign-container">
-            <BrandCard 
-              brandData={{
-                logo: brand.logo,
-                name: brand.name,
-                totalCampaigns: brand.totalCampaigns,
-                activeCampaigns: brand.activeCampaigns,
-              }}
-              isExpanded={expandedBrandId === brand.id}
-              onToggleExpand={(e) => toggleBrandExpand(brand.id, e)}
+      <div className="campaigns-list">
+        {allCampaigns.length > 0 ? (
+          allCampaigns.map((campaign) => (
+            <CampaignCard 
+              key={`${campaign.id}-${campaign.brandName}`}
+              campaign={campaign}
+              brandLogo={campaign.brandLogo}
+              brandName={campaign.brandName}
             />
-            
-            <div className={`campaigns-list ${expandedBrandId === brand.id ? 'expanded' : 'collapsed'}`}>
-              {brand.campaigns.map((campaign) => (
-                <CampaignCard 
-                  key={campaign.id}
-                  campaign={campaign}
-                  brandLogo={brand.logo}
-                  brandName={brand.name}
-                />
-              ))}
-            </div>
+          ))
+        ) : (
+          <div className="no-campaigns">
+            <p>No campaigns found. You haven't been assigned to any campaigns yet.</p>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );
