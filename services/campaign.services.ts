@@ -8,6 +8,7 @@ interface GetCampaignsParams {
   limit?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  organizationId?: string;
 }
 
 interface PaginatedResponse<T> {
@@ -29,8 +30,10 @@ export class CampaignService {
       limit = 10,
       sortBy = 'createdAt',
       sortOrder = 'desc',
+      organizationId,
     } = params;    
-    const where: any = {};
+    const where: any = {organizationId};
+
     
     if (search) {
       where.OR = [

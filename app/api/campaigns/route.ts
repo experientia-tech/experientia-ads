@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
       limit,
       sortBy,
       sortOrder,
+      organizationId: auth.orgId
     });
 
     return NextResponse.json(response);
