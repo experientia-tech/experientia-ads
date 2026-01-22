@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 export interface CampaignCardProps {
   campaign: {
-    id: string;
+    id: string | number;
     name: string;
     serviceType: string;
     description: string;
@@ -25,8 +25,8 @@ export interface CampaignCardProps {
 }
 
 const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
-  const completedTasks = campaign.completedTasks ?? campaign.tasks.filter(task => task.status === 'COMPLETED').length;
-  const totalTasks = campaign.totalTasks || campaign.tasks.length || 1; // Avoid division by zero
+  const completedTasks = campaign.completedTasks ?? (Array.isArray(campaign.tasks) ? campaign.tasks.filter(task => task.status === 'COMPLETED').length : 0);
+  const totalTasks = campaign.totalTasks || (Array.isArray(campaign.tasks) ? campaign.tasks.length : 1); // Avoid division by zero
   
   const progressPercentage = (completed: number, total: number) => {
     return Math.round((completed / total) * 100);
