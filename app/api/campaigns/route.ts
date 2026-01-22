@@ -1,11 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import type { CreateCampaignInput, CampaignStatus } from '@/types/campaign';
 import { CampaignService } from '@/services/campaign.services';
+import { authorize } from '@/lib/middleware';
+import { ROLES } from '@/lib/roles';
 
 const campaignService = new CampaignService();
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
+    const auth = authorize(request, [ROLES.ADMIN]); 
+    if (auth instanceof NextResponse) return auth;
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status') as CampaignStatus | null;
@@ -36,10 +41,12 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    const auth = authorize(request, [ROLES.ADMIN]); 
+    if (auth instanceof NextResponse) return auth;
+
     const body = await request.json();
-    //const { members, tasks, ...campaignData } = body;
     const campaignData = body;
     
     const campaign = await campaignService.createCampaign(campaignData);
