@@ -183,3 +183,17 @@ export const authenticatedFetch = async (
     throw new Error(error.message || "Network error occurred");
   }
 };
+export const getTokenPayload = () => {
+  const token = getToken();
+  if (!token) return null;
+  
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(window.atob(base64));
+    return payload;
+  } catch (error) {
+    console.error('Error decoding token:', error);
+    return null;
+  }
+};

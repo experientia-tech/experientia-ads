@@ -47,7 +47,10 @@ export async function POST(request: NextRequest) {
     if (auth instanceof NextResponse) return auth;
 
     const body = await request.json();
-    const campaignData = body;
+    const campaignData = {
+      ...body,
+      organizationId: auth.orgId
+    };
     
     const campaign = await campaignService.createCampaign(campaignData);
 

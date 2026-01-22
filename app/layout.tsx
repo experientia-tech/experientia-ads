@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { ProfileProvider } from "./experientia/providers/ProfileProvider";
-import { CampaignProvider } from "./experientia/providers/CampaignProvider";
 
 export const metadata: Metadata = {
   title: "Experientia",
@@ -16,9 +14,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        <ProfileProvider>
-          <CampaignProvider>{children}</CampaignProvider>
-        </ProfileProvider>
+        {children}
       </body>
     </html>
   );

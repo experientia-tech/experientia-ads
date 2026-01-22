@@ -18,7 +18,7 @@ export interface CampaignTaskInput {
 export interface CreateCampaignInput {
   name: string;
   description: string;
-  organizationId: string;
+  organizationId?: string;
   status?: CampaignStatus;
   latitude?: number;
   longitude?: number;

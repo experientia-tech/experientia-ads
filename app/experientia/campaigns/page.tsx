@@ -1,19 +1,54 @@
 'use client';
-import React, { useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { authenticatedFetch } from '../store/Auth';
 import CampaignCard from '../components/campaign_card/CampaignCard';
-import { useCampaign } from '../context/CampaignContext';
 import './page.scss';
 
+interface Campaign {
+  id: string;
+  name: string;
+  status: string;
+  startDate: string;
+  endDate: string;
+  serviceType?: string;
+  description?: string;
+  organizationId?: string;
+  address?: string;
+  totalTasks?: number;
+  completedTasks?: number;
+  members?: any[];
+  tasks?: Array<{ status: string }>;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 const AssignedCampaignsPage = () => {
-  const { state, fetchCampaigns } = useCampaign();
-  const { campaigns, isLoading, error } = state;
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchCampaigns = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await authenticatedFetch('/api/campaigns');
+      if (!response.ok) {
+        throw new Error('Failed to fetch campaigns');
+      }
+      const data = await response.json();
+      setCampaigns(data.data || []);
+    } catch (err) {
+      console.error('Error fetching campaigns:', err);
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     fetchCampaigns();
   }, [fetchCampaigns]);
 
-  if (isLoading && campaigns.length === 0) {
+  if (loading) {
     return (
       <div className="assigned-campaigns">
         <div className="header">
@@ -72,8 +107,20 @@ const AssignedCampaignsPage = () => {
         {campaigns.length > 0 ? (
           campaigns.map((campaign) => (
             <CampaignCard 
-              key={`${campaign.id}-${campaign.name}`}
-              campaign={campaign}
+              key={campaign.id}
+              campaign={{
+                ...campaign,
+                serviceType: campaign.serviceType || 'General',
+                description: campaign.description || '',
+                organizationId: campaign.organizationId || '',
+                address: campaign.address || '',
+                totalTasks: campaign.totalTasks || 0,
+                completedTasks: campaign.completedTasks || 0,
+                members: campaign.members || [],
+                tasks: campaign.tasks || [],
+                createdAt: campaign.createdAt || new Date().toISOString(),
+                updatedAt: campaign.updatedAt || new Date().toISOString(),
+              }}
             />
           ))
         ) : (
