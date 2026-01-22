@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import type { CampaignRole } from '@prisma/client';
+import type { CampaignRole } from '../app/generated/prisma/client';
 
 export class CampaignMemberService {
   async getCampaignMembers(filters: {
@@ -131,6 +131,19 @@ export class CampaignMemberService {
       data: { role }
     });
   }
+async updateCampaignMemberStatus(memberId: string, active: boolean) {
+  const member = await prisma.campaignMember.findUnique({
+    where: { id: memberId }
+  });
+
+  if (!member) {
+    throw new Error('Campaign member not found');
+  }
+  return prisma.campaignMember.update({
+    where: { id: memberId },
+    data: { active }
+  });
+}
 }
 
 export const campaignMemberService = new CampaignMemberService();

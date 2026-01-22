@@ -1,47 +1,74 @@
 'use client';
-import React, { useState } from 'react';
-import BrandCard from '../components/brand_card/BrandCard';
+import React, { useState, useEffect, useCallback } from 'react';
+import { authenticatedFetch } from '../store/Auth';
 import CampaignCard from '../components/campaign_card/CampaignCard';
 import './page.scss';
 
-// Mock data - replace with actual data from your API
-const brandData = {
-  logo: '/experentia.png',
-  name: 'Experientia',
-  totalCampaigns: 5,
-  activeCampaigns: 3,
-};
-
-const campaigns = [
-  {
-    id: 1,
-    name: 'Summer Sale 2023',
-    serviceType: 'Social Media Marketing',
-    role: 'Content Creator',
-    startDate: '2023-06-01',
-    endDate: '2023-08-31',
-    totalTasks: 15,
-    completedTasks: 8,
-  },
-  {
-    id: 2,
-    name: 'Product Launch',
-    serviceType: 'Influencer Marketing',
-    role: 'Campaign Manager',
-    startDate: '2023-07-15',
-    endDate: '2023-09-30',
-    totalTasks: 10,
-    completedTasks: 3,
-  },
-];
+interface Campaign {
+  id: string;
+  name: string;
+  status: string;
+  startDate: string;
+  endDate: string;
+  serviceType?: string;
+  description?: string;
+  organizationId?: string;
+  address?: string;
+  totalTasks?: number;
+  completedTasks?: number;
+  members?: any[];
+  tasks?: Array<{ status: string }>;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 const AssignedCampaignsPage = () => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const toggleExpand = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsExpanded(!isExpanded);
-  };
+  const fetchCampaigns = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await authenticatedFetch('/api/campaigns');
+      if (!response.ok) {
+        throw new Error('Failed to fetch campaigns');
+      }
+      const data = await response.json();
+      setCampaigns(data.data || []);
+    } catch (err) {
+      console.error('Error fetching campaigns:', err);
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCampaigns();
+  }, [fetchCampaigns]);
+
+  if (loading) {
+    return (
+      <div className="assigned-campaigns">
+        <div className="header">
+          <h1>Assigned Campaigns</h1>
+          <p className="subheading">Loading campaigns...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="assigned-campaigns">
+        <div className="header">
+          <h1>Assigned Campaigns</h1>
+          <p className="subheading error">Error loading campaigns: {error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="assigned-campaigns">
@@ -72,28 +99,35 @@ const AssignedCampaignsPage = () => {
         <div className="filter-group">
           <select className="filter-select">
             <option>All companies</option>
-            <option>Company 1</option>
-            <option>Company 2</option>
-            <option>Company 3</option>
           </select>
         </div>
       </div>
 
-      <BrandCard 
-        brandData={brandData}
-        isExpanded={isExpanded}
-        onToggleExpand={toggleExpand}
-      />
-
-      <div className={`campaigns-list ${isExpanded ? 'expanded' : 'collapsed'}`}>
-        {campaigns.map((campaign) => (
-          <CampaignCard 
-            key={campaign.id}
-            campaign={campaign}
-            brandLogo={brandData.logo}
-            brandName={brandData.name}
-          />
-        ))}
+      <div className="campaigns-list">
+        {campaigns.length > 0 ? (
+          campaigns.map((campaign) => (
+            <CampaignCard 
+              key={campaign.id}
+              campaign={{
+                ...campaign,
+                serviceType: campaign.serviceType || 'General',
+                description: campaign.description || '',
+                organizationId: campaign.organizationId || '',
+                address: campaign.address || '',
+                totalTasks: campaign.totalTasks || 0,
+                completedTasks: campaign.completedTasks || 0,
+                members: campaign.members || [],
+                tasks: campaign.tasks || [],
+                createdAt: campaign.createdAt || new Date().toISOString(),
+                updatedAt: campaign.updatedAt || new Date().toISOString(),
+              }}
+            />
+          ))
+        ) : (
+          <div className="no-campaigns">
+            <p>No campaigns found. You haven't been assigned to any campaigns yet.</p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,10 +1,10 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import { FiUpload, FiX } from 'react-icons/fi';
 import './CreateCampaignForm.scss';
-import { useProfileStore } from '@/app/experientia/store/useProfileStore';
 import { useRouter } from 'next/navigation';
+import { authenticatedFetch,getTokenPayload  } from '../store/Auth';
+
 
 const CreateCampaignForm = ({ onClose }: { onClose: () => void }) => {
   const [brandName, setBrandName] = useState('');
@@ -14,14 +14,18 @@ const CreateCampaignForm = ({ onClose }: { onClose: () => void }) => {
   const [endDate, setEndDate] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [serviceType, setServiceType] = useState('');
-  const {profile} = useProfileStore();
   const router = useRouter();
   const [organizationId, setOrganizationId] = useState('');
-  useEffect(() => {
-    if (profile?.organizationId) {
-      setOrganizationId(profile.organizationId);
-    }
-  }, [profile]);
+useEffect(() => {
+  const payload = getTokenPayload();
+  console.log('Token payload:', payload);
+  if (payload?.orgld) {
+    setOrganizationId(payload.orgld);
+  } else {
+    console.log('No organization ID found in token payload');
+  }
+}, []);
+ 
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -36,9 +40,9 @@ const CreateCampaignForm = ({ onClose }: { onClose: () => void }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
-  
+
   try {
-    const response = await fetch('/api/campaigns', {
+    const response = await authenticatedFetch('/api/campaigns', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -51,26 +55,26 @@ const CreateCampaignForm = ({ onClose }: { onClose: () => void }) => {
         endDate: endDate || null,
         serviceType: serviceType || 'DEFAULT_SERVICE',
         status: 'ACTIVE',
-        organizationId: organizationId,
         latitude: null,
         longitude: null,
         description: '',  
       }),
     });
 
-    const data = await response.json();
-
     if (!response.ok) {
-      throw new Error(data.error || 'Failed to create campaign');
+      const errorData = await response.json();
+      console.error('API Error:', errorData);
+      throw new Error(errorData.error || 'Failed to create campaign');
     }
 
+    const data = await response.json();
     alert('Campaign created successfully!');
     onClose();
-    router.refresh(); 
+    router.refresh();
 
   } catch (error) {
     console.error('Error creating campaign:', error);
-    alert(error instanceof Error ? error.message : 'Failed to create campaign');
+    alert(`Error: ${error instanceof Error ? error.message : 'Failed to create campaign'}`);
   }
 };
 

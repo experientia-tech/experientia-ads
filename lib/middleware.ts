@@ -1,27 +1,41 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
 import jwt from "jsonwebtoken";
+import { NextRequest, NextResponse } from "next/server";
+import { Role } from "./roles";
 
-export function middleware(req: NextRequest) {
-  const token = req.cookies.get("auth_token")?.value;
+export function authorize(
+  req: NextRequest,
+  allowedRoles: Role[]
+) {
+  const authHeader = req.headers.get("authorization");
 
-  // Public routes
-  if (req.nextUrl.pathname.startsWith("/login")) {
-    return NextResponse.next();
+  if (!authHeader?.startsWith("Bearer ")) {
+    return NextResponse.json(
+      { message: "Missing authorization token" },
+      { status: 401 }
+    );
   }
 
-  if (!token) {
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
+  const token = authHeader.split(" ")[1];
 
   try {
-    jwt.verify(token, process.env.JWT_SECRET!);
-    return NextResponse.next();
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      sub: string;
+      orgId: string;
+      role: Role;
+    };
+
+    if (!allowedRoles.includes(decoded.role)) {
+      return NextResponse.json(
+        { message: "Access denied" },
+        { status: 403 }
+      );
+    }
+
+    return decoded; // ✅ return user context
   } catch {
-    return NextResponse.redirect(new URL("/login", req.url));
+    return NextResponse.json(
+      { message: "Invalid or expired token" },
+      { status: 401 }
+    );
   }
 }
-
-export const config = {
-  matcher: ["/dashboard/:path*", "/api/:path*"],
-};
