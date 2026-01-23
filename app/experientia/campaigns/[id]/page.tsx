@@ -1,18 +1,8 @@
 "use client";
 import Image from "next/image";
 import TaskOverview from "../../components/task_overview/task_overview";
-import {
-  FiEdit2,
-  FiAlertCircle,
-  FiRefreshCw,
-  FiFileText,
-  FiArrowLeft,
-  FiBriefcase,
-  FiUsers,
-  FiUserCheck,
-  FiUserPlus,
-  FiPlus,
-} from "react-icons/fi";
+import { FiEdit2, FiAlertCircle, FiRefreshCw, FiFileText, FiArrowLeft, FiBriefcase, FiUsers, FiUserCheck, FiPlus, FiUserPlus } from "react-icons/fi";
+import SupervisorModal from "@/app/experientia/components/supervisor_modal/SupervisorModal";
 import Link from "next/link";
 import styles from "./page.module.scss";
 import TeamMemberTable from "../../components/team_member_table/TeamMemberTable";
@@ -34,6 +24,7 @@ const CampaignDetailsPage = ({
   const [campaign, setCampaign] = useState<ICampaign | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSupervisorModalOpen, setIsSupervisorModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -159,7 +150,10 @@ const CampaignDetailsPage = ({
                 <span className={styles.teamLabel}>Brands</span>
               </div>
             </div>
-            <button className={styles.addButton}>
+            <button 
+              className={styles.addButton}
+              onClick={() => setIsSupervisorModalOpen(true)}
+            >
               <FiPlus size={20} />
             </button>
           </div>
@@ -174,7 +168,10 @@ const CampaignDetailsPage = ({
                 <span className={styles.teamLabel}>Agencies</span>
               </div>
             </div>
-            <button className={styles.addButton}>
+            <button 
+              className={styles.addButton}
+              onClick={() => setIsSupervisorModalOpen(true)}
+            >
               <FiPlus size={20} />
             </button>
           </div>
@@ -189,7 +186,10 @@ const CampaignDetailsPage = ({
                 <span className={styles.teamLabel}>Supervisors</span>
               </div>
             </div>
-            <button className={styles.addButton}>
+            <button 
+              className={styles.addButton}
+              onClick={() => setIsSupervisorModalOpen(true)}
+            >
               <FiPlus size={20} />
             </button>
           </div>
@@ -204,7 +204,10 @@ const CampaignDetailsPage = ({
                 <span className={styles.teamLabel}>Executors</span>
               </div>
             </div>
-            <button className={styles.addButton}>
+            <button 
+              className={styles.addButton}
+              onClick={() => setIsSupervisorModalOpen(true)}
+            >
               <FiPlus size={20} />
             </button>
           </div>
@@ -241,6 +244,18 @@ const CampaignDetailsPage = ({
             )}
         </div>
       </div>
+
+      <SupervisorModal
+        isOpen={isSupervisorModalOpen}
+        onClose={() => setIsSupervisorModalOpen(false)}
+        onSelect={(supervisor) => {
+          // TODO: Implement API call to add supervisor to campaign
+          console.log('Adding supervisor:', supervisor);
+          // After successful API call, you might want to refresh the campaign data
+          // fetchCampaignData();
+        }}
+        existingSupervisors={campaign?.members?.map(m => m.userId) || []}
+      />
     </div>
   );
 };
