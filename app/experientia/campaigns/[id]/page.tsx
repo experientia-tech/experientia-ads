@@ -3,6 +3,8 @@ import Image from "next/image";
 import TaskOverview from "../../components/task_overview/task_overview";
 import {
   FiEdit2,
+  FiAlertCircle,
+  FiRefreshCw,
   FiFileText,
   FiArrowLeft,
   FiBriefcase,
@@ -17,7 +19,7 @@ import TeamMemberTable from "../../components/team_member_table/TeamMemberTable"
 
 import { fetchCampaignById } from "@/app/store/Campaigns";
 import { ICampaign } from "@/app/constants/interface";
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useCallback } from "react";
 
 const CampaignDetailsPage = ({
   params,
@@ -30,14 +32,40 @@ const CampaignDetailsPage = ({
   console.log(id, "The Params");
 
   const [campaign, setCampaign] = useState<ICampaign | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const res = await fetchCampaignById(id);
+        if (res.success) {
+          setCampaign(res.data || null);
+        } else {
+          throw new Error(res.error || 'Failed to fetch campaign');
+        }
+      } catch (err) {
+        console.error('Error fetching campaign:', err);
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id]);
+
+  const handleRefresh = () => {
+    setError(null);
     fetchCampaignById(id).then((res) => {
       if (res.success) {
         setCampaign(res.data || null);
+      } else {
+        setError(res.error || 'Failed to refresh data');
       }
     });
-  }, [id]);
+  };
 
   return (
     <div className={styles.campaignDetailsPage}>
@@ -182,37 +210,35 @@ const CampaignDetailsPage = ({
           </div>
         </div>
         <div className={styles.teamMemberSection}>
-          <TeamMemberTable
-            members={[
-              {
-                id: "1",
-                name: "John Doe",
-                contactNumber: "+1 (555) 123-4567",
-                role: "Manager",
-                location: "New York, USA",
-                assignedBy: "Admin",
-                status: "active",
-              },
-              {
-                id: "2",
-                name: "Jane Smith",
-                contactNumber: "+1 (555) 987-6543",
-                role: "Supervisor",
-                location: "Los Angeles, USA",
-                assignedBy: "John Doe",
-                status: "active",
-              },
-              {
-                id: "3",
-                name: "Mike Johnson",
-                contactNumber: "+1 (555) 456-7890",
-                role: "Executor",
-                location: "Chicago, USA",
-                assignedBy: "Jane Smith",
-                status: "pending",
-              },
-            ]}
-          />
+            {loading ? (
+              <div className={styles.loadingState}>
+                <div className={styles.spinner}></div>
+                <p>Loading team members...</p>
+              </div>
+            ) : error ? (
+              <div className={styles.errorState}>
+                <FiAlertCircle size={24} />
+                <p>{error}</p>
+                <button 
+                  onClick={handleRefresh}
+                  className={styles.retryButton}
+                >
+                  <FiRefreshCw size={16} /> Retry
+                </button>
+              </div>
+            ) : (
+              <TeamMemberTable
+                members={(campaign?.members || []).map(member => ({
+                  id: member.id,
+                  name: `${member.user?.firstName || ''} ${member.user?.lastName || ''}`.trim() || 'Unnamed User',
+                  contactNumber: member.user?.phone || 'N/A',
+                  role: member.role,
+                  location: campaign?.name || 'N/A',
+                  assignedBy: member.assignedBy,
+                  status: member.active ? 'active' : 'inactive',
+                }))}
+              />
+            )}
         </div>
       </div>
     </div>

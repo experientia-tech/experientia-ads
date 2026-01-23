@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { FiUpload, FiX } from 'react-icons/fi';
 import './CreateCampaignForm.scss';
 import { useRouter } from 'next/navigation';
-import { authenticatedFetch,getTokenPayload  } from '../store/Auth';
+import { authenticatedFetch, getTokenPayload } from '@/app/store/Auth';
 
 
 const CreateCampaignForm = ({ onClose }: { onClose: () => void }) => {
