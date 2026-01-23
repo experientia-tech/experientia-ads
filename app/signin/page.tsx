@@ -16,8 +16,6 @@ const SignIn = () => {
   const [resendTimer, setResendTimer] = useState(0);
 
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
-  // Resend timer countdown
   useEffect(() => {
     if (resendTimer > 0) {
       const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
