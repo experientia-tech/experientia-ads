@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
-import { authenticatedFetch } from '../store/Auth';
+import { authenticatedFetch } from '../../store/Auth';
 import CampaignCard from '../components/campaign_card/CampaignCard';
 import './page.scss';
 
