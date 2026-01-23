@@ -5,6 +5,7 @@ import { isAuthenticated } from "../store/Auth";
 import CampaignCard from "../components/campaign_card/CampaignCard";
 import Filters from "../components/filters/Filters";
 import styles from "./page.module.scss"; 
+import { Campaign } from "../../constants/interface";
 import {
   FiLayers,
   FiCheckCircle,
@@ -16,8 +17,7 @@ import {
   FiRefreshCw
 } from "react-icons/fi";
 import SummaryCard from "../components/summary_card/SummaryCard";
-import { type Campaign } from "@/hooks/useDashboard";
-import { useCampaigns } from "@/hooks/useCampaigns";
+import { useCampaigns } from "../store/useCampaigns";
 
 const DashboardPage = () => {
   const router = useRouter();

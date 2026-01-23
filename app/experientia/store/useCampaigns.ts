@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Campaign } from './useDashboard';
-import { authenticatedFetch } from '../app/experientia/store/Auth';
+import { Campaign } from '../../constants/interface';
+import { authenticatedFetch } from './Auth';
+
 
 export function useCampaigns() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
