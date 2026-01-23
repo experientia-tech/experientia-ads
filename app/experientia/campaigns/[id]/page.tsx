@@ -19,6 +19,8 @@ import { fetchCampaignById } from "@/app/store/Campaigns";
 import { ICampaign } from "@/app/constants/interface";
 import { useState, useEffect, use } from "react";
 
+import { formatDate } from "@/app/constants/date";
+
 const CampaignDetailsPage = ({
   params,
 }: {
@@ -106,15 +108,21 @@ const CampaignDetailsPage = ({
           </div>
           <div className={styles.infoItem}>
             <span className={styles.infoLabel}>Created</span>
-            <span className={styles.infoValue}>May 15, 2023</span>
+            <span className={styles.infoValue}>
+              {formatDate(campaign?.createdAt)}
+            </span>
           </div>
           <div className={styles.infoItem}>
             <span className={styles.infoLabel}>Started</span>
-            <span className={styles.infoValue}>{campaign?.startDate}</span>
+            <span className={styles.infoValue}>
+              {formatDate(campaign?.startDate)}
+            </span>
           </div>
           <div className={styles.infoItem}>
             <span className={styles.infoLabel}>End Date</span>
-            <span className={styles.infoValue}>{campaign?.endDate}</span>
+            <span className={styles.infoValue}>
+              {formatDate(campaign?.endDate)}
+            </span>
           </div>
         </div>
       </div>
