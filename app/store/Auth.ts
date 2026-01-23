@@ -1,6 +1,7 @@
 import { ISendOtpResponse, IVerifyOtpResponse } from "../constants/interface";
 
 // Token management
+
 const TOKEN_KEY = "token";
 
 export const getToken = (): string | null => {
@@ -25,9 +26,7 @@ export const isAuthenticated = (): boolean => {
 // Check authentication before API calls
 export const checkAuth = (): boolean => {
   if (!isAuthenticated()) {
-    // Clear any stale data
     logout();
-    // Redirect to login
     if (typeof window !== "undefined") {
       window.location.href = "/signin";
     }
@@ -91,17 +90,12 @@ export const verifyOtp = async (
         error: data.error || "Invalid OTP",
       };
     }
-
-    console.log(data.token, "The Data");
-
     // Extract token from response
     const token = data.token || data.tokenData;
-
     // Store token in localStorage if present
     if (token) {
       setToken(token);
     }
-
     return {
       success: true,
       message: data.message || "Login successful",
@@ -120,7 +114,6 @@ export const logout = () => {
   // Clear token from localStorage
   removeToken();
 
-  // Clear the auth cookie
   if (typeof document !== "undefined") {
     document.cookie =
       "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
@@ -171,6 +164,7 @@ export const authenticatedFetch = async (
     throw new Error(error.message || "Network error occurred");
   }
 };
+
 export const getTokenPayload = () => {
   const token = getToken();
   if (!token) return null;

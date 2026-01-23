@@ -11,8 +11,8 @@ export interface IVerifyOtpResponse {
   token?: string;
   error?: string;
 }
- 
-export interface Campaign {
+
+export interface ICampaign {
   id: string | number;
   name: string;
   status: string;
@@ -31,11 +31,11 @@ export interface Campaign {
   updatedAt: string;
 }
 
-export interface DashboardSummary {
+export interface IDashboardSummary {
   totalCampaigns: number;
   totalTasks: number;
   completedTasks: number;
   pendingTasks: number;
   flaggedTasks: number;
-  campaigns: Campaign[];
+  campaigns: ICampaign[];
 }

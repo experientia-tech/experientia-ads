@@ -1,11 +1,11 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { isAuthenticated } from "../store/Auth";
+import { isAuthenticated } from "../../store/Auth";
 import CampaignCard from "../components/campaign_card/CampaignCard";
 import Filters from "../components/filters/Filters";
-import styles from "./page.module.scss"; 
-import { Campaign } from "../../constants/interface";
+import styles from "./page.module.scss";
+import { ICampaign } from "../../constants/interface";
 import {
   FiLayers,
   FiCheckCircle,
@@ -14,10 +14,10 @@ import {
   FiFlag,
   FiGrid,
   FiInbox,
-  FiRefreshCw
+  FiRefreshCw,
 } from "react-icons/fi";
 import SummaryCard from "../components/summary_card/SummaryCard";
-import { useCampaigns } from "../store/useCampaigns";
+import { fetchCampaigns } from "../../store/Campaigns";
 
 const DashboardPage = () => {
   const router = useRouter();
@@ -30,28 +30,40 @@ const DashboardPage = () => {
     }
   }, [router]);
 
-  const { campaigns, loading, error, refresh: fetchCampaigns } = useCampaigns();
-  
+  const [campaigns, setCampaigns] = useState<ICampaign[]>([]);
+
+  useEffect(() => {
+    fetchCampaigns().then((res) => {
+      if (res.success) {
+        setCampaigns(res.data || []);
+      }
+    });
+  }, []);
+
   // Calculate summary metrics
   const totalCampaigns = campaigns.length;
   const activeCampaigns = campaigns.filter(
-    (campaign: Campaign) => campaign.status === 'ACTIVE' || campaign.status === 'active'
+    (campaign: ICampaign) =>
+      campaign.status === "ACTIVE" || campaign.status === "active",
   ).length;
-  
+
   const totalTasks = campaigns.reduce(
-    (sum: number, campaign: Campaign) => sum + (Number(campaign.totalTasks) || 0),
-    0
+    (sum: number, campaign: ICampaign) =>
+      sum + (Number(campaign.totalTasks) || 0),
+    0,
   );
-  
+
   const completedTasks = campaigns.reduce(
-    (sum: number, campaign: Campaign) => sum + (Number(campaign.completedTasks) || 0),
-    0
+    (sum: number, campaign: ICampaign) =>
+      sum + (Number(campaign.completedTasks) || 0),
+    0,
   );
-  
+
   const pendingTasks = Math.max(0, totalTasks - completedTasks);
   const flaggedTasks = campaigns.reduce(
-    (sum: number, campaign: Campaign) => sum + (Number(campaign.flaggedTasks) || 0),
-    0
+    (sum: number, campaign: ICampaign) =>
+      sum + (Number(campaign.flaggedTasks) || 0),
+    0,
   );
 
   return (
@@ -96,33 +108,17 @@ const DashboardPage = () => {
       <Filters />
 
       <div className="campaignsList">
-        {loading ? (
-          <div className={styles.loadingState}>
-            <div className={styles.spinner}></div>
-            <p>Loading campaigns...</p>
-          </div>
-        ) : error ? (
-          <div className={styles.errorState}>
-            <FiAlertCircle size={24} />
-            <p>Error loading campaigns: {error}</p>
-            <button 
-              onClick={() => fetchCampaigns()} 
-              className={styles.retryButton}
-            >
-              Retry
-            </button>
-          </div>
-        ) : campaigns.length > 0 ? (
+        {campaigns.length > 0 ? (
           <div className={styles.campaignsGrid}>
-            {campaigns.map((campaign: Campaign) => (
-              <CampaignCard 
+            {campaigns.map((campaign: ICampaign) => (
+              <CampaignCard
                 key={campaign.id}
                 campaign={{
                   ...campaign,
-                  serviceType: campaign.serviceType || 'General',
-                  description: campaign.description || '',
-                  organizationId: campaign.organizationId || '',
-                  address: campaign.address || '',
+                  serviceType: campaign.serviceType || "General",
+                  description: campaign.description || "",
+                  organizationId: campaign.organizationId || "",
+                  address: campaign.address || "",
                   totalTasks: campaign.totalTasks || 0,
                   completedTasks: campaign.completedTasks || 0,
                   members: campaign.members || [],

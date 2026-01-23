@@ -1,32 +1,4 @@
-interface SendOtpResponse {
-  success: boolean;
-  message?: string;
-  error?: string;
-}
-
-interface VerifyOtpResponse {
-  success: boolean;
-  message?: string;
-  data?: string;
-  token?: string;
-  error?: string;
-}
-
-interface Campaign {
-  id: string;
-  name: string;
-  description?: string;
-  status?: string;
-  createdAt?: string;
-  // Add other campaign fields as needed
-}
-
-interface GetCampaignsResponse {
-  success: boolean;
-  campaigns?: Campaign[];
-  message?: string;
-  error?: string;
-}
+import { ISendOtpResponse, IVerifyOtpResponse } from "../constants/interface";
 
 // Token management for executor
 const EXECUTOR_TOKEN_KEY = "executor_token";
@@ -54,7 +26,7 @@ export const isExecutorAuthenticated = (): boolean => {
 export const checkExecutorAuth = (): boolean => {
   if (!isExecutorAuthenticated()) {
     // Clear any stale data
-    logoutExecutor();
+    // logoutExecutor();
     // Redirect to executor login
     if (typeof window !== "undefined") {
       window.location.href = "/executor/login";
@@ -65,7 +37,7 @@ export const checkExecutorAuth = (): boolean => {
 };
 
 // Send OTP API call for executor
-export const sendOtp = async (phone: string): Promise<SendOtpResponse> => {
+export const sendOtp = async (phone: string): Promise<ISendOtpResponse> => {
   try {
     const response = await fetch("/api/executor/send-otp", {
       method: "POST",
@@ -100,7 +72,7 @@ export const sendOtp = async (phone: string): Promise<SendOtpResponse> => {
 export const verifyOtp = async (
   phone: string,
   otp: string,
-): Promise<VerifyOtpResponse> => {
+): Promise<IVerifyOtpResponse> => {
   try {
     const response = await fetch("/api/executor/verify-otp", {
       method: "POST",
@@ -141,131 +113,131 @@ export const verifyOtp = async (
   }
 };
 
-// Get campaigns for executor
-export const getCampaigns = async (): Promise<GetCampaignsResponse> => {
-  try {
-    // Check authentication first
-    if (!checkExecutorAuth()) {
-      return {
-        success: false,
-        error: "Not authenticated",
-      };
-    }
+// // Get campaigns for executor
+// export const getCampaigns = async (): Promise<GetCampaignsResponse> => {
+//   try {
+//     // Check authentication first
+//     if (!checkExecutorAuth()) {
+//       return {
+//         success: false,
+//         error: "Not authenticated",
+//       };
+//     }
 
-    const token = getExecutorToken();
+//     const token = getExecutorToken();
 
-    const response = await fetch("/api/executor/campaigns", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-      credentials: "include",
-    });
+//     const response = await fetch("/api/executor/campaigns", {
+//       method: "GET",
+//       headers: {
+//         "Content-Type": "application/json",
+//         ...(token && { Authorization: `Bearer ${token}` }),
+//       },
+//       credentials: "include",
+//     });
 
-    const data = await response.json();
+//     const data = await response.json();
 
-    // If unauthorized, logout and redirect
-    if (response.status === 401) {
-      logoutExecutor();
-      if (typeof window !== "undefined") {
-        window.location.href = "/executor/login";
-      }
-      return {
-        success: false,
-        error: "Session expired. Please login again.",
-      };
-    }
+//     // If unauthorized, logout and redirect
+//     if (response.status === 401) {
+//       logoutExecutor();
+//       if (typeof window !== "undefined") {
+//         window.location.href = "/executor/login";
+//       }
+//       return {
+//         success: false,
+//         error: "Session expired. Please login again.",
+//       };
+//     }
 
-    if (!response.ok) {
-      return {
-        success: false,
-        error: data.error || "Failed to fetch campaigns",
-      };
-    }
+//     if (!response.ok) {
+//       return {
+//         success: false,
+//         error: data.error || "Failed to fetch campaigns",
+//       };
+//     }
 
-    return {
-      success: true,
-      campaigns: data.campaigns || data.data || [],
-      message: data.message || "Campaigns fetched successfully",
-    };
-  } catch (error: any) {
-    return {
-      success: false,
-      error: error.message || "Network error occurred",
-    };
-  }
-};
+//     return {
+//       success: true,
+//       campaigns: data.campaigns || data.data || [],
+//       message: data.message || "Campaigns fetched successfully",
+//     };
+//   } catch (error: any) {
+//     return {
+//       success: false,
+//       error: error.message || "Network error occurred",
+//     };
+//   }
+// };
 
-// Logout function for executor
-export const logoutExecutor = () => {
-  // Clear token from localStorage
-  removeExecutorToken();
+// // Logout function for executor
+// export const logoutExecutor = () => {
+//   // Clear token from localStorage
+//   removeExecutorToken();
 
-  // Clear the auth cookie
-  if (typeof document !== "undefined") {
-    document.cookie =
-      "executor_auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-  }
-};
+//   // Clear the auth cookie
+//   if (typeof document !== "undefined") {
+//     document.cookie =
+//       "executor_auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+//   }
+// };
 
 // Generic authenticated API call wrapper for executor
-export const executorAuthenticatedFetch = async (
-  url: string,
-  options: RequestInit = {},
-): Promise<Response> => {
-  // Check if executor is authenticated
-  if (!checkExecutorAuth()) {
-    throw new Error("Not authenticated");
-  }
+// export const executorAuthenticatedFetch = async (
+//   url: string,
+//   options: RequestInit = {},
+// ): Promise<Response> => {
+//   // Check if executor is authenticated
+//   if (!checkExecutorAuth()) {
+//     throw new Error("Not authenticated");
+//   }
 
-  const token = getExecutorToken();
+//   const token = getExecutorToken();
 
-  // Add authorization header
-  const headers = {
-    "Content-Type": "application/json",
-    ...options.headers,
-    ...(token && { Authorization: `Bearer ${token}` }),
-  };
+//   // Add authorization header
+//   const headers = {
+//     "Content-Type": "application/json",
+//     ...options.headers,
+//     ...(token && { Authorization: `Bearer ${token}` }),
+//   };
 
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers,
-      credentials: "include",
-    });
+//   try {
+//     const response = await fetch(url, {
+//       ...options,
+//       headers,
+//       credentials: "include",
+//     });
 
-    // If unauthorized, logout and redirect
-    if (response.status === 401) {
-      logoutExecutor();
-      if (typeof window !== "undefined") {
-        window.location.href = "/executor/login";
-      }
-      throw new Error("Session expired. Please login again.");
-    }
+//     // If unauthorized, logout and redirect
+//     if (response.status === 401) {
+//       logoutExecutor();
+//       if (typeof window !== "undefined") {
+//         window.location.href = "/executor/login";
+//       }
+//       throw new Error("Session expired. Please login again.");
+//     }
 
-    return response;
-  } catch (error: any) {
-    // Handle network errors
-    if (error.message === "Session expired. Please login again.") {
-      throw error;
-    }
-    throw new Error(error.message || "Network error occurred");
-  }
-};
+//     return response;
+//   } catch (error: any) {
+//     // Handle network errors
+//     if (error.message === "Session expired. Please login again.") {
+//       throw error;
+//     }
+//     throw new Error(error.message || "Network error occurred");
+//   }
+// };
 
-// Get token payload for executor
-export const getExecutorTokenPayload = () => {
-  const token = getExecutorToken();
-  if (!token) return null;
+// // Get token payload for executor
+// export const getExecutorTokenPayload = () => {
+//   const token = getExecutorToken();
+//   if (!token) return null;
 
-  try {
-    const base64Url = token.split(".")[1];
-    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-    const payload = JSON.parse(window.atob(base64));
-    return payload;
-  } catch (error) {
-    console.error("Error decoding executor token:", error);
-    return null;
-  }
-};
+//   try {
+//     const base64Url = token.split(".")[1];
+//     const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+//     const payload = JSON.parse(window.atob(base64));
+//     return payload;
+//   } catch (error) {
+//     console.error("Error decoding executor token:", error);
+//     return null;
+//   }
+// };
