@@ -1,181 +1,138 @@
-import { ISendOtpResponse, IVerifyOtpResponse } from "../constants/interface";
+import { create } from "zustand";
+import {
+  IProfile,
+  ISendOtpResponse,
+  IVerifyOtpResponse,
+} from "../constants/interface";
+import { setToken, removeToken } from "../constants/auth";
+import { authenticatedFetch } from "../constants/api";
 
-// Token management
+// --- Zustand Store ---
 
-const TOKEN_KEY = "token";
+interface AuthState {
+  user: IProfile | null;
+  isLoading: boolean;
+  error: string | null;
 
-export const getToken = (): string | null => {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem(TOKEN_KEY);
-};
+  sendOtp: (phone: string) => Promise<ISendOtpResponse>;
+  verifyOtp: (phone: string, otp: string) => Promise<IVerifyOtpResponse>;
+  fetchProfile: () => Promise<void>;
+  logout: () => Promise<void>;
+  clearAuth: () => void;
+  setUser: (user: IProfile | null) => void;
+}
 
-export const setToken = (token: string): void => {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(TOKEN_KEY, token);
-};
+export const useAuthStore = create<AuthState>((set, get) => ({
+  user: null,
+  isLoading: false,
+  error: null,
 
-export const removeToken = (): void => {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem(TOKEN_KEY);
-};
+  setUser: (user) => set({ user }),
 
-export const isAuthenticated = (): boolean => {
-  return !!getToken();
-};
+  sendOtp: async (phone: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone }),
+      });
 
-// Check authentication before API calls
-export const checkAuth = (): boolean => {
-  if (!isAuthenticated()) {
-    logout();
-    if (typeof window !== "undefined") {
-      window.location.href = "/signin";
-    }
-    return false;
-  }
-  return true;
-};
+      const data = await response.json();
+      set({ isLoading: false });
 
-// Send OTP API call
-export const sendOtp = async (phone: string): Promise<ISendOtpResponse> => {
-  try {
-    const response = await fetch("/api/auth/send-otp", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ phone }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      return {
-        success: false,
-        error: data.error || "Failed to send OTP",
-      };
-    }
-
-    return {
-      success: true,
-      message: data.message || "OTP sent successfully",
-    };
-  } catch (error: any) {
-    return {
-      success: false,
-      error: error.message || "Network error occurred",
-    };
-  }
-};
-
-// Verify OTP API call
-export const verifyOtp = async (
-  phone: string,
-  otp: string,
-): Promise<IVerifyOtpResponse> => {
-  try {
-    const response = await fetch("/api/auth/verify-otp", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ phone, otp }),
-      credentials: "include", // Important for cookies
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      return {
-        success: false,
-        error: data.error || "Invalid OTP",
-      };
-    }
-    // Extract token from response
-    const token = data.token || data.tokenData;
-    // Store token in localStorage if present
-    if (token) {
-      setToken(token);
-    }
-    return {
-      success: true,
-      message: data.message || "Login successful",
-      token,
-    };
-  } catch (error: any) {
-    return {
-      success: false,
-      error: error.message || "Network error occurred",
-    };
-  }
-};
-
-// Logout function
-export const logout = () => {
-  // Clear token from localStorage
-  removeToken();
-
-  if (typeof document !== "undefined") {
-    document.cookie =
-      "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-  }
-};
-
-// Generic authenticated API call wrapper
-export const authenticatedFetch = async (
-  url: string,
-  options: RequestInit = {},
-): Promise<Response> => {
-  // Check if user is authenticated
-  if (!checkAuth()) {
-    throw new Error("Not authenticated");
-  }
-
-  const token = getToken();
-
-  // Add authorization header
-  const headers = {
-    "Content-Type": "application/json",
-    ...options.headers,
-    ...(token && { Authorization: `Bearer ${token}` }),
-  };
-
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers,
-      credentials: "include",
-    });
-
-    // If unauthorized, logout and redirect
-    if (response.status === 401) {
-      logout();
-      if (typeof window !== "undefined") {
-        window.location.href = "/signin";
+      if (!response.ok) {
+        return { success: false, error: data.error || "Failed to send OTP" };
       }
-      throw new Error("Session expired. Please login again.");
-    }
 
-    return response;
-  } catch (error: any) {
-    // Handle network errors
-    if (error.message === "Session expired. Please login again.") {
+      return {
+        success: true,
+        message: data.message || "OTP sent successfully",
+      };
+    } catch (error: any) {
+      set({ isLoading: false, error: error.message });
+      return {
+        success: false,
+        error: error.message || "Network error occurred",
+      };
+    }
+  },
+
+  verifyOtp: async (phone: string, otp: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, otp }),
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        set({ isLoading: false, error: data.error || "Invalid OTP" });
+        return { success: false, error: data.error || "Invalid OTP" };
+      }
+
+      const token = data.token || data.tokenData;
+      if (token) {
+        setToken(token);
+        // Fetch profile immediately after login success
+        await get().fetchProfile();
+      }
+
+      set({ isLoading: false });
+      return {
+        success: true,
+        message: data.message || "Login successful",
+        token,
+      };
+    } catch (error: any) {
+      set({ isLoading: false, error: error.message });
+      return {
+        success: false,
+        error: error.message || "Network error occurred",
+      };
+    }
+  },
+
+  fetchProfile: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await authenticatedFetch("/api/profile", {
+        method: "GET",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to get profile");
+      }
+
+      set({ user: data, isLoading: false });
+    } catch (error: any) {
+      set({ user: null, error: error.message, isLoading: false });
       throw error;
     }
-    throw new Error(error.message || "Network error occurred");
-  }
-};
+  },
 
-export const getTokenPayload = () => {
-  const token = getToken();
-  if (!token) return null;
+  logout: async () => {
+    removeToken();
+    set({ user: null, error: null });
 
-  try {
-    const base64Url = token.split(".")[1];
-    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-    const payload = JSON.parse(window.atob(base64));
-    return payload;
-  } catch (error) {
-    console.error("Error decoding token:", error);
-    return null;
-  }
-};
+    if (typeof document !== "undefined") {
+      document.cookie =
+        "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+    }
+  },
+
+  clearAuth: () => set({ user: null, error: null, isLoading: false }),
+}));
+
+export const sendOtp = (phone: string) =>
+  useAuthStore.getState().sendOtp(phone);
+export const verifyOtp = (phone: string, otp: string) =>
+  useAuthStore.getState().verifyOtp(phone, otp);
+export const getProfile = () => useAuthStore.getState().fetchProfile();
+export const logout = () => useAuthStore.getState().logout();

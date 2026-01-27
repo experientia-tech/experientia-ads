@@ -3,7 +3,8 @@ import { useState, useEffect } from "react";
 import { FiUpload, FiX } from "react-icons/fi";
 import "./CreateCampaignForm.scss";
 import { useRouter } from "next/navigation";
-import { authenticatedFetch, getTokenPayload } from "@/app/store/Auth";
+import { authenticatedFetch } from "@/app/constants/api";
+import { getTokenPayload } from "@/app/constants/auth";
 
 const CreateCampaignForm = ({ onClose }: { onClose: () => void }) => {
   const [brandName, setBrandName] = useState("");
