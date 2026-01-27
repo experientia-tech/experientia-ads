@@ -10,6 +10,7 @@ interface CampaignCardProps {
   location: string;
   status: "Pending" | "In Progress" | "Scheduled" | "Completed";
   dueText: string;
+  startText: string;
   icon?: string;
 }
 
@@ -19,6 +20,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({
   location,
   status,
   dueText,
+  startText,
   icon,
 }) => {
   return (
@@ -47,6 +49,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({
       </div>
 
       <div className="card-bottom">
+        <span className="due-text">{startText}</span>
         <span className="due-text">{dueText}</span>
         <Link href={`/executor/campaigns/${id}`} className="details-link">
           Details <FiChevronRight size={16} />

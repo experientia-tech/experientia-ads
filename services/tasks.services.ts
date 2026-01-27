@@ -1,5 +1,5 @@
-import { prisma } from '../lib/prisma';
-import { TaskStatus } from '../app/generated/prisma/client';
+import { prisma } from "../lib/prisma";
+import { TaskStatus } from "../app/generated/prisma/client";
 
 type CreateTaskInput = {
   campaignId: string;
@@ -57,10 +57,10 @@ export const taskService = {
     });
   },
 
-   //Update a task
+  //Update a task
   async updateTask(id: string, data: UpdateTaskInput) {
     const updateData: any = { ...data };
-    
+
     // Handle status-specific updates
     if (data.status === TaskStatus.IN_PROGRESS && !data.status) {
       updateData.startedAt = new Date();
@@ -114,7 +114,7 @@ export const taskService = {
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         include: {
           campaign: {
             select: {
