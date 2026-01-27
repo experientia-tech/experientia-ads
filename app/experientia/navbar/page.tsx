@@ -160,16 +160,7 @@ const Navbar = () => {
                     </div>
                     <div className="profile-phone">{user?.phone}</div>
                   </div>
-                  <div className="dropdown-divider"></div>
-                  <div className="dropdown-item">
-                    <FiUser className="dropdown-icon" />
-                    <span>My Profile</span>
-                  </div>
-                  <div className="dropdown-item">
-                    <FiSettings className="dropdown-icon" />
-                    <span>Settings</span>
-                  </div>
-                  <div className="dropdown-divider"></div>
+
                   <button className="dropdown-item logout">
                     <FiLogOut className="dropdown-icon" />
                     <span>Logout</span>
