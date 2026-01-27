@@ -148,7 +148,8 @@ try {
 'use client';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { isAuthenticated, authenticatedFetch } from '@/app/experientia/store/Auth';
+import { isAuthenticated } from '@/app/constants/auth';
+import { authenticatedFetch } from '@/app/constants/api';
 
 export default function Dashboard() {
   const router = useRouter();

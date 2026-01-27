@@ -1,31 +1,30 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { FiUpload, FiX } from 'react-icons/fi';
-import './CreateCampaignForm.scss';
-import { useRouter } from 'next/navigation';
-import { authenticatedFetch,getTokenPayload  } from '../store/Auth';
-
+"use client";
+import { useState, useEffect } from "react";
+import { FiUpload, FiX } from "react-icons/fi";
+import "./CreateCampaignForm.scss";
+import { useRouter } from "next/navigation";
+import { authenticatedFetch } from "@/app/constants/api";
+import { getTokenPayload } from "@/app/constants/auth";
 
 const CreateCampaignForm = ({ onClose }: { onClose: () => void }) => {
-  const [brandName, setBrandName] = useState('');
-  const [campaignLocation, setCampaignLocation] = useState('');
-  const [totalTasks, setTotalTasks] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [brandName, setBrandName] = useState("");
+  const [campaignLocation, setCampaignLocation] = useState("");
+  const [totalTasks, setTotalTasks] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [serviceType, setServiceType] = useState('');
+  const [serviceType, setServiceType] = useState("");
   const router = useRouter();
-  const [organizationId, setOrganizationId] = useState('');
-useEffect(() => {
-  const payload = getTokenPayload();
-  console.log('Token payload:', payload);
-  if (payload?.orgld) {
-    setOrganizationId(payload.orgld);
-  } else {
-    console.log('No organization ID found in token payload');
-  }
-}, []);
- 
+  const [organizationId, setOrganizationId] = useState("");
+  useEffect(() => {
+    const payload = getTokenPayload();
+    console.log("Token payload:", payload);
+    if (payload?.orgld) {
+      setOrganizationId(payload.orgld);
+    } else {
+      console.log("No organization ID found in token payload");
+    }
+  }, []);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -39,44 +38,45 @@ useEffect(() => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  try {
-    const response = await authenticatedFetch('/api/campaigns', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: brandName,
-        address: campaignLocation,
-        totalTasks: parseInt(totalTasks, 10) || 0,
-        startDate: startDate || null,
-        endDate: endDate || null,
-        serviceType: serviceType || 'DEFAULT_SERVICE',
-        status: 'ACTIVE',
-        latitude: null,
-        longitude: null,
-        description: '',  
-      }),
-    });
+    try {
+      const response = await authenticatedFetch("/api/campaigns", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: brandName,
+          address: campaignLocation,
+          totalTasks: parseInt(totalTasks, 10) || 0,
+          startDate: startDate || null,
+          endDate: endDate || null,
+          serviceType: serviceType || "DEFAULT_SERVICE",
+          status: "ACTIVE",
+          latitude: null,
+          longitude: null,
+          description: "",
+        }),
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('API Error:', errorData);
-      throw new Error(errorData.error || 'Failed to create campaign');
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("API Error:", errorData);
+        throw new Error(errorData.error || "Failed to create campaign");
+      }
+
+      const data = await response.json();
+      alert("Campaign created successfully!");
+      onClose();
+      router.refresh();
+    } catch (error) {
+      console.error("Error creating campaign:", error);
+      alert(
+        `Error: ${error instanceof Error ? error.message : "Failed to create campaign"}`,
+      );
     }
-
-    const data = await response.json();
-    alert('Campaign created successfully!');
-    onClose();
-    router.refresh();
-
-  } catch (error) {
-    console.error('Error creating campaign:', error);
-    alert(`Error: ${error instanceof Error ? error.message : 'Failed to create campaign'}`);
-  }
-};
+  };
 
   return (
     <div className="campaign-form-overlay">
@@ -87,7 +87,7 @@ useEffect(() => {
             <FiX size={24} />
           </button>
         </div>
-        
+
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="brandName">Brand Name</label>
@@ -158,12 +158,12 @@ useEffect(() => {
             <div className="image-upload">
               <label className="upload-btn">
                 <FiUpload className="upload-icon" />
-                {selectedImage ? 'Change Image' : 'Upload Image'}
+                {selectedImage ? "Change Image" : "Upload Image"}
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleImageUpload}
-                  style={{ display: 'none' }}
+                  style={{ display: "none" }}
                 />
               </label>
               {selectedImage && (

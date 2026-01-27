@@ -2,46 +2,46 @@
   padding: 16px;
   max-width: 1200px;
   margin: 0 auto;
-  
+
   @media (min-width: 769px) {
     padding: 24px 32px;
   }
 
   .header {
     margin-bottom: 32px;
-    
+
     h1 {
       font-size: 32px;
       font-weight: 600;
       color: #1a1a1a;
       margin: 0 0 8px 0;
     }
-    
+
     .subheading {
       font-size: 16px;
       color: #666;
       margin: 0;
     }
   }
-  
+
   .filters {
     display: flex;
     gap: 12px;
     margin-bottom: 20px;
     flex-wrap: wrap;
-    
+
     @media (max-width: 768px) {
       flex-direction: column;
       gap: 8px;
-      
+
       .filter-group {
         width: 100%;
       }
     }
-    
+
     .filter-group {
       min-width: 200px;
-      
+
       .filter-select {
         width: 100%;
         padding: 10px 12px;
@@ -51,11 +51,11 @@
         background-color: white;
         cursor: pointer;
         transition: all 0.2s;
-        
+
         &:hover {
           border-color: #999;
         }
-        
+
         &:focus {
           outline: none;
           border-color: #4a90e2;
@@ -90,11 +90,11 @@
     margin-top: 24px;
     background-color: #f9fafb;
     border-radius: 8px;
-    padding: 16px;
-    
+    padding: 16px 0;
+
     > * {
       margin-bottom: 12px;
-      
+
       &:last-child {
         margin-bottom: 0;
       }
@@ -102,7 +102,7 @@
 
     > * {
       margin-bottom: 12px;
-      
+
       &:last-child {
         margin-bottom: 0;
       }

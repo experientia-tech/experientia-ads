@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { FiSearch, FiFilter, FiChevronDown, FiChevronUp, FiUser, FiPhone, FiMapPin, FiUserCheck } from 'react-icons/fi';
+import { FiSearch, FiFilter, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import styles from './TeamMemberTable.module.scss';
 
 interface TeamMember {
@@ -97,15 +97,11 @@ const TeamMemberTable: React.FC<TeamMemberTableProps> = ({ members = [] }) => {
                 <tr key={member.id}>
                   <td>
                     <div className={styles.memberInfo}>
-                      <div className={styles.avatar}>
-                        <FiUser />
-                      </div>
                       {member.name}
                     </div>
                   </td>
                   <td>
                     <div className={styles.contactCell}>
-                      <FiPhone className={styles.icon} />
                       {member.contactNumber}
                     </div>
                   </td>
@@ -116,13 +112,11 @@ const TeamMemberTable: React.FC<TeamMemberTableProps> = ({ members = [] }) => {
                   </td>
                   <td>
                     <div className={styles.locationCell}>
-                      <FiMapPin className={styles.icon} />
                       {member.location}
                     </div>
                   </td>
                   <td>
                     <div className={styles.assignedBy}>
-                      <FiUserCheck className={styles.icon} />
                       {member.assignedBy}
                     </div>
                   </td>

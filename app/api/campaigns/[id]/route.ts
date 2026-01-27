@@ -6,10 +6,10 @@ const campaignService = new CampaignService();
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
+    const { id } = await Promise.resolve(params);
 
     if (!id) {
       return NextResponse.json(
@@ -42,10 +42,10 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
+    const { id } = await Promise.resolve(params);
     const data: Partial<CreateCampaignInput> = await request.json();
 
     if (!id) {
@@ -71,10 +71,10 @@ export async function PUT(
 }
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
+    const { id } = await Promise.resolve(params);
 
     if (!id) {
       return NextResponse.json(

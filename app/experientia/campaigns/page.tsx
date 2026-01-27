@@ -1,8 +1,8 @@
-'use client';
-import React, { useState, useEffect, useCallback } from 'react';
-import { authenticatedFetch } from '../store/Auth';
-import CampaignCard from '../components/campaign_card/CampaignCard';
-import './page.scss';
+"use client";
+import React, { useState, useEffect, useCallback } from "react";
+import { authenticatedFetch } from "../../constants/api";
+import CampaignCard from "../components/campaign_card/CampaignCard";
+import "./page.scss";
 
 interface Campaign {
   id: string;
@@ -30,15 +30,15 @@ const AssignedCampaignsPage = () => {
   const fetchCampaigns = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await authenticatedFetch('/api/campaigns');
+      const response = await authenticatedFetch("/api/campaigns");
       if (!response.ok) {
-        throw new Error('Failed to fetch campaigns');
+        throw new Error("Failed to fetch campaigns");
       }
       const data = await response.json();
       setCampaigns(data.data || []);
     } catch (err) {
-      console.error('Error fetching campaigns:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      console.error("Error fetching campaigns:", err);
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
     }
@@ -76,7 +76,7 @@ const AssignedCampaignsPage = () => {
         <h1>Assigned Campaigns</h1>
         <p className="subheading">Campaigns assigned to you</p>
       </div>
-      
+
       <div className="filters">
         <div className="filter-group">
           <select className="filter-select">
@@ -86,7 +86,7 @@ const AssignedCampaignsPage = () => {
             <option>Email Campaigns</option>
           </select>
         </div>
-        
+
         <div className="filter-group">
           <select className="filter-select">
             <option>All locations</option>
@@ -95,7 +95,7 @@ const AssignedCampaignsPage = () => {
             <option>Asia</option>
           </select>
         </div>
-        
+
         <div className="filter-group">
           <select className="filter-select">
             <option>All companies</option>
@@ -106,14 +106,14 @@ const AssignedCampaignsPage = () => {
       <div className="campaigns-list">
         {campaigns.length > 0 ? (
           campaigns.map((campaign) => (
-            <CampaignCard 
+            <CampaignCard
               key={campaign.id}
               campaign={{
                 ...campaign,
-                serviceType: campaign.serviceType || 'General',
-                description: campaign.description || '',
-                organizationId: campaign.organizationId || '',
-                address: campaign.address || '',
+                serviceType: campaign.serviceType || "General",
+                description: campaign.description || "",
+                organizationId: campaign.organizationId || "",
+                address: campaign.address || "",
                 totalTasks: campaign.totalTasks || 0,
                 completedTasks: campaign.completedTasks || 0,
                 members: campaign.members || [],
@@ -125,7 +125,10 @@ const AssignedCampaignsPage = () => {
           ))
         ) : (
           <div className="no-campaigns">
-            <p>No campaigns found. You haven't been assigned to any campaigns yet.</p>
+            <p>
+              No campaigns found. You haven't been assigned to any campaigns
+              yet.
+            </p>
           </div>
         )}
       </div>

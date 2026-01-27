@@ -64,13 +64,6 @@ const ExecutorNavbar = () => {
                 <p>Welcome, John!</p>
               </div>
               <ul className="dropdown-list">
-                <li>
-                  <FiUser /> My Profile
-                </li>
-                <li>
-                  <FiSettings /> Settings
-                </li>
-                <li className="divider"></li>
                 <li className="logout">
                   <FiLogOut /> Logout
                 </li>

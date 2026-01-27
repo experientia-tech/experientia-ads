@@ -9,7 +9,7 @@ import {
   FiLogOut,
 } from "react-icons/fi";
 import { useRouter } from "next/navigation";
-import { logout } from "../../experientia/store/Auth";
+import { useAuthStore } from "../../store/Auth";
 import "./mobile-header.scss";
 
 interface MobileHeaderProps {
@@ -34,7 +34,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
 
   const handleLogout = () => {
-    logout();
+    useAuthStore.getState().logout();
     router.replace("/executor/login");
   };
 

@@ -1,0 +1,90 @@
+import { create } from "zustand";
+import { ICampaign } from "../constants/interface";
+import { authenticatedFetch } from "../constants/api";
+
+interface CampaignState {
+  campaigns: ICampaign[];
+  selectedCampaign: ICampaign | null;
+  isLoading: boolean;
+  error: string | null;
+
+  fetchCampaigns: () => Promise<{
+    success: boolean;
+    data?: ICampaign[];
+    error?: string;
+  }>;
+  fetchCampaignById: (
+    id: string,
+  ) => Promise<{ success: boolean; data?: ICampaign; error?: string }>;
+  clearError: () => void;
+  setCampaigns: (campaigns: ICampaign[]) => void;
+}
+
+export const useCampaignStore = create<CampaignState>((set) => ({
+  campaigns: [],
+  selectedCampaign: null,
+  isLoading: false,
+  error: null,
+
+  setCampaigns: (campaigns) => set({ campaigns }),
+
+  fetchCampaigns: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await authenticatedFetch("/api/campaigns");
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        const errorMessage = `Failed to fetch campaigns: ${response.status} ${response.statusText}`;
+        console.error("API Error:", errorText);
+        set({ isLoading: false, error: errorMessage });
+        return { success: false, error: errorMessage };
+      }
+
+      const data = await response.json();
+      const campaignsData = Array.isArray(data)
+        ? data
+        : data.campaigns || data.data || [];
+
+      set({ campaigns: campaignsData, isLoading: false });
+      return { success: true, data: campaignsData };
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "An error occurred";
+      console.error("Error fetching campaigns:", err);
+      set({ isLoading: false, error: errorMessage });
+      return { success: false, error: errorMessage, data: [] };
+    }
+  },
+
+  fetchCampaignById: async (campaignId: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await authenticatedFetch(`/api/campaigns/${campaignId}`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        const errorMessage = `Failed to fetch campaign: ${response.status} ${response.statusText}`;
+        set({ isLoading: false, error: errorMessage });
+        return { success: false, error: errorMessage };
+      }
+
+      const data = await response.json();
+      set({ selectedCampaign: data, isLoading: false });
+      return { success: true, data };
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "An error occurred";
+      console.error("Error fetching campaign:", err);
+      set({ isLoading: false, error: errorMessage });
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  clearError: () => set({ error: null }),
+}));
+
+export const fetchCampaigns = () =>
+  useCampaignStore.getState().fetchCampaigns();
+export const fetchCampaignById = (id: string) =>
+  useCampaignStore.getState().fetchCampaignById(id);
