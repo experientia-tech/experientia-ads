@@ -155,7 +155,9 @@ const CampaignDetailsPage = ({
                 <FiBriefcase size={24} />
               </div>
               <div className={styles.teamInfo}>
-                <span className={styles.teamCount}>3</span>
+               {/*  <span className={styles.teamCount}>
+                  {campaign?.brands?.length || 0}
+                </span> */}
                 <span className={styles.teamLabel}>Brands</span>
               </div>
             </div>
@@ -173,7 +175,9 @@ const CampaignDetailsPage = ({
                 <FiUsers size={24} />
               </div>
               <div className={styles.teamInfo}>
-                <span className={styles.teamCount}>2</span>
+                {/*  <span className={styles.teamCount}>
+                  {campaign?.agencies?.length || 0}
+                </span> */}
                 <span className={styles.teamLabel}>Agencies</span>
               </div>
             </div>
@@ -191,7 +195,9 @@ const CampaignDetailsPage = ({
                 <FiUserCheck size={24} />
               </div>
               <div className={styles.teamInfo}>
-                <span className={styles.teamCount}>5</span>
+                 <span className={styles.teamCount}>
+                  {campaign?.members?.filter(m => m.role === 'SUPERVISOR').length || 0}
+                </span>
                 <span className={styles.teamLabel}>Supervisors</span>
               </div>
             </div>
@@ -209,7 +215,9 @@ const CampaignDetailsPage = ({
                 <FiUserPlus size={24} />
               </div>
               <div className={styles.teamInfo}>
-                <span className={styles.teamCount}>8</span>
+                <span className={styles.teamCount}>
+                  {campaign?.members?.filter(m => m.role === 'EXECUTOR').length || 0}
+                </span>
                 <span className={styles.teamLabel}>Executors</span>
               </div>
             </div>
