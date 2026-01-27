@@ -1,9 +1,8 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import { FiSearch, FiX, FiUserPlus, FiCheck, FiAlertCircle } from 'react-icons/fi';
 import styles from './SupervisorModal.module.scss';
-import { authenticatedFetch } from '@/app/store/Auth';
+import { authenticatedFetch } from '../../../constants/api';
 
 export interface Supervisor {
   id: string;
