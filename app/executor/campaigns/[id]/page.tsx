@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   FiChevronLeft,
@@ -8,10 +8,18 @@ import {
   FiClock,
 } from "react-icons/fi";
 import "./campaign-details.scss";
+import { useExecutorStore } from "@/app/store/Executor";
 
 const CampaignDetails = () => {
   const router = useRouter();
+
+  const { getCampaigns } = useExecutorStore();
+
   const [activeTab, setActiveTab] = useState<"tasks" | "completed">("tasks");
+
+  useEffect(() => {
+    getCampaigns();
+  }, []);
 
   const tasks = [
     {

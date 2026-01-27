@@ -2,17 +2,32 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import "./login.scss";
+import { useExecutorStore } from "@/app/store/Executor";
 
 const ExecutorLogin = () => {
   const router = useRouter();
+
+  // Store state and actions
+  const {
+    sendOtp,
+    verifyOtp,
+    isLoading: loading,
+    error: storeError,
+    clearError,
+  } = useExecutorStore();
 
   // Local state
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [otp, setOtpState] = useState(["", "", "", "", "", ""]);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [localError, setLocalError] = useState("");
   const [resendTimer, setResendTimer] = useState(0);
+
+  const error = localError || storeError;
+  const setError = (msg: string) => {
+    setLocalError(msg);
+    if (!msg) clearError();
+  };
 
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -38,18 +53,16 @@ const ExecutorLogin = () => {
       return;
     }
 
-    setLoading(true);
+    const result = await sendOtp(phoneNumber);
 
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
+    if (result.success) {
       setStep("otp");
       setResendTimer(45);
       // Auto-focus first OTP input
       setTimeout(() => {
         otpInputRefs.current[0]?.focus();
       }, 100);
-    }, 1000);
+    }
   };
 
   const handleOtpChange = (index: number, value: string) => {
@@ -109,18 +122,11 @@ const ExecutorLogin = () => {
       return;
     }
 
-    setLoading(true);
+    const result = await verifyOtp(phoneNumber, otpValue);
 
-    // Simulate API call - check for hardcoded credentials
-    setTimeout(() => {
-      setLoading(false);
-      // Accept 123456 for any phone number to make testing easier
-      if (otpValue === "123456") {
-        router.push("/executor/dashboard");
-      } else {
-        setError("Invalid OTP. Try 123456");
-      }
-    }, 1000);
+    if (result.success) {
+      router.push("/executor/dashboard");
+    }
   };
 
   const handleResendOtp = async () => {
@@ -129,11 +135,13 @@ const ExecutorLogin = () => {
     setError("");
     setOtpState(["", "", "", "", "", ""]);
 
-    // Simulate API call
-    setResendTimer(45);
-    setTimeout(() => {
-      otpInputRefs.current[0]?.focus();
-    }, 100);
+    const result = await sendOtp(phoneNumber);
+    if (result.success) {
+      setResendTimer(45);
+      setTimeout(() => {
+        otpInputRefs.current[0]?.focus();
+      }, 100);
+    }
   };
 
   const handleBackToPhone = () => {

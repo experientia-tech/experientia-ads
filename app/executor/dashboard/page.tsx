@@ -4,8 +4,16 @@ import MobileHeader from "../components/mobile-header";
 import CampaignCard from "../components/campaign-card";
 import { FiCheckCircle, FiClock } from "react-icons/fi";
 import "./dashboard.scss";
+import { useExecutorStore } from "@/app/store/Executor";
+import { useEffect } from "react";
 
 const ExecutorDashboard = () => {
+  const { getCampaigns, campaigns, isLoading } = useExecutorStore();
+
+  useEffect(() => {
+    getCampaigns();
+  }, []);
+
   return (
     <div className="dashboard-page">
       <MobileHeader title="Hello, Alex" subtitle="Monday, Oct 24 • New York" />
@@ -39,30 +47,38 @@ const ExecutorDashboard = () => {
         </div>
 
         <div className="campaign-list">
-          <CampaignCard
-            id="1"
-            name="Coca-Cola Summer 24"
-            location="123 Main St, Downtown"
-            status="Pending"
-            dueText="Due Today, 5:00 PM"
-            icon="🥤"
-          />
-          <CampaignCard
-            id="2"
-            name="Nike Air Launch"
-            location="450 Broadway, Soho"
-            status="In Progress"
-            dueText="Due Tomorrow"
-            icon="📢"
-          />
-          <CampaignCard
-            id="3"
-            name="Spotify Wrapped"
-            location="88 5th Ave, Flatiron"
-            status="Scheduled"
-            dueText="Oct 28"
-            icon="🎵"
-          />
+          {isLoading ? (
+            <p>Loading campaigns...</p>
+          ) : campaigns && campaigns.length > 0 ? (
+            campaigns.map((campaign) => (
+              <CampaignCard
+                key={campaign.id}
+                id={campaign.id?.toString() || ""}
+                name={campaign.name || "Untitled Campaign"}
+                location={campaign.address || "No location specified"}
+                status={
+                  (campaign.status as
+                    | "Pending"
+                    | "In Progress"
+                    | "Scheduled"
+                    | "Completed") || "Pending"
+                }
+                dueText={
+                  campaign.endDate
+                    ? `Ends ${new Date(campaign.endDate).toLocaleDateString()}`
+                    : "No end date"
+                }
+                startText={
+                  campaign.startDate
+                    ? `Starts ${new Date(campaign.startDate).toLocaleDateString()}`
+                    : "No start date"
+                }
+                icon={campaign.serviceType === "Beverage" ? "🥤" : "📢"}
+              />
+            ))
+          ) : (
+            <p>No campaigns found.</p>
+          )}
         </div>
       </div>
     </div>
