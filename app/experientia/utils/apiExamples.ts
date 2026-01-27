@@ -4,7 +4,7 @@
  * This file demonstrates various patterns for making authenticated API calls
  */
 
-import { authenticatedFetch } from "../store/Auth";
+import { authenticatedFetch } from "../../constants/api";
 
 // Example 1: Fetch user profile
 export const fetchUserProfile = async () => {

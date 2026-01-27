@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { sendOtp, verifyOtp } from "@/app/store/Auth";
+import { useAuthStore } from "@/app/store/Auth";
 import "./page.scss";
 
 const SignIn = () => {
@@ -12,7 +12,12 @@ const SignIn = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [otp, setOtpState] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const {
+    sendOtp,
+    verifyOtp,
+    isLoading: loading,
+    error: storeError,
+  } = useAuthStore();
   const [resendTimer, setResendTimer] = useState(0);
 
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -37,9 +42,7 @@ const SignIn = () => {
       return;
     }
 
-    setLoading(true);
     const result = await sendOtp(phoneNumber);
-    setLoading(false);
 
     if (result.success) {
       setStep("otp");
@@ -110,9 +113,7 @@ const SignIn = () => {
       return;
     }
 
-    setLoading(true);
     const result = await verifyOtp(phoneNumber, otpValue);
-    setLoading(false);
 
     if (result.success) {
       // Navigate to dashboard on success

@@ -39,3 +39,16 @@ export interface IDashboardSummary {
   flaggedTasks: number;
   campaigns: ICampaign[];
 }
+
+export interface IProfile {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  isActive: boolean;
+  lastLoginAt: string;
+  organizationId: string;
+  createdAt: string;
+  updatedAt: string;
+}

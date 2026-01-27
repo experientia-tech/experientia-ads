@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { isAuthenticated } from "../../store/Auth";
+import { isAuthenticated } from "../../constants/auth";
 import CampaignCard from "../components/campaign_card/CampaignCard";
 import Filters from "../components/filters/Filters";
 import styles from "./page.module.scss";
