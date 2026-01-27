@@ -27,6 +27,7 @@ const CampaignDetailsPage = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSupervisorModalOpen, setIsSupervisorModalOpen] = useState(false);
+  const [isAddingSupervisor, setIsAddingSupervisor] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -255,14 +256,51 @@ const CampaignDetailsPage = ({
 
       <SupervisorModal
         isOpen={isSupervisorModalOpen}
-        onClose={() => setIsSupervisorModalOpen(false)}
-        onSelect={(supervisor) => {
-          // TODO: Implement API call to add supervisor to campaign
-          console.log('Adding supervisor:', supervisor);
-          // After successful API call, you might want to refresh the campaign data
-          // fetchCampaignData();
+        campaignId={id}
+        onClose={() => !isAddingSupervisor && setIsSupervisorModalOpen(false)}
+        onSelect={async (supervisor) => {
+          if (isAddingSupervisor) return;
+          
+          try {
+            setIsAddingSupervisor(true);
+            const addResponse = await fetch('/api/campaign-members', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                campaignId: id,
+                userId: supervisor.id,
+                role: 'SUPERVISOR'
+              }),
+            });
+
+            if (!addResponse.ok) {
+              const errorData = await addResponse.json();
+              throw new Error(errorData.error || 'Failed to add supervisor');
+            }
+
+            // Close the modal and refresh the campaign data
+            setIsSupervisorModalOpen(false);
+            
+            // Refresh the campaign data
+            const updatedResponse = await fetchCampaignById(id);
+            if (updatedResponse.success && updatedResponse.data) {
+              setCampaign(updatedResponse.data);
+            }
+            
+            // Show success message
+            console.log('Successfully added supervisor');
+          } catch (error) {
+            console.error('Error adding supervisor:', error);
+            // Show error message to user
+            alert(error instanceof Error ? error.message : 'Failed to add supervisor');
+          } finally {
+            setIsAddingSupervisor(false);
+          }
         }}
         existingSupervisors={campaign?.members?.map(m => m.userId) || []}
+        isLoading={isAddingSupervisor}
       />
     </div>
   );

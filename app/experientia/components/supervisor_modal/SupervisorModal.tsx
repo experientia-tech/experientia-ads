@@ -1,21 +1,25 @@
 'use client';
 
-import { useState } from 'react';
-import { FiSearch, FiX, FiUserPlus, FiCheck } from 'react-icons/fi';
+import { useState, useEffect } from 'react';
+import { FiSearch, FiX, FiUserPlus, FiCheck, FiAlertCircle } from 'react-icons/fi';
 import styles from './SupervisorModal.module.scss';
+import { authenticatedFetch } from '@/app/store/Auth';
 
-interface Supervisor {
+export interface Supervisor {
   id: string;
   name: string;
   role: string;
   email: string;
+  phone?: string;
 }
 
 interface SupervisorModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelect: (supervisor: Supervisor) => void;
+  onSelect: (supervisor: Supervisor) => Promise<void> | void;
   existingSupervisors?: string[];
+  campaignId: string;
+  isLoading?: boolean;
 }
 
 const SupervisorModal: React.FC<SupervisorModalProps> = ({
@@ -23,20 +27,53 @@ const SupervisorModal: React.FC<SupervisorModalProps> = ({
   onClose,
   onSelect,
   existingSupervisors = [],
+  campaignId,
+  isLoading = false
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSupervisor, setSelectedSupervisor] = useState<Supervisor | null>(null);
+  const [supervisors, setSupervisors] = useState<Supervisor[]>([]);
+  const [isLoadingState, setIsLoadingState] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data - replace with actual API call
-  const allSupervisors: Supervisor[] = [
-    { id: '1', name: 'John Doe', role: 'Supervisor', email: 'john@example.com' },
-    { id: '2', name: 'Jane Smith', role: 'Supervisor', email: 'jane@example.com' },
-    { id: '3', name: 'Mike Johnson', role: 'Supervisor', email: 'mike@example.com' },
-  ];
+  useEffect(() => {
+    const fetchSupervisors = async () => {
+      try {
+        setIsLoadingState(true);
+        const response = await authenticatedFetch('/api/supervisors');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch supervisors');
+        }
+        
+        const data = await response.json();
+        
+        // Map the API response to match our Supervisor interface
+        const formattedSupervisors = data.map((user: any) => ({
+          id: user.id,
+          name: `${user.firstName} ${user.lastName}`.trim(),
+          role: user.role || 'SUPERVISOR',
+          email: user.email,
+          phone: user.phone || ''
+        }));
+        
+        setSupervisors(formattedSupervisors);
+      } catch (err) {
+        console.error('Error fetching supervisors:', err);
+        setError('Failed to load supervisors. Please try again.');
+      } finally {
+        setIsLoadingState(false);
+      }
+    };
 
-  const filteredSupervisors = allSupervisors.filter(
+    if (isOpen) {
+      fetchSupervisors();
+    }
+  }, [isOpen]);
+
+  const filteredSupervisors = supervisors.filter(
     (supervisor) =>
-      !existingSupervisors.includes(supervisor.id) &&
+      !existingSupervisors?.includes(supervisor.id) &&
       (supervisor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         supervisor.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
@@ -66,7 +103,23 @@ const SupervisorModal: React.FC<SupervisorModalProps> = ({
         </div>
 
         <div className={styles.supervisorList}>
-          {filteredSupervisors.length > 0 ? (
+          {isLoadingState ? (
+            <div className={styles.loadingState}>
+              <div className={styles.spinner}></div>
+              <p>Loading supervisors...</p>
+            </div>
+          ) : error ? (
+            <div className={styles.errorState}>
+              <FiAlertCircle size={24} />
+              <p>{error}</p>
+              <button 
+                onClick={() => window.location.reload()}
+                className={styles.retryButton}
+              >
+                Retry
+              </button>
+            </div>
+          ) : filteredSupervisors.length > 0 ? (
             filteredSupervisors.map((supervisor) => (
               <div
                 key={supervisor.id}
@@ -91,24 +144,24 @@ const SupervisorModal: React.FC<SupervisorModalProps> = ({
           )}
         </div>
 
-        <div className={styles.modalFooter}>
-          <button onClick={onClose} className={styles.cancelButton}>
+        <div className={styles.modalActions}>
+          <button
+            className={`${styles.button} ${styles.cancelButton}`}
+            onClick={onClose}
+            disabled={isLoadingState}
+            type="button"
+          >
             Cancel
           </button>
           <button
-            onClick={() => {
-              if (selectedSupervisor) {
-                onSelect(selectedSupervisor);
-                onClose();
-              }
-            }}
-            className={`${styles.addButton} ${
+            className={`${styles.button} ${styles.addButton} ${
               !selectedSupervisor ? styles.disabled : ''
             }`}
-            disabled={!selectedSupervisor}
+            onClick={() => selectedSupervisor && onSelect(selectedSupervisor)}
+            disabled={!selectedSupervisor || isLoadingState}
+            type="button"
           >
-            <FiUserPlus size={16} />
-            Add Supervisor
+            {isLoadingState ? 'Adding...' : 'Add Supervisor'}
           </button>
         </div>
       </div>
