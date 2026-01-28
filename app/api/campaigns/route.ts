@@ -61,7 +61,6 @@ export async function POST(request: NextRequest) {
     };
     
     const createdCampaign = await campaignService.createCampaign(campaignData);
-    // Get the authorization token from the request headers
     const authToken = request.headers.get('authorization')|| '';
     return NextResponse.json(
       response(true, 201, authToken, 'Campaign created successfully', createdCampaign),

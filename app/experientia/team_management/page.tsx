@@ -1,41 +1,32 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './page.module.scss';
-import { FiSearch, FiFilter, FiChevronDown, FiChevronUp, FiPhone, FiMail, FiUser, FiCheck, FiX } from 'react-icons/fi';
-
-// Mock data for campaigns and team members
-const campaignsData = [
-  {
-    id: 1,
-    name: 'Summer Collection',
-    totalMembers: 5,
-    activeMembers: 4,
-    members: [
-      { id: 1, name: 'John Doe', email: 'john@example.com', phone: '+1 234 567 890', role: 'Content Creator', status: 'active' },
-      { id: 2, name: 'Jane Smith', email: 'jane@example.com', phone: '+1 234 567 891', role: 'Designer', status: 'active' },
-      { id: 3, name: 'Mike Johnson', email: 'mike@example.com', phone: '+1 234 567 892', role: 'Developer', status: 'inactive' },
-      { id: 4, name: 'Sarah Wilson', email: 'sarah@example.com', phone: '+1 234 567 893', role: 'Manager', status: 'active' },
-      { id: 5, name: 'Alex Brown', email: 'alex@example.com', phone: '+1 234 567 894', role: 'Content Creator', status: 'active' },
-    ]
-  },
-  // Add more campaigns as needed
-];
+import { FiSearch, FiChevronDown, FiChevronUp, FiPhone, FiMail, FiUser } from 'react-icons/fi';
+import { useCampaignStore } from '@/app/store/Campaigns';
 
 const TeamManagementPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [expandedCampaign, setExpandedCampaign] = useState<number | null>(null);
+  const [expandedCampaign, setExpandedCampaign] = useState<string | null>(null);
+  const [roleFilter, setRoleFilter] = useState('');
+  const [showActiveOnly, setShowActiveOnly] = useState(false);
+  const { campaigns, fetchCampaigns } = useCampaignStore();
 
-  const toggleCampaign = (campaignId: number) => {
+  useEffect(() => {
+    const loadCampaigns = async () => {
+      await fetchCampaigns();
+    };
+    loadCampaigns();
+  }, [fetchCampaigns]);
+
+  const toggleCampaign = (campaignId: string) => {
     setExpandedCampaign(expandedCampaign === campaignId ? null : campaignId);
   };
 
-  // Filter campaigns based on search
-  const filteredCampaigns = campaignsData.filter(campaign =>
-    campaign.name.toLowerCase().includes(searchQuery.toLowerCase())
+  // Filter campaigns based on search query
+  const filteredCampaigns = campaigns.filter(campaign => 
+    campaign?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    campaign?.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
-  const [roleFilter, setRoleFilter] = useState('');
-const [campaignFilter, setCampaignFilter] = useState('');
-const [showActiveOnly, setShowActiveOnly] = useState(false);
 
   return (
     <div className={styles.teamPage}>
@@ -71,34 +62,16 @@ const [showActiveOnly, setShowActiveOnly] = useState(false);
             </select>
           </div>
           
-          <div className={styles.filterGroup}>
-            <select 
-              id="campaignFilter" 
-              className={styles.filterSelect}
-              value={campaignFilter}
-              onChange={(e) => setCampaignFilter(e.target.value)}
-            >
-              <option value="">All Campaigns</option>
-              {campaignsData.map(campaign => (
-                <option key={campaign.id} value={campaign.id}>
-                  {campaign.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          <div className={styles.filterGroup}>
-            <label className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                checked={showActiveOnly}
-                onChange={(e) => setShowActiveOnly(e.target.checked)}
-                className={styles.checkboxInput}
-              />
-              <span className={styles.checkboxCustom}></span>
-              Show Active Only
-            </label>
-          </div>
+          <label className={styles.checkboxLabel}>
+            <input
+              type="checkbox"
+              checked={showActiveOnly}
+              onChange={(e) => setShowActiveOnly(e.target.checked)}
+              className={styles.checkboxInput}
+            />
+            <span className={styles.checkboxCustom}></span>
+            Show Active Only
+          </label>
         </div>
       </div>
 
@@ -107,18 +80,18 @@ const [showActiveOnly, setShowActiveOnly] = useState(false);
           <div key={campaign.id} className={styles.campaignCard}>
             <div 
               className={styles.campaignHeader}
-              onClick={() => toggleCampaign(campaign.id)}
+              onClick={() => toggleCampaign(campaign.id?.toString() || '')}
             >
               <div className={styles.campaignInfo}>
                 <h3>{campaign.name}</h3>
                 <div className={styles.stats}>
                   <span className={styles.statItem}>
                     <FiUser className={styles.statIcon} />
-                    {campaign.totalMembers} Members
+                    {campaign.members?.length || 0} Members
                   </span>
                   <span className={`${styles.statItem} ${styles.active}`}>
-                    <FiCheck className={styles.statIcon} />
-                    {campaign.activeMembers} Active
+                    <FiMail className={styles.statIcon} />
+                    {campaign.members?.filter(m => m.active).length || 0} Active
                   </span>
                 </div>
               </div>
@@ -133,43 +106,41 @@ const [showActiveOnly, setShowActiveOnly] = useState(false);
                   <thead>
                     <tr className={styles.tableHeaderRow}>
                       <th className={styles.tableHeaderCell}>Name</th>
-                      <th className={styles.tableHeaderCell}>Email</th>
                       <th className={styles.tableHeaderCell}>Phone</th>
                       <th className={styles.tableHeaderCell}>Role</th>
                       <th className={styles.tableHeaderCell}>Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {campaign.members.map((member) => (
+                    {campaign.members?.map((member) => (
                       <tr key={member.id} className={styles.tableRow}>
                         <td className={styles.tableCell}>
                           <div className={styles.memberCell}>
                             <FiUser className={styles.userIcon} />
-                            {member.name}
+                            {member.user?.firstName} {member.user?.lastName}
                           </div>
                         </td>
                         <td className={styles.tableCell}>
-                          <a href={`mailto:${member.email}`} className={styles.emailLink}>
-                            <FiMail className={styles.icon} />
-                            {member.email}
-                          </a>
-                        </td>
-                        <td className={styles.tableCell}>
-                          <a href={`tel:${member.phone}`} className={styles.phoneLink}>
-                            <FiPhone className={styles.icon} />
-                            {member.phone}
-                          </a>
+                          {member.user?.phone && (
+                            <a href={`tel:${member.user.phone}`} className={styles.phoneLink}>
+                              <FiPhone className={styles.icon} />
+                              {member.user.phone}
+                            </a>
+                          )}
                         </td>
                         <td className={styles.tableCell}>{member.role}</td>
                         <td className={styles.tableCell}>
-                          <span className={`${styles.status} ${member.status === 'active' ? styles.active : ''}`}>
-                            {member.status === 'active' ? 'Active' : 'Inactive'}
+                          <span className={`${styles.status} ${member.active ? styles.active : ''}`}>
+                            {member.active ? 'Active' : 'Inactive'}
                           </span>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+                {(!campaign.members || campaign.members.length === 0) && (
+                  <div className={styles.noMembers}>No team members found for this campaign.</div>
+                )}
               </div>
             )}
           </div>
