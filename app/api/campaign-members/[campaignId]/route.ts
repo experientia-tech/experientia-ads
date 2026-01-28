@@ -1,23 +1,25 @@
-import { NextResponse } from 'next/server';
-import { getAuthUser } from '@/lib/auth';
+import { NextRequest, NextResponse } from 'next/server';
+import { authorize } from '@/lib/middleware';
+import { ROLES } from '@/lib/roles';
+import { response } from '@/utils/response';
 import { campaignMemberService } from '@/services/campaign-member.services';
 
-export async function GET(
-  request: Request,
-  { params }: { params: { campaignId: string } }
-) {
-  try {
-    const authUser = await getAuthUser();
-    if (!authUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+type RequestHandler = (
+  request: NextRequest,
+  context: { params: { campaignId: string } }
+) => Promise<NextResponse>;
 
-    const resolvedParams = await Promise.resolve(params);
-    const campaignId = resolvedParams.campaignId;
+export const GET: RequestHandler = async (request, { params }) => {
+  try {
+    const auth = authorize(request, [ROLES.ADMIN, ROLES.EXECUTOR]);
+    if (auth instanceof NextResponse) return auth;
+
+    const { campaignId } = await Promise.resolve(params);
+    const authToken = request.headers.get('authorization')?.split(' ')[1] || '';
 
     if (!campaignId) {
       return NextResponse.json(
-        { error: 'Campaign ID is required' },
+        response(false, 400, authToken, 'Campaign ID is required'),
         { status: 400 }
       );
     }
@@ -26,15 +28,18 @@ export async function GET(
       campaignId
     });
 
-    return NextResponse.json(members);
+    return NextResponse.json(
+      response(true, 200, authToken, 'Campaign members fetched successfully', members)
+    );
   } catch (error) {
     console.error('Error fetching campaign members:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch campaign members';
+    const statusCode = error instanceof Error && error.message === 'Campaign not found' ? 404 : 500;
+    const authToken = request.headers.get('authorization')?.split(' ')[1] || '';
+    
     return NextResponse.json(
-      { 
-        error: 'Failed to fetch campaign members',
-        details: error instanceof Error ? error.message : String(error)
-      },
-      { status: 500 }
+      response(false, statusCode, authToken, errorMessage),
+      { status: statusCode }
     );
   }
-}
+};

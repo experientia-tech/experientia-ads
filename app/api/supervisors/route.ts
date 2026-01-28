@@ -1,16 +1,20 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAuthUser } from '@/lib/auth';
+import { authorize } from '@/lib/middleware';
+import { ROLES } from '@/lib/roles';
+import { response } from '@/utils/response';
 
-export async function GET() {
+type RequestHandler = (
+  request: NextRequest,
+) => Promise<NextResponse>;
+
+export const GET: RequestHandler = async (request) => {
   try {
-    const authUser = await getAuthUser();
-    if (!authUser) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const auth = authorize(request, [ROLES.ADMIN, ROLES.EXECUTOR]);
+    if (auth instanceof NextResponse) return auth;
+
+    const authToken = request.headers.get('authorization')?.split(' ')[1] || '';
+    
     const supervisorAssignments = await prisma.campaignMember.findMany({
       where: {
         role: 'SUPERVISOR' as const,
@@ -28,6 +32,7 @@ export async function GET() {
         },
       },
     });
+    
     const supervisors = supervisorAssignments.map((assignment) => ({
       id: assignment.userId,
       firstName: assignment.user.firstName,
@@ -36,11 +41,16 @@ export async function GET() {
       role: 'SUPERVISOR',
     }));
 
-    return NextResponse.json(supervisors);
+    return NextResponse.json(
+      response(true, 200, authToken, 'Supervisors fetched successfully', supervisors)
+    );
   } catch (error) {
     console.error('Error fetching supervisors:', error);
+    const errorMessage = 'Failed to fetch supervisors';
+    const authToken = request.headers.get('authorization')?.split(' ')[1] || '';
+    
     return NextResponse.json(
-      { error: 'Failed to fetch supervisors' },
+      response(false, 500, authToken, errorMessage),
       { status: 500 }
     );
   }

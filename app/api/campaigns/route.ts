@@ -3,6 +3,7 @@ import type { CreateCampaignInput, CampaignStatus } from '@/types/campaign';
 import { CampaignService } from '@/services/campaign.services';
 import { authorize } from '@/lib/middleware';
 import { ROLES } from '@/lib/roles';
+import { response } from '@/utils/response';
 
 const campaignService = new CampaignService();
 
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'createdAt';
     const sortOrder = searchParams.get('sortOrder') as 'asc' | 'desc' || 'desc';
 
-    const response = await campaignService.getCampaigns({
+    const campaigns = await campaignService.getCampaigns({
       search,
       status,
       page,
@@ -29,14 +30,14 @@ export async function GET(request: NextRequest) {
       organizationId: auth.orgId
     });
 
-    return NextResponse.json(response);
+    // Get the authorization token from the request headers
+    const authToken = request.headers.get('authorization')?.split(' ')[1] || '';
+    return NextResponse.json(response(true, 200, authToken, 'Campaigns fetched successfully', campaigns));
   } catch (error) {
     console.error('Error fetching campaigns:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch campaigns';
     return NextResponse.json(
-      { 
-        error: 'Failed to fetch campaigns', 
-        details: error instanceof Error ? error.message : String(error) 
-      },
+      response(false, 500, undefined, errorMessage),
       { status: 500 }
     );
   }
@@ -53,16 +54,18 @@ export async function POST(request: NextRequest) {
       organizationId: auth.orgId
     };
     
-    const campaign = await campaignService.createCampaign(campaignData);
-
-    return NextResponse.json(campaign);
+    const createdCampaign = await campaignService.createCampaign(campaignData);
+    // Get the authorization token from the request headers
+    const authToken = request.headers.get('authorization')?.split(' ')[1] || '';
+    return NextResponse.json(
+      response(true, 201, authToken, 'Campaign created successfully', createdCampaign),
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Error creating campaign:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create campaign';
     return NextResponse.json(
-      { 
-        error: 'Failed to create campaign', 
-        details: error instanceof Error ? error.message : String(error) 
-      },
+      response(false, 500, undefined, errorMessage),
       { status: 500 }
     );
   }
