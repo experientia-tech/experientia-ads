@@ -17,7 +17,7 @@ import {
   FiRefreshCw,
 } from "react-icons/fi";
 import SummaryCard from "../components/summary_card/SummaryCard";
-import { fetchCampaigns } from "../../store/Campaigns";
+import { useCampaignStore } from "../../store/Campaigns";
 
 const DashboardPage = () => {
   const router = useRouter();
@@ -30,37 +30,34 @@ const DashboardPage = () => {
     }
   }, [router]);
 
-  const [campaigns, setCampaigns] = useState<ICampaign[]>([]);
+  const { campaigns, fetchCampaigns } = useCampaignStore();
 
   useEffect(() => {
-    fetchCampaigns().then((res) => {
-      if (res.success) {
-        setCampaigns(res.data || []);
-      }
-    });
-  }, []);
+    fetchCampaigns();
+  }, [fetchCampaigns]);
 
   // Calculate summary metrics
-  const totalCampaigns = campaigns.length;
-  const activeCampaigns = campaigns.filter(
+  const campaignsList = Array.isArray(campaigns) ? campaigns : [];
+  const totalCampaigns = campaignsList.length;
+  const activeCampaigns = campaignsList.filter(
     (campaign: ICampaign) =>
       campaign.status === "ACTIVE" || campaign.status === "active",
   ).length;
 
-  const totalTasks = campaigns.reduce(
+  const totalTasks = campaignsList.reduce(
     (sum: number, campaign: ICampaign) =>
       sum + (Number(campaign.totalTasks) || 0),
     0,
   );
 
-  const completedTasks = campaigns.reduce(
+  const completedTasks = campaignsList.reduce(
     (sum: number, campaign: ICampaign) =>
       sum + (Number(campaign.completedTasks) || 0),
     0,
   );
 
   const pendingTasks = Math.max(0, totalTasks - completedTasks);
-  const flaggedTasks = campaigns.reduce(
+  const flaggedTasks = campaignsList.reduce(
     (sum: number, campaign: ICampaign) =>
       sum + (Number(campaign.flaggedTasks) || 0),
     0,

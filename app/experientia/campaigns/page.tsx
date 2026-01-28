@@ -34,8 +34,19 @@ const AssignedCampaignsPage = () => {
       if (!response.ok) {
         throw new Error("Failed to fetch campaigns");
       }
-      const data = await response.json();
-      setCampaigns(data.data || []);
+      const responseData = await response.json();
+      let campaignsData: Campaign[] = [];
+      if (Array.isArray(responseData)) {
+        campaignsData = responseData;
+      } else if (responseData.data && Array.isArray(responseData.data.data)) {
+        campaignsData = responseData.data.data;
+      } else if (responseData.data && Array.isArray(responseData.data)) {
+        campaignsData = responseData.data;
+      } else if (responseData.campaigns) {
+        campaignsData = responseData.campaigns;
+      }
+      
+      setCampaigns(campaignsData);
     } catch (err) {
       console.error("Error fetching campaigns:", err);
       setError(err instanceof Error ? err.message : "An error occurred");

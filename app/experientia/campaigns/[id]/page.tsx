@@ -10,7 +10,7 @@ import TeamMemberTable from "../../components/team_member_table/TeamMemberTable"
 import { fetchCampaignById } from "@/app/store/Campaigns";
 import { ICampaign } from "@/app/constants/interface";
 import { useState, useEffect, use, useCallback } from "react";
-
+import { authenticatedFetch } from "@/app/constants/api";
 import { formatDate } from "@/app/constants/date";
 
 const CampaignDetailsPage = ({
@@ -271,7 +271,7 @@ const CampaignDetailsPage = ({
           
           try {
             setIsAddingSupervisor(true);
-            const addResponse = await fetch('/api/campaign-members', {
+            const addResponse = await authenticatedFetch('/api/campaign-members', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -287,21 +287,15 @@ const CampaignDetailsPage = ({
               const errorData = await addResponse.json();
               throw new Error(errorData.error || 'Failed to add supervisor');
             }
-
-            // Close the modal and refresh the campaign data
             setIsSupervisorModalOpen(false);
-            
-            // Refresh the campaign data
             const updatedResponse = await fetchCampaignById(id);
             if (updatedResponse.success && updatedResponse.data) {
               setCampaign(updatedResponse.data);
             }
             
-            // Show success message
             console.log('Successfully added supervisor');
           } catch (error) {
             console.error('Error adding supervisor:', error);
-            // Show error message to user
             alert(error instanceof Error ? error.message : 'Failed to add supervisor');
           } finally {
             setIsAddingSupervisor(false);
