@@ -41,10 +41,17 @@ export const useCampaignStore = create<CampaignState>((set) => ({
         return { success: false, error: errorMessage };
       }
 
-      const data = await response.json();
-      const campaignsData = Array.isArray(data)
-        ? data
-        : data.campaigns || data.data || [];
+      const responseData = await response.json();
+      let campaignsData: ICampaign[] = [];
+      if (Array.isArray(responseData)) {
+        campaignsData = responseData;
+      } else if (responseData.data && Array.isArray(responseData.data.data)) {
+        campaignsData = responseData.data.data;
+      } else if (responseData.data && Array.isArray(responseData.data)) {
+        campaignsData = responseData.data;
+      } else if (responseData.campaigns) {
+        campaignsData = responseData.campaigns;
+      }
 
       set({ campaigns: campaignsData, isLoading: false });
       return { success: true, data: campaignsData };
@@ -69,9 +76,10 @@ export const useCampaignStore = create<CampaignState>((set) => ({
         return { success: false, error: errorMessage };
       }
 
-      const data = await response.json();
-      set({ selectedCampaign: data, isLoading: false });
-      return { success: true, data };
+      const responseData = await response.json();
+      const campaignData = responseData.data || responseData;
+      set({ selectedCampaign: campaignData, isLoading: false });
+      return { success: true, data: campaignData };
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "An error occurred";

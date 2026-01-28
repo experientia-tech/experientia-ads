@@ -45,14 +45,16 @@ const SupervisorModal: React.FC<SupervisorModalProps> = ({
           throw new Error('Failed to fetch supervisors');
         }
         
-        const data = await response.json();
+        const responseData = await response.json();
+        const supervisorsData = Array.isArray(responseData) 
+          ? responseData 
+          : responseData.data || [];
         
-        // Map the API response to match our Supervisor interface
-        const formattedSupervisors = data.map((user: any) => ({
+        const formattedSupervisors = supervisorsData.map((user: any) => ({
           id: user.id,
-          name: `${user.firstName} ${user.lastName}`.trim(),
+          name: `${user.firstName} ${user.lastName || ''}`.trim() || 'Unnamed Supervisor',
           role: user.role || 'SUPERVISOR',
-          email: user.email,
+          email: user.email || '',
           phone: user.phone || ''
         }));
         
