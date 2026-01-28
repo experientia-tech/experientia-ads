@@ -1,22 +1,24 @@
-import { NextResponse } from 'next/server';
-import { getAuthUser } from '@/lib/auth';
+import { NextRequest, NextResponse } from 'next/server';
+import { authorize } from '@/lib/middleware';
+import { ROLES } from '@/lib/roles';
+import { response } from '@/utils/response';
 import { campaignMemberService } from '@/services/campaign-member.services';
 
-export async function PATCH(request: Request) {
-  try {
-    const authUser = await getAuthUser();
-    if (!authUser) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+type RequestHandler = (
+  request: NextRequest,
+) => Promise<NextResponse>;
 
+export const PATCH: RequestHandler = async (request) => {
+  try {
+    const auth = authorize(request, [ROLES.ADMIN]);
+    if (auth instanceof NextResponse) return auth;
+
+    const authToken = request.headers.get('authorization')?.split(' ')[1] || '';
     const { memberId, role } = await request.json();
 
     if (!memberId || !role) {
       return NextResponse.json(
-        { error: 'memberId and role are required' },
+        response(false, 400, authToken, 'memberId and role are required'),
         { status: 400 }
       );
     }
@@ -26,19 +28,27 @@ export async function PATCH(request: Request) {
       role
     );
 
-    return NextResponse.json(updatedMember);
+    return NextResponse.json(
+      response(true, 200, authToken, 'Campaign member role updated successfully', updatedMember)
+    );
   } catch (error) {
     console.error('Error updating campaign member role:', error);
-    return NextResponse.json(
-      { 
-        error: 'Failed to update campaign member role',
-        details: error instanceof Error ? error.message : String(error)
-      },
-      { 
-        status: error instanceof Error && error.message === 'Campaign member not found'
-          ? 404 
-          : 500
+    
+    let statusCode = 500;
+    if (error instanceof Error) {
+      if (error.message === 'Campaign member not found') {
+        statusCode = 404;
+      } else if (error.message === 'Invalid role') {
+        statusCode = 400;
       }
+    }
+    
+    const errorMessage = error instanceof Error ? error.message : 'Failed to update campaign member role';
+    const authToken = request.headers.get('authorization')?.split(' ')[1] || '';
+    
+    return NextResponse.json(
+      response(false, statusCode, authToken, errorMessage),
+      { status: statusCode }
     );
   }
 }
