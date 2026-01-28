@@ -1,29 +1,27 @@
-import { NextResponse } from 'next/server';
-import { getAuthUser } from '@/lib/auth';
+import { NextRequest, NextResponse } from 'next/server';
 import { CampaignService } from '@/services/campaign.services';
-import { prisma } from '@/lib/prisma';
+import { authorize } from '@/lib/middleware';
+import { ROLES } from '@/lib/roles';
+import { response } from '@/utils/response';
+
+type RequestHandler = (
+  request: NextRequest,
+  params: { params: { id: string } }
+) => Promise<NextResponse>;
 
 const campaignService = new CampaignService();
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export const PATCH: RequestHandler = async (request, { params }) => {
   try {
-    const authUser = await getAuthUser();
-    if (!authUser) {
+    const auth = authorize(request, [ROLES.ADMIN]);
+    if (auth instanceof NextResponse) return auth;
+
+    const { id } = await Promise.resolve(params);
+    const authToken = request.headers.get('authorization')?.split(' ')[1] || '';
+
+    if (!id) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-    
-    const resolvedParams = await Promise.resolve(params);
-    const campaignId = resolvedParams.id;
-    
-    if (!campaignId) {
-      return NextResponse.json(
-        { error: 'Campaign ID is required' },
+        response(false, 400, authToken, 'Campaign ID is required'),
         { status: 400 }
       );
     }
@@ -31,32 +29,29 @@ export async function PATCH(
     const { status } = await request.json();
     if (!status || typeof status !== 'string') {
       return NextResponse.json(
-        { error: 'Status is required and must be a string' },
+        response(false, 400, authToken, 'Status is required and must be a string'),
         { status: 400 }
       );
     }
 
-    const existingCampaign = await prisma.campaign.findUnique({
-      where: { id: campaignId }
-    });
-
-    if (!existingCampaign) {
+    const result = await campaignService.updateCampaignStatus(id, status);
+    
+    if (!result) {
       return NextResponse.json(
-        { error: 'Campaign not found' },
+        response(false, 404, authToken, 'Campaign not found'),
         { status: 404 }
       );
     }
 
-    const updatedCampaign = await campaignService.updateCampaignStatus(campaignId, status);
-
-    return NextResponse.json(updatedCampaign);
+    return NextResponse.json(
+      response(true, 200, authToken, 'Campaign status updated successfully', result)
+    );
   } catch (error) {
     console.error('Error updating campaign status:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to update campaign status';
+    const authToken = request.headers.get('authorization')?.split(' ')[1] || '';
     return NextResponse.json(
-      { 
-        error: 'Failed to update campaign status',
-        details: error instanceof Error ? error.message : String(error)
-      },
+      response(false, 500, authToken, errorMessage),
       { status: 500 }
     );
   }

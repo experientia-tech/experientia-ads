@@ -216,37 +216,59 @@ export class CampaignService {
     return this.formatCampaignResponse(updatedCampaign);
   }
 
-  async getCampaignById(id: string): Promise<CampaignResponse | null> {
-  try {
-    const campaign = await prisma.campaign.findUnique({
-      where: { id },
-      include: {
-        members: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                phone: true,
+  async getCampaignById(id: string, token?: string): Promise<{
+    success: boolean;
+    statusCode: number;
+    message: string;
+    data: CampaignResponse | null;
+    token?: string;
+  }> {
+    try {
+      const campaign = await prisma.campaign.findUnique({
+        where: { id },
+        include: {
+          members: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  phone: true,
+                },
               },
             },
           },
+          tasks: true,
         },
-        tasks: true,
-      },
-    });
+      });
 
-    if (!campaign) {
-      return null;
+      if (!campaign) {
+        return {
+          success: false,
+          statusCode: 404,
+          message: 'Campaign not found',
+          data: null
+        };
+      }
+
+      return {
+        success: true,
+        statusCode: 200,
+        message: 'Campaign retrieved successfully',
+        data: this.formatCampaignResponse(campaign),
+        token
+      };
+    } catch (error) {
+      console.error('Error in getCampaignById:', error);
+      return {
+        success: false,
+        statusCode: 500,
+        message: error instanceof Error ? error.message : 'Failed to fetch campaign',
+        data: null
+      };
     }
-
-    return this.formatCampaignResponse(campaign);
-  } catch (error) {
-    console.error('Error in getCampaignById:', error);
-    throw error;
   }
-}
 async updateCampaign(
   id: string, 
   data: Partial<CreateCampaignInput>
