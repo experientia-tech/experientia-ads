@@ -40,11 +40,24 @@ export const checkExecutorAuth = (): boolean => {
 
 // --- Zustand Store ---
 
+interface ExecutorProfile {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  isActive: boolean;
+  lastLoginAt: Date | null;
+  organizationId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 interface ExecutorState {
   isLoading: boolean;
   error: string | null;
   token: string | null;
   campaigns: Partial<ICampaign>[];
+  profile: ExecutorProfile | null;
 
   sendOtp: (phone: string) => Promise<ISendOtpResponse>;
   verifyOtp: (phone: string, otp: string) => Promise<IVerifyOtpResponse>;
@@ -53,6 +66,11 @@ interface ExecutorState {
   getCampaigns: () => Promise<{
     success: boolean;
     campaigns: Partial<ICampaign>[];
+    error?: string;
+  }>;
+  getProfile: () => Promise<{
+    success: boolean;
+    profile?: ExecutorProfile;
     error?: string;
   }>;
 }
@@ -65,6 +83,7 @@ export const useExecutorStore = create<ExecutorState>((set, get) => ({
       ? localStorage.getItem(EXECUTOR_TOKEN_KEY)
       : null,
   campaigns: [],
+  profile: null,
 
   clearError: () => set({ error: null }),
 
@@ -220,6 +239,58 @@ export const useExecutorStore = create<ExecutorState>((set, get) => ({
       return {
         success: false,
         campaigns: [],
+        error: error.message || "Network error occurred",
+      };
+    }
+  },
+
+  getProfile: async () => {
+    // Check authentication first
+    if (!checkExecutorAuth()) {
+      return {
+        success: false,
+        error: "Not authenticated",
+      };
+    }
+
+    const token = getExecutorToken();
+
+    try {
+      const response = await fetch("/api/profile", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (response.status === 401) {
+        get().logout();
+        return {
+          success: false,
+          error: "Session expired. Please login again.",
+        };
+      }
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: data.error || "Failed to fetch profile",
+        };
+      }
+
+      set({ profile: data });
+
+      return {
+        success: true,
+        profile: data,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
         error: error.message || "Network error occurred",
       };
     }
