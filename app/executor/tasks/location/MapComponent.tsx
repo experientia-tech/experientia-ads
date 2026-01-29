@@ -1,46 +1,60 @@
-import React from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
+"use client";
 
-// Fix for default marker icon in Next.js
-const icon = L.icon({
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
+import { useEffect, useRef } from "react";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 
 interface MapComponentProps {
   lat: number;
   lng: number;
 }
 
-const MapComponent: React.FC<MapComponentProps> = ({ lat, lng }) => {
-  return (
-    <MapContainer
-      center={[lat, lng]}
-      zoom={16}
-      style={{ height: "100%", width: "100%", borderRadius: "16px" }}
-      scrollWheelZoom={false}
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <Marker position={[lat, lng]} icon={icon}>
-        <Popup>
-          Your current location
-          <br />
-          {lat.toFixed(6)}, {lng.toFixed(6)}
-        </Popup>
-      </Marker>
-    </MapContainer>
-  );
-};
+mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
 
-export default MapComponent;
+export default function MapComponent({ lat, lng }: MapComponentProps) {
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+
+  useEffect(() => {
+    if (!mapContainerRef.current || mapRef.current) return;
+
+    mapRef.current = new mapboxgl.Map({
+      container: mapContainerRef.current,
+      style: "mapbox://styles/mapbox/streets-v12",
+      center: [lng, lat],
+      zoom: 16,
+    });
+
+    // Marker
+    new mapboxgl.Marker({
+      color: "#7c3aed",
+    })
+      .setLngLat([lng, lat])
+      .addTo(mapRef.current);
+
+    return () => {
+      mapRef.current?.remove();
+      mapRef.current = null;
+    };
+  }, [lat, lng]);
+
+  if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
+    return (
+      <div className="flex h-full items-center justify-center bg-gray-100 text-slate-500 font-semibold">
+        Mapbox token not configured
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={mapContainerRef}
+      style={{
+        width: "100%",
+        height: "100%",
+        borderRadius: "16px",
+        overflow: "hidden",
+      }}
+    />
+  );
+}
