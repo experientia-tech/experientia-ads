@@ -6,13 +6,15 @@ export interface CampaignMemberInput {
   assignedBy: string;
 }
 
+export interface TaskImage {
+  url: string;
+}
+
 export interface CampaignTaskInput {
-  title: string;
-  description?: string;
-  status?: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'REJECTED';
-  executorUserId: string;
-  dueDate?: Date | string;
-  priority?: 'LOW' | 'MEDIUM' | 'HIGH';
+  images?: TaskImage[];
+  latitude?: number;
+  longitude?: number;
+  address?: string;
 }
 
 export interface CreateCampaignInput {
