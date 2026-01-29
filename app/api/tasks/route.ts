@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getAuthUser } from '@/lib/auth';
 import { taskService } from '@/services/tasks.services';
 import { TaskStatus } from '@/app/generated/prisma/client';
+import { response } from '@/utils/response';
 
 export async function POST(request: Request) {
   try {
@@ -10,7 +11,7 @@ export async function POST(request: Request) {
     
     if (!authUser) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        response(false, 401, undefined, 'Unauthorized'),
         { status: 401 }
       );
     }
@@ -20,7 +21,7 @@ export async function POST(request: Request) {
     // Validate required fields
     if (!body.campaignId || !body.executorUserId) {
       return NextResponse.json(
-        { error: 'Missing required fields: campaignId and executorUserId are required' },
+        response(false, 400, undefined, 'Missing required fields: campaignId and executorUserId are required'),
         { status: 400 }
       );
     }
@@ -32,7 +33,7 @@ export async function POST(request: Request) {
 
     if (!campaign) {
       return NextResponse.json(
-        { error: 'Campaign not found' },
+        response(false, 404, undefined, 'Campaign not found'),
         { status: 404 }
       );
     }
@@ -44,24 +45,35 @@ export async function POST(request: Request) {
 
     if (!executor) {
       return NextResponse.json(
-        { error: 'Executor user not found' },
+        response(false, 404, undefined, 'Executor user not found'),
         { status: 404 }
       );
     }
 
     // Create the task using the service
-    const task = await taskService.createTask({
-      campaignId: body.campaignId,
-      executorUserId: body.executorUserId,
-      notes: body.notes,
-      metadata: body.metadata,
-    });
+    try {
+      const task = await taskService.createTask({
+        campaignId: body.campaignId,
+        executorUserId: body.executorUserId,
+        notes: body.notes,
+        metadata: body.metadata,
+      });
 
-    return NextResponse.json(task, { status: 201 });
+      return NextResponse.json(
+        response(true, 201, undefined, 'Task created successfully', task),
+        { status: 201 }
+      );
+    } catch (error) {
+      console.error('Error creating task:', error);
+      return NextResponse.json(
+        response(false, 500, undefined, 'Failed to create task'),
+        { status: 500 }
+      );
+    }
   } catch (error) {
-    console.error('Error creating task:', error);
+    console.error('Unexpected error in tasks POST:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      response(false, 500, undefined, 'An unexpected error occurred'),
       { status: 500 }
     );
   }
@@ -85,11 +97,13 @@ export async function GET(request: Request) {
       limit,
     });
 
-    return NextResponse.json(result);
-  } catch (error) {
-    console.error('Error fetching tasks:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      response(true, 200, undefined, 'Tasks retrieved successfully', result)
+    );
+  } catch (error) {
+    console.error('Error in task list service:', error);
+    return NextResponse.json(
+      response(false, 500, undefined, 'Failed to retrieve tasks'),
       { status: 500 }
     );
   }

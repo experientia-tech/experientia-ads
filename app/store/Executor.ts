@@ -199,7 +199,7 @@ export const useExecutorStore = create<ExecutorState>((set, get) => ({
     const token = getExecutorToken();
 
     try {
-      const response = await fetch("/api/executor/campaigns", {
+      const response = await fetch("/api/executor/campaign", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
