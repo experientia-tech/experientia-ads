@@ -8,15 +8,63 @@ import { useExecutorStore } from "@/app/store/Executor";
 import { useEffect } from "react";
 
 const ExecutorDashboard = () => {
-  const { getCampaigns, campaigns, isLoading } = useExecutorStore();
+  const { getCampaigns, campaigns, isLoading, getProfile, profile } =
+    useExecutorStore();
+  const [currentLocation, setCurrentLocation] =
+    React.useState<string>("Loading...");
 
   useEffect(() => {
     getCampaigns();
+    getProfile();
+
+    // Get user's current location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const response = await fetch(
+              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}&localityLanguage=en`,
+            );
+            const data = await response.json();
+            setCurrentLocation(
+              data.city || data.locality || "Unknown Location",
+            );
+          } catch (error) {
+            setCurrentLocation("Location unavailable");
+          }
+        },
+        () => {
+          setCurrentLocation("Location unavailable");
+        },
+      );
+    } else {
+      setCurrentLocation("Location unavailable");
+    }
   }, []);
+
+  // Format current date
+  const getCurrentDate = () => {
+    const now = new Date();
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: "long",
+      month: "short",
+      day: "numeric",
+    };
+    return now.toLocaleDateString("en-US", options);
+  };
+
+  const fullName = profile
+    ? `${profile.firstName} ${profile.lastName}`
+    : "User";
 
   return (
     <div className="dashboard-page">
-      <MobileHeader title="Hello, Alex" subtitle="Monday, Oct 24 • New York" />
+      <MobileHeader
+        title={`Hello, ${fullName}`}
+        subtitle={`${getCurrentDate()} • ${currentLocation}`}
+        name={fullName}
+        phone={profile?.phone || ""}
+      />
 
       <div className="stats-section">
         <div className="stat-card design-card">
