@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { taskService } from '@/services/tasks.services';
 import { getAuthUser } from '@/lib/auth';
+import { response } from '@/utils/response';
 
 export async function GET(
   request: Request,
@@ -28,19 +29,18 @@ export async function GET(
 
     if (!task) {
       return NextResponse.json(
-        { error: 'Task not found' },
+        response(false, 404, undefined, 'Task not found'),
         { status: 404 }
       );
     }
 
-    return NextResponse.json(task);
+    return NextResponse.json(
+      response(true, 200, undefined, 'Task retrieved successfully', task)
+    );
   } catch (error) {
     console.error('Error fetching task:', error);
     return NextResponse.json(
-      { 
-        error: 'Failed to fetch task', 
-        details: error instanceof Error ? error.message : String(error) 
-      },
+      response(false, 500, undefined, 'Failed to fetch task'),
       { status: 500 }
     );
   }
@@ -69,17 +69,26 @@ export async function PATCH(
       );
     }
 
-    const updatedTask = await taskService.updateTask(id, data);
-    return NextResponse.json(updatedTask);
+    try {
+      const updatedTask = await taskService.updateTask(id, data);
+      return NextResponse.json(
+        response(true, 200, undefined, 'Task updated successfully', updatedTask)
+      );
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Task not found') {
+        return NextResponse.json(
+          response(false, 404, undefined, 'Task not found'),
+          { status: 404 }
+        );
+      }
+      throw error;
+    }
     
   } catch (error) {
     console.error('Error updating task:', error);
     return NextResponse.json(
-      { 
-        error: 'Failed to update task', 
-        details: error instanceof Error ? error.message : String(error) 
-      },
-      { status: error instanceof Error && error.message === 'Task not found' ? 404 : 500 }
+      response(false, 500, undefined, 'Failed to update task'),
+      { status: 500 }
     );
   }
 }
@@ -106,16 +115,25 @@ export async function DELETE(
       );
     }
 
-    const result = await taskService.deleteTask(id);
-    return NextResponse.json(result);
+    try {
+      await taskService.deleteTask(id);
+      return NextResponse.json(
+        response(true, 200, undefined, 'Task deleted successfully')
+      );
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Task not found') {
+        return NextResponse.json(
+          response(false, 404, undefined, 'Task not found'),
+          { status: 404 }
+        );
+      }
+      throw error;
+    }
   } catch (error) {
     console.error('Error deleting task:', error);
     return NextResponse.json(
-      { 
-        error: 'Failed to delete task',
-        details: error instanceof Error ? error.message : String(error)
-      },
-      { status: error instanceof Error && error.message === 'Task not found' ? 404 : 500 }
+      response(false, 500, undefined, 'Failed to delete task'),
+      { status: 500 }
     );
   }
 }
