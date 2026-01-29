@@ -31,8 +31,14 @@ export async function GET(request: NextRequest) {
     });
 
     // Get the authorization token from the request headers
-    const authToken = request.headers.get('authorization')?.split(' ')[1] || '';
-    return NextResponse.json(response(true, 200, authToken, 'Campaigns fetched successfully', campaigns));
+    const authToken = request.headers.get('authorization') || '';
+    return NextResponse.json({
+      success: true,
+      statusCode: 200,
+      token: authToken,
+      message: 'Campaigns fetched successfully',
+      ...campaigns
+    });
   } catch (error) {
     console.error('Error fetching campaigns:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch campaigns';
@@ -55,8 +61,7 @@ export async function POST(request: NextRequest) {
     };
     
     const createdCampaign = await campaignService.createCampaign(campaignData);
-    // Get the authorization token from the request headers
-    const authToken = request.headers.get('authorization')?.split(' ')[1] || '';
+    const authToken = request.headers.get('authorization')|| '';
     return NextResponse.json(
       response(true, 201, authToken, 'Campaign created successfully', createdCampaign),
       { status: 201 }
