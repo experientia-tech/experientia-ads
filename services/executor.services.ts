@@ -96,7 +96,8 @@ export async function createCampaignTask(campaignId: string, taskData: CampaignT
       },
     });
 
-    return task;
+    const { status, ...taskWithoutStatus } = task;
+    return taskWithoutStatus;
   } catch (error) {
     console.error('Error in createCampaignTask:', error);
     throw error;
