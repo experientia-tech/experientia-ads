@@ -36,7 +36,7 @@ const TaskOverview: React.FC<TaskOverviewProps> = ({
           <div className={styles.progressCircle} style={{ 
             background: `conic-gradient(#4a90e2 0% ${progress}%, #e9ecef ${progress}% 100%)`
           }}>
-            <span>{progress}%</span>
+            <span>{progress.toFixed(1)}%</span>
           </div>
           <span className={styles.statLabel}>Progress</span>
         </div>

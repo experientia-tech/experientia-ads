@@ -33,7 +33,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
       : 0);
   const totalTasks =
     campaign.totalTasks ||
-    (Array.isArray(campaign.tasks) ? campaign.tasks.length : 1); // Avoid division by zero
+    (Array.isArray(campaign.tasks) ? campaign.tasks.length : 1);
 
   const progressPercentage = (completed: number, total: number) => {
     return Math.round((completed / total) * 100);
