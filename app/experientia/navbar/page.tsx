@@ -26,6 +26,12 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Get user initials for avatar
+  const getInitials = () => {
+    if (!user?.firstName || !user?.lastName) return "U";
+    return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+  };
+
   // Toggle mobile menu
   const toggleMenu = () => {
     const newMenuState = !isMenuOpen;
@@ -139,9 +145,23 @@ const Navbar = () => {
             <div className="profile-section" ref={dropdownRef}>
               <div className="profile-info">
                 <div
-                  className="profile-image"
+                  className="profile-avatar"
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  style={{ cursor: "pointer" }}
+                  style={{
+                    cursor: "pointer",
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "50%",
+                    background:
+                      "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "white",
+                    fontWeight: "600",
+                    fontSize: "14px",
+                    position: "relative",
+                  }}
                 >
                   <Image
                     src=  {logo}
