@@ -140,30 +140,14 @@
     }
   }
 
-  .tab-switcher {
-    display: flex;
-    background: #e2e8f0;
-    border-radius: 12px;
-    padding: 4px;
-    margin-bottom: 32px;
+  .tasks-header {
+    margin-bottom: 20px;
 
-    .tab-btn {
-      flex: 1;
-      padding: 12px;
-      border: none;
-      border-radius: 10px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      color: #64748b;
-      background: transparent;
-
-      &.active {
-        background: #ffffff;
-        color: #1a1a1a;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-      }
+    .section-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #1a1a1a;
+      margin: 0;
     }
   }
 

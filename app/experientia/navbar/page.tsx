@@ -12,8 +12,8 @@ import {
 import dynamic from "next/dynamic";
 import "./page.scss";
 import { useAuthStore } from "@/app/store/Auth";
-
-import LogoImage from "../../../public/logo.jpeg";
+//@ts-ignore
+import logo from "@/public/experientia.png";
 const CreateCampaignForm = dynamic(
   () => import("../create_campaign/CreateCampaignForm"),
   { ssr: false },
@@ -110,7 +110,7 @@ const Navbar = () => {
           <div className="company-brand">
             <div className="logo">
               <Image
-                src={LogoImage}
+                src={logo}
                 alt="Experientia Logo"
                 width={40}
                 height={40}
@@ -163,19 +163,13 @@ const Navbar = () => {
                     position: "relative",
                   }}
                 >
-                  {getInitials()}
-                  <span
-                    style={{
-                      position: "absolute",
-                      bottom: "2px",
-                      right: "2px",
-                      width: "10px",
-                      height: "10px",
-                      borderRadius: "50%",
-                      backgroundColor: "#10b981",
-                      border: "2px solid white",
-                    }}
-                  ></span>
+                  <Image
+                    src=  {logo}
+                    alt="Profile"
+                    width={36}
+                    height={36}
+                    className="rounded-full"
+                  />
                 </div>
               </div>
 

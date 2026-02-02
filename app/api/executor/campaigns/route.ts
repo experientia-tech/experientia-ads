@@ -2,22 +2,30 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCampaigns } from "@/services/executor.services";
 import { authorize } from "@/lib/middleware";
 import { ROLES } from "@/lib/roles";
+import { response } from "@/utils/response";
 
 export async function GET(request: NextRequest) {
   try {
     const auth = authorize(request, [ROLES.EXECUTOR]);
     if (auth instanceof NextResponse) return auth;
-    // Get userId from auth
-    const userId = "49a34c3d-e09e-46c7-ac06-c5a94030bbc8"; // Replace with actual user ID retrieval logic
-    // Assuming getCampaigns fetches campaigns for the current user with role 'executor'
-    // You may need to pass user ID or context if required by the service
+    
+    // Get the token from the authorization header
+    const authHeader = request.headers.get("authorization") || '';
+    const token = authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : '';
+    
+    // Get userId 
+    const userId = auth.sub;
+    
     const campaigns = await getCampaigns(userId);
-    return NextResponse.json(campaigns);
+    
+    return NextResponse.json(
+      response(true, 200, token, 'Campaigns retrieved successfully', campaigns)
+    );
   } catch (error) {
     console.error("Error fetching campaigns:", error);
     return NextResponse.json(
-      { error: "Failed to fetch campaigns" },
-      { status: 500 },
+      response(false, 500, undefined, 'Failed to fetch campaigns'),
+      { status: 500 }
     );
   }
 }
