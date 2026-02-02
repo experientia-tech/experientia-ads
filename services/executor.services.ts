@@ -85,7 +85,8 @@ export async function createCampaignTask(campaignId: string, taskData: CampaignT
             location: {
               latitude: taskData.latitude,
               longitude: taskData.longitude,
-              address: taskData.address || null
+              address: taskData.address || null,
+              accuracy: taskData.accuracy || null
             }
           } : {})
         } as any,

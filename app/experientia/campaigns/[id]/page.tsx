@@ -3,6 +3,7 @@ import Image from "next/image";
 import TaskOverview from "../../components/task_overview/task_overview";
 import { FiEdit2, FiAlertCircle, FiRefreshCw, FiFileText, FiArrowLeft, FiBriefcase, FiUsers, FiUserCheck, FiPlus, FiUserPlus } from "react-icons/fi";
 import SupervisorModal from "@/app/experientia/components/supervisor_modal/SupervisorModal";
+import ExecutorModal from "@/app/experientia/components/executor_modal/ExecutorModal";
 import Link from "next/link";
 import styles from "./page.module.scss";
 import TeamMemberTable from "../../components/team_member_table/TeamMemberTable";
@@ -27,7 +28,9 @@ const CampaignDetailsPage = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSupervisorModalOpen, setIsSupervisorModalOpen] = useState(false);
+  const [isExecutorModalOpen, setIsExecutorModalOpen] = useState(false);
   const [isAddingSupervisor, setIsAddingSupervisor] = useState(false);
+  const [isAddingExecutor, setIsAddingExecutor] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -223,7 +226,7 @@ const CampaignDetailsPage = ({
             </div>
             <button 
               className={styles.addButton}
-              onClick={() => setIsSupervisorModalOpen(true)}
+              onClick={() => setIsExecutorModalOpen(true)}
             >
               <FiPlus size={20} />
             </button>
@@ -303,6 +306,49 @@ const CampaignDetailsPage = ({
         }}
         existingSupervisors={campaign?.members?.map(m => m.userId) || []}
         isLoading={isAddingSupervisor}
+      />
+
+      <ExecutorModal
+        isOpen={isExecutorModalOpen}
+        campaignId={id}
+        onClose={() => !isAddingExecutor && setIsExecutorModalOpen(false)}
+        onSelect={async (executor) => {
+          if (isAddingExecutor) return;
+          
+          try {
+            setIsAddingExecutor(true);
+            const addResponse = await authenticatedFetch('/api/campaign-members', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                campaignId: id,
+                userId: executor.id,
+                role: 'EXECUTOR'
+              }),
+            });
+
+            if (!addResponse.ok) {
+              const errorData = await addResponse.json();
+              throw new Error(errorData.error || 'Failed to add executor');
+            }
+            setIsExecutorModalOpen(false);
+            const updatedResponse = await fetchCampaignById(id);
+            if (updatedResponse.success && updatedResponse.data) {
+              setCampaign(updatedResponse.data);
+            }
+            
+            console.log('Successfully added executor');
+          } catch (error) {
+            console.error('Error adding executor:', error);
+            alert(error instanceof Error ? error.message : 'Failed to add executor');
+          } finally {
+            setIsAddingExecutor(false);
+          }
+        }}
+        existingExecutors={campaign?.members?.map(m => m.userId) || []}
+        isLoading={isAddingExecutor}
       />
     </div>
   );
