@@ -63,6 +63,9 @@ const TaskLocation = () => {
     }
   }, [router]);
 
+  // Helper function to add delay
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
   const getAddressFromCoordinates = async (coords: LocationData) => {
     const cacheKey = `geocode_${coords.lat.toFixed(4)}_${coords.lng.toFixed(4)}`;
     
@@ -80,62 +83,86 @@ const TaskLocation = () => {
       }
     }
 
+    // Rate limiting - respect Nominatim's 1 request per second policy
+    const lastRequest = localStorage.getItem('lastGeocodingRequest');
+    if (lastRequest) {
+      const timeSinceLastRequest = Date.now() - parseInt(lastRequest);
+      if (timeSinceLastRequest < 1000) {
+        await delay(1000 - timeSinceLastRequest);
+      }
+    }
+    localStorage.setItem('lastGeocodingRequest', Date.now().toString());
+
     try {
       console.log('Getting address for:', coords);
       
-      // Create multiple geocoding promises to run in parallel
-      const geocodingPromises = [
-        // OpenStreetMap Nominatim
-        fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.lat}&lon=${coords.lng}&addressdetails=1&zoom=18`,
+      // Try primary service first with longer timeout
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.lat}&lon=${coords.lng}&addressdetails=1`,
           {
             headers: { 'User-Agent': 'ExperientiaApp/1.0' },
-            signal: AbortSignal.timeout(2000) // 2 second timeout
+            signal: AbortSignal.timeout(5000) // Increased to 5 seconds
           }
-        ).then(res => res.ok ? res.json() : Promise.reject()),
-        
-        // Alternative Nominatim endpoint
-        fetch(
+        );
+
+        if (response.ok) {
+          const result = await response.json();
+          
+          if (result && result.display_name) {
+            setFullAddress(result.display_name);
+            localStorage.setItem(cacheKey, JSON.stringify({
+              address: result.display_name,
+              timestamp: Date.now()
+            }));
+            return;
+          }
+        }
+      } catch (primaryError) {
+        console.log('Primary geocoding service failed, trying alternative...');
+      }
+      
+      // If primary fails, wait a bit and try alternative format
+      await delay(1000);
+      
+      try {
+        const response2 = await fetch(
           `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coords.lat}&lon=${coords.lng}`,
           {
             headers: { 'User-Agent': 'ExperientiaApp/1.0' },
-            signal: AbortSignal.timeout(2000)
+            signal: AbortSignal.timeout(5000)
           }
-        ).then(res => res.ok ? res.json() : Promise.reject())
-      ];
+        );
 
-      // Race the promises - use first successful response
-      try {
-        const result = await Promise.race(geocodingPromises);
-        if (result && result.display_name) {
-          setFullAddress(result.display_name);
-          // Cache the result
-          localStorage.setItem(cacheKey, JSON.stringify({
-            address: result.display_name,
-            timestamp: Date.now()
-          }));
-          return;
+        if (response2.ok) {
+          const result2 = await response2.json();
+          
+          if (result2 && result2.display_name) {
+            setFullAddress(result2.display_name);
+            localStorage.setItem(cacheKey, JSON.stringify({
+              address: result2.display_name,
+              timestamp: Date.now()
+            }));
+            return;
+          }
         }
-      } catch (error) {
-        console.log('All geocoding services failed or timed out');
+      } catch (secondaryError) {
+        console.log('Secondary geocoding service also failed');
       }
 
-      // Fallback to coordinates
-      const lat = coords.lat.toFixed(4);
-      const lng = coords.lng.toFixed(4);
-      const fallbackAddress = `Location (${lat}, ${lng})`;
+      // If both fail, use fallback
+      throw new Error('All geocoding attempts failed');
+      
+    } catch (error) {
+      console.error("Geocoding failed:", error);
+      const fallbackAddress = `Location at ${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`;
       setFullAddress(fallbackAddress);
       
-      // Cache fallback too
+      // Cache fallback too to avoid repeated failed requests
       localStorage.setItem(cacheKey, JSON.stringify({
         address: fallbackAddress,
         timestamp: Date.now()
       }));
-      
-    } catch (error) {
-      console.error("Geocoding failed:", error);
-      const fallbackAddress = `Location (${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)})`;
-      setFullAddress(fallbackAddress);
     }
   };
 
@@ -256,6 +283,12 @@ const TaskLocation = () => {
               <span className="coord-label">Longitude:</span>
               <span className="coord-value">{location.lng.toFixed(6)}</span>
             </div>
+            {locationAccuracy && (
+              <div className="coord-item">
+                <span className="coord-label">Accuracy:</span>
+                <span className="coord-value">{locationAccuracy.toFixed(2)}m</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
