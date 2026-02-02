@@ -84,6 +84,24 @@ const TaskCapture = () => {
       return;
     }
 
+    let debounceTimer: NodeJS.Timeout;
+    let lastCalculatedDistance: number | null = null;
+
+    // Debounced distance calculation
+    const debouncedDistanceCalculation = (currentLat: number, currentLng: number, targetLat: number, targetLng: number) => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        const distance = calculateDistance(currentLat, currentLng, targetLat, targetLng);
+        
+        // Only update if distance changed significantly (more than 0.1 meters)
+        if (lastCalculatedDistance === null || Math.abs(distance - lastCalculatedDistance) > 0.1) {
+          setLocationAccuracy(distance);
+          lastCalculatedDistance = distance;
+          sessionStorage.setItem('locationAccuracy', JSON.stringify(distance));
+        }
+      }, 100); // 100ms debounce
+    };
+
     // Get immediate location first
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -109,7 +127,7 @@ const TaskCapture = () => {
       }
     );
 
-    // Then watch for updates
+    // Then watch for updates with optimized frequency
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
         const location = {
@@ -119,18 +137,17 @@ const TaskCapture = () => {
         };
         setCurrentLocation(location);
         
-        // Update GPS accuracy
-        sessionStorage.setItem('locationAccuracy', JSON.stringify(position.coords.accuracy));
-        
-        // Calculate distance from target if available
+        // Calculate distance from target if available (with debouncing)
         if (targetLocation) {
-          const distance = calculateDistance(
+          debouncedDistanceCalculation(
             location.lat,
             location.lng,
             targetLocation.lat,
             targetLocation.lng
           );
-          setLocationAccuracy(distance);
+        } else {
+          // Update GPS accuracy if no target
+          sessionStorage.setItem('locationAccuracy', JSON.stringify(position.coords.accuracy));
         }
       },
       (error) => {
@@ -139,11 +156,14 @@ const TaskCapture = () => {
       {
         enableHighAccuracy: true,
         timeout: 3000,
-        maximumAge: 0
+        maximumAge: 1000 // Allow 1 second cache to reduce updates
       }
     );
 
-    return () => navigator.geolocation.clearWatch(watchId);
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+      clearTimeout(debounceTimer);
+    };
   }, [targetLocation]);
 
   // Calculate distance when both currentLocation and targetLocation are available
@@ -159,20 +179,24 @@ const TaskCapture = () => {
     }
   }, [currentLocation, targetLocation]);
 
-  // Calculate distance between two points in meters
+  // Optimized distance calculation using Haversine formula with early returns
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 6371e3; // Earth's radius in meters
-    const φ1 = lat1 * Math.PI / 180;
-    const φ2 = lat2 * Math.PI / 180;
-    const Δφ = (lat2 - lat1) * Math.PI / 180;
-    const Δλ = (lon2 - lon1) * Math.PI / 180;
+    // Early return if coordinates are identical
+    if (lat1 === lat2 && lon1 === lon2) return 0;
+    
+    // Convert to radians
+    const φ1 = lat1 * 0.017453292519943295; // Math.PI / 180
+    const φ2 = lat2 * 0.017453292519943295;
+    const Δφ = (lat2 - lat1) * 0.017453292519943295;
+    const Δλ = (lon2 - lon1) * 0.017453292519943295;
 
+    // Haversine formula
     const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
               Math.cos(φ1) * Math.cos(φ2) *
               Math.sin(Δλ/2) * Math.sin(Δλ/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 
-    return R * c; // Distance in meters
+    return 6371000 * c; // Earth's radius in meters
   };
 
   // Camera functions

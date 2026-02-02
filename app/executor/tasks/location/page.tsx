@@ -44,14 +44,9 @@ const TaskLocation = () => {
     if (storedLocation) {
       const locationData = JSON.parse(storedLocation);
       setLocation(locationData);
-      
-      // Set immediate fallback address
       setFullAddress(`Getting address... (${locationData.lat.toFixed(4)}, ${locationData.lng.toFixed(4)})`);
-      
-      // Get detailed address from coordinates (async)
       getAddressFromCoordinates(locationData);
     } else {
-      // If no location, redirect back to capture page
       router.push("/executor/tasks/capture");
     }
 
@@ -69,71 +64,85 @@ const TaskLocation = () => {
   }, [router]);
 
   const getAddressFromCoordinates = async (coords: LocationData) => {
+    const cacheKey = `geocode_${coords.lat.toFixed(4)}_${coords.lng.toFixed(4)}`;
+    
+    // Check cache first
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        const cachedData = JSON.parse(cached);
+        if (Date.now() - cachedData.timestamp < 3600000) { // 1 hour cache
+          setFullAddress(cachedData.address);
+          return;
+        }
+      } catch (e) {
+        console.log('Cache parse failed, fetching fresh data');
+      }
+    }
+
     try {
       console.log('Getting address for:', coords);
       
-      // Try OpenStreetMap Nominatim first (most reliable)
-      try {
-        const response = await fetch(
+      // Create multiple geocoding promises to run in parallel
+      const geocodingPromises = [
+        // OpenStreetMap Nominatim
+        fetch(
           `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.lat}&lon=${coords.lng}&addressdetails=1&zoom=18`,
           {
-            headers: {
-              'User-Agent': 'ExperientiaApp/1.0'
-            }
+            headers: { 'User-Agent': 'ExperientiaApp/1.0' },
+            signal: AbortSignal.timeout(2000) // 2 second timeout
           }
-        );
+        ).then(res => res.ok ? res.json() : Promise.reject()),
         
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Geocoding response:', data);
-          
-          if (data && data.display_name) {
-            setFullAddress(data.display_name);
-            return;
-          }
-        }
-      } catch (error) {
-        console.log('OpenStreetMap failed, trying alternative...');
-      }
-
-      // Fallback: Try a simpler format
-      try {
-        const response = await fetch(
+        // Alternative Nominatim endpoint
+        fetch(
           `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coords.lat}&lon=${coords.lng}`,
           {
-            headers: {
-              'User-Agent': 'ExperientiaApp/1.0'
-            }
+            headers: { 'User-Agent': 'ExperientiaApp/1.0' },
+            signal: AbortSignal.timeout(2000)
           }
-        );
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data && data.display_name) {
-            setFullAddress(data.display_name);
-            return;
-          }
+        ).then(res => res.ok ? res.json() : Promise.reject())
+      ];
+
+      // Race the promises - use first successful response
+      try {
+        const result = await Promise.race(geocodingPromises);
+        if (result && result.display_name) {
+          setFullAddress(result.display_name);
+          // Cache the result
+          localStorage.setItem(cacheKey, JSON.stringify({
+            address: result.display_name,
+            timestamp: Date.now()
+          }));
+          return;
         }
       } catch (error) {
-        console.log('Alternative geocoding failed');
+        console.log('All geocoding services failed or timed out');
       }
 
-      // If all else fails, create a simple address format
+      // Fallback to coordinates
       const lat = coords.lat.toFixed(4);
       const lng = coords.lng.toFixed(4);
-      setFullAddress(`Location (${lat}, ${lng})`);
+      const fallbackAddress = `Location (${lat}, ${lng})`;
+      setFullAddress(fallbackAddress);
+      
+      // Cache fallback too
+      localStorage.setItem(cacheKey, JSON.stringify({
+        address: fallbackAddress,
+        timestamp: Date.now()
+      }));
       
     } catch (error) {
-      console.error("All geocoding services failed:", error);
-      // Final fallback
-      setFullAddress(`Location (${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)})`);
+      console.error("Geocoding failed:", error);
+      const fallbackAddress = `Location (${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)})`;
+      setFullAddress(fallbackAddress);
     }
   };
 
   const handleRetakePhotos = () => {
-    // Clear session storage and go back to capture page
     sessionStorage.removeItem("capturedPhotos");
     sessionStorage.removeItem("taskLocation");
+    sessionStorage.removeItem("locationAccuracy");
     router.push("/executor/tasks/capture");
   };
 
@@ -146,21 +155,18 @@ const TaskLocation = () => {
     setIsSubmitting(true);
 
     try {
-      // Get executor token
       const token = localStorage.getItem('executor_token');
       
-      // Prepare task data in the required format
       const taskData = {
         images: capturedPhotos.map(photo => ({
-          url: photo.dataUrl  // Using dataUrl as the url field
+          url: photo.dataUrl 
         })),
         latitude: location?.lat,
         longitude: location?.lng,
         address: fullAddress,
-        accuracy: locationAccuracy?.toString() || "0"  // Convert to string as per example
+        accuracy: locationAccuracy?.toString() || "0"
       };
 
-      // Submit task to API
       const response = await fetch(`/api/executor/campaigns/${campaignId}/tasks`, {
         method: 'POST',
         headers: {
@@ -173,7 +179,6 @@ const TaskLocation = () => {
       if (response.ok) {
         const result = await response.json();
         
-        // Clear session storage
         sessionStorage.removeItem("capturedPhotos");
         sessionStorage.removeItem("taskLocation");
         sessionStorage.removeItem("locationAccuracy");
@@ -212,7 +217,6 @@ const TaskLocation = () => {
       </header>
 
       <div className="location-content">
-        {/* Captured Photos Section */}
         <div className="captured-photos-section">
           <h3 className="section-title">Captured Photos</h3>
           <div className="photos-grid">
@@ -224,12 +228,10 @@ const TaskLocation = () => {
           </div>
         </div>
 
-        {/* Map Component */}
         <div className="map-container">
           <MapComponent lat={location.lat} lng={location.lng} />
         </div>
 
-        {/* Full Address */}
         <div className="address-section">
           <div className="address-header">
             <FiMapPin size={20} />
@@ -240,7 +242,6 @@ const TaskLocation = () => {
           </div>
         </div>
 
-        {/* Coordinates Display */}
         <div className="coordinates-section">
           <div className="coords-header">
             <FiMapPin size={20} />
@@ -259,7 +260,6 @@ const TaskLocation = () => {
         </div>
       </div>
 
-      {/* Action Buttons */}
       <div className="action-buttons">
         <button className="retake-btn" onClick={handleRetakePhotos}>
           <FiRotateCcw size={20} />

@@ -14,6 +14,8 @@ const CreateCampaignForm = ({ onClose }: { onClose: () => void }) => {
   const [endDate, setEndDate] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [serviceType, setServiceType] = useState("");
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
   const router = useRouter();
   const [organizationId, setOrganizationId] = useState("");
   useEffect(() => {
@@ -37,8 +39,24 @@ const CreateCampaignForm = ({ onClose }: { onClose: () => void }) => {
     }
   };
 
+  const validateCoordinates = () => {
+    if (latitude && !/^-?([0-8]?[0-9]|90)\.?[0-9]*$/.test(latitude)) {
+      alert("Please enter a valid latitude between -90 and 90");
+      return false;
+    }
+    if (longitude && !/^-?([0-9]{1,2}|1[0-7][0-9]|180)\.?[0-9]*$/.test(longitude)) {
+      alert("Please enter a valid longitude between -180 and 180");
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateCoordinates()) {
+      return;
+    }
 
     try {
       const response = await authenticatedFetch("/api/campaigns", {
@@ -54,8 +72,8 @@ const CreateCampaignForm = ({ onClose }: { onClose: () => void }) => {
           endDate: endDate || null,
           serviceType: serviceType || "DEFAULT_SERVICE",
           status: "ACTIVE",
-          latitude: null,
-          longitude: null,
+          latitude: latitude ? parseFloat(latitude) : null,
+          longitude: longitude ? parseFloat(longitude) : null,
           description: "",
         }),
       });
@@ -124,6 +142,36 @@ const CreateCampaignForm = ({ onClose }: { onClose: () => void }) => {
                 placeholder="Enter number of tasks"
                 min="1"
                 required
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="latitude">Latitude</label>
+              <input
+                type="number"
+                id="latitude"
+                value={latitude}
+                onChange={(e) => setLatitude(e.target.value)}
+                placeholder="Enter latitude (e.g., 40.7128)"
+                step="any"
+                min="-90"
+                max="90"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="longitude">Longitude</label>
+              <input
+                type="number"
+                id="longitude"
+                value={longitude}
+                onChange={(e) => setLongitude(e.target.value)}
+                placeholder="Enter longitude (e.g., -74.0060)"
+                step="any"
+                min="-180"
+                max="180"
               />
             </div>
           </div>
