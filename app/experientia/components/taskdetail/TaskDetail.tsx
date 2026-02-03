@@ -186,10 +186,10 @@ const TaskDetail = ({ task, onClose }: TaskDetailProps) => {
         </div>
         
         <div className={styles.actions}>
-          <button className={`${styles.flagButton} ${task.isFlagged ? styles.flagged : ''}`}>
+       {/*    <button className={`${styles.flagButton} ${task.isFlagged ? styles.flagged : ''}`}>
             <FiFlag className={styles.icon} />
             {task.isFlagged ? 'Unflag Task' : 'Flag Task'}
-          </button>
+          </button> */}
         </div>
       </div>
     </div>

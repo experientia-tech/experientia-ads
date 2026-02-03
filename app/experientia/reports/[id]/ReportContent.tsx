@@ -55,6 +55,19 @@ const ReportContent = ({
 
   console.log("campaign", campaign);
 
+const ReportContent = ({ campaignId, campaign }: { campaignId: string; campaign: any }) => {
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371000; // Earth's radius in meters
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c; // Distance in meters
+  };
+
   const [filters, setFilters] = useState({
     card: false,
     location: false,
@@ -66,11 +79,18 @@ const ReportContent = ({
     geofenced: false,
   });
   const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [campaignData, setCampaignData] = useState<any>(null);
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   //locations seperately
   const [locations, setLocations] = useState<locationProps[]>([]);
+  // Calculate task overview statistics from real data
+  const totalTasks = campaignData?.totalTasks ?? 0;
+  const completedTasks = tasks.length;
+  const remainingTasks = totalTasks - completedTasks;
+  const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+  const flaggedTasks = tasks.filter(task => task.flagged).length;
 
   // Fetch tasks from API
   useEffect(() => {
@@ -91,57 +111,50 @@ const ReportContent = ({
         const data = await response.json();
         console.log("API Response:", data);
         if (data.success && data.data && data.data.tasks) {
+          // Set campaign data for task overview
+          setCampaignData(data.data);
+          
           // Sort tasks by creation date to calculate time differences correctly
-          const sortedTasks = data.data.tasks.sort(
-            (a: any, b: any) =>
-              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+          const sortedTasks = data.data.tasks.sort((a: any, b: any) => 
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
           );
-
-          console.log("sortedTasks", sortedTasks);
-
+          
           // Format the tasks for ReportCard component
           const formattedTasks = sortedTasks.map((task: any, index: number) => {
-            const metadata = (task.metadata as any) || {};
+            const metadata = task.metadata as any || {};
             const location = metadata.location || {};
-
-            let distance = "Unknown";
+            
+            let distance = 'Unknown';
             if (index > 0) {
               const previousTask = sortedTasks[index - 1];
-              const previousMetadata = (previousTask.metadata as any) || {};
+              const previousMetadata = previousTask.metadata as any || {};
               const previousLocation = previousMetadata.location || {};
-
-              if (
-                location.latitude &&
-                location.longitude &&
-                previousLocation.latitude &&
-                previousLocation.longitude
-              ) {
+              
+              if (location.latitude && location.longitude && 
+                  previousLocation.latitude && previousLocation.longitude) {
                 const distanceInMeters = calculateDistance(
-                  location.latitude,
-                  location.longitude,
-                  previousLocation.latitude,
-                  previousLocation.longitude,
+                  location.latitude, location.longitude,
+                  previousLocation.latitude, previousLocation.longitude
                 );
-                distance =
-                  distanceInMeters >= 1000
-                    ? `${(distanceInMeters / 1000).toFixed(1)}km`
-                    : `${Math.round(distanceInMeters)}m`;
+                distance = distanceInMeters >= 1000 
+                  ? `${(distanceInMeters / 1000).toFixed(1)}km` 
+                  : `${Math.round(distanceInMeters)}m`;
               }
             } else {
               // For first task, show GPS accuracy
               if (location.accuracy) {
                 distance = `${Math.round(parseFloat(location.accuracy))}m`;
               } else {
-                distance = "Unknown";
+                distance = 'Unknown';
               }
             }
-            let timeLater = "0s";
+            let timeLater = '0s';
             if (index > 0) {
               const previousTask = sortedTasks[index - 1];
               const currentTime = new Date(task.createdAt).getTime();
               const previousTime = new Date(previousTask.createdAt).getTime();
               const timeDiffMs = currentTime - previousTime;
-
+              
               if (timeDiffMs < 60000) {
                 timeLater = `${Math.round(timeDiffMs / 1000)}s`;
               } else if (timeDiffMs < 3600000) {
@@ -150,40 +163,28 @@ const ReportContent = ({
                 timeLater = `${Math.round(timeDiffMs / 3600000)}h`;
               }
             }
-
-            setLocations((prev) => [...prev, location]);
-
+            
             return {
               id: task.id,
               taskId: task.id,
-              productImage:
-                metadata.images?.[0]?.url || "/path/to/product-image.jpg",
-              date: task.createdAt
-                ? new Date(task.createdAt).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })
-                : "Unknown",
-              time: task.createdAt
-                ? new Date(task.createdAt).toLocaleTimeString("en-US", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : "Unknown",
-              location:
-                location.address || campaign.address || "Unknown Location",
+              productImage: metadata.images?.[0]?.url || '/path/to/product-image.jpg',
+              date: task.createdAt ? new Date(task.createdAt).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric' 
+              }) : 'Unknown',
+              time: task.createdAt ? new Date(task.createdAt).toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+              }) : 'Unknown',
+              location: location.address || campaign.address || 'Unknown Location',
               latitude: location.latitude,
               longitude: location.longitude,
-              inGeofence: location.accuracy
-                ? parseFloat(location.accuracy) <= 100
-                : true,
+              inGeofence: location.accuracy ? parseFloat(location.accuracy) <= 100 : true,
               distance: distance,
               timeLater: timeLater,
-              executorName: task.executor
-                ? `${task.executor.firstName} ${task.executor.lastName}`
-                : "Unknown Executor",
-              executorId: task.executor?.id || "unknown",
+              executorName: task.executor ? `${task.executor.firstName} ${task.executor.lastName}` : 'Unknown Executor',
+              executorId: task.executor?.id || 'unknown',
               status: task.status,
               flagged: task.flagged,
               startedAt: task.startedAt,
@@ -207,7 +208,7 @@ const ReportContent = ({
     if (campaignId) {
       fetchTasks();
     }
-  }, [campaignId, campaign]);
+  }, [campaignId]);
 
   const executors = [
     { id: "all", name: "All Executors" },
@@ -269,33 +270,12 @@ const ReportContent = ({
       </div>
 
       <div className={styles.reportContent}>
-        <TaskOverview
-          totalTasks={loading ? 0 : tasks.length}
-          completedTasks={
-            loading
-              ? 0
-              : tasks.filter((task) => task.status === "completed").length
-          }
-          remainingTasks={
-            loading
-              ? 0
-              : tasks.filter((task) => task.status !== "completed").length
-          }
-          progress={
-            loading
-              ? 0
-              : tasks.length > 0
-                ? Math.round(
-                    (tasks.filter((task) => task.status === "completed")
-                      .length /
-                      tasks.length) *
-                      100,
-                  )
-                : 0
-          }
-          flaggedTasks={
-            loading ? 0 : tasks.filter((task) => task.flagged).length
-          }
+        <TaskOverview 
+          totalTasks={totalTasks}
+          completedTasks={completedTasks}
+          remainingTasks={remainingTasks}
+          progress={progress}
+          flaggedTasks={flaggedTasks}
         />
 
         <div className={styles.filtersSection}>
