@@ -4,7 +4,7 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const lat = searchParams.get('lat');
   const lon = searchParams.get('lon');
-  const provider = searchParams.get('provider') || 'geocode-maps';
+  const provider = searchParams.get('provider') || 'bigdatacloud';
 
   if (!lat || !lon) {
     return NextResponse.json(
@@ -18,48 +18,12 @@ export async function GET(request: NextRequest) {
     let timeout = 10000;
 
     switch (provider) {
-      case 'mapbox':
-        const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
-        if (!mapboxToken) {
-          return NextResponse.json(
-            { error: 'Mapbox access token not configured' },
-            { status: 500 }
-          );
-        }
-        url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lon},${lat}.json?access_token=${mapboxToken}&types=address,place,postcode,locality,neighborhood,district,country`;
-        break;
-      case 'geocode-maps':
-        url = `https://geocode.maps.co/reverse?lat=${lat}&lon=${lon}`;
-        break;
       case 'bigdatacloud':
         url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`;
         break;
-      case 'photon':
-        url = `https://photon.komoot.io/reverse?lat=${lat}&lon=${lon}`;
-        break;
-      case 'opencage':
-        const opencageKey = process.env.OPENCAGE_API_KEY;
-        if (!opencageKey) {
-          return NextResponse.json(
-            { error: 'OpenCage API key not configured' },
-            { status: 500 }
-          );
-        }
-        url = `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${opencageKey}&limit=1`;
-        break;
-      case 'locationiq':
-        const locationiqKey = process.env.LOCATIONIQ_API_KEY;
-        if (!locationiqKey) {
-          return NextResponse.json(
-            { error: 'LocationIQ API key not configured' },
-            { status: 500 }
-          );
-        }
-        url = `https://us1.locationiq.com/v1/reverse.php?key=${locationiqKey}&lat=${lat}&lon=${lon}&format=json&addressdetails=1`;
-        break;
       default:
         return NextResponse.json(
-          { error: 'Invalid provider specified' },
+          { error: 'Invalid provider specified. Only bigdatacloud is supported.' },
           { status: 400 }
         );
     }

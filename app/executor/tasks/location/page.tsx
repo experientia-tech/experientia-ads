@@ -33,6 +33,7 @@ const TaskLocation = () => {
   const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
   const [campaignId, setCampaignId] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAddressFetching, setIsAddressFetching] = useState(false);
 
   useEffect(() => {
     // Clear all geocoding cache to force fresh lookup
@@ -44,12 +45,15 @@ const TaskLocation = () => {
     const storedCampaignId = sessionStorage.getItem("currentCampaignId");
     const storedAccuracy = sessionStorage.getItem("locationAccuracy");
     
-    if (storedLocation) {
+    if (storedLocation && !isAddressFetching) {
       const locationData = JSON.parse(storedLocation);
       setLocation(locationData);
       setFullAddress("Fetching full address...");
-      getAddressFromCoordinates(locationData);
-    } else {
+      setIsAddressFetching(true);
+      getAddressFromCoordinates(locationData).finally(() => {
+        setIsAddressFetching(false);
+      });
+    } else if (!storedLocation) {
       router.push("/executor/tasks/capture");
     }
 
@@ -129,106 +133,7 @@ const TaskLocation = () => {
     try {
       console.log('Getting FULL address for coordinates:', coords);
       
-      // Try 1: Mapbox - Excellent full addresses with proper formatting
-      try {
-        console.log('Trying Mapbox for full address...');
-        const response = await fetch(
-          `/api/geocode?lat=${coords.lat}&lon=${coords.lng}&provider=mapbox`,
-          { 
-            signal: AbortSignal.timeout(10000),
-            headers: {
-              'Accept': 'application/json',
-            }
-          }
-        );
-
-        if (response.ok) {
-          const result = await response.json();
-          console.log('Mapbox full response:', result);
-          
-          if (result && result.features && result.features.length > 0) {
-            const feature = result.features[0];
-            
-            // Mapbox provides a formatted place_name
-            if (feature.place_name) {
-              const address = feature.place_name;
-              console.log('Full address found via Mapbox:', address);
-              setFullAddress(address);
-              localStorage.setItem(cacheKey, JSON.stringify({
-                address: address,
-                timestamp: Date.now()
-              }));
-              return;
-            }
-            
-            // Fallback: Build address from context
-            if (feature.context && feature.context.length > 0) {
-              const parts: string[] = [];
-              
-              // Add address text if available
-              if (feature.text) parts.push(feature.text);
-              
-              // Add context parts (street, city, region, country, etc.)
-              feature.context.forEach((ctx: any) => {
-                if (ctx.text && !parts.includes(ctx.text)) {
-                  parts.push(ctx.text);
-                }
-              });
-              
-              const address = parts.join(', ');
-              if (address && address.length > 20) {
-                console.log('Full address built from Mapbox context:', address);
-                setFullAddress(address);
-                localStorage.setItem(cacheKey, JSON.stringify({
-                  address: address,
-                  timestamp: Date.now()
-                }));
-                return;
-              }
-            }
-          }
-        }
-      } catch (mapboxError) {
-        console.log('Mapbox service failed:', mapboxError);
-      }
-
-      await delay(1500);
-      
-      // Try 2: Geocode.maps.co - Provides detailed full addresses
-      try {
-        console.log('Trying Geocode.maps.co for full address...');
-        const response = await fetch(
-          `/api/geocode?lat=${coords.lat}&lon=${coords.lng}&provider=geocode-maps`,
-          { 
-            signal: AbortSignal.timeout(10000),
-            headers: {
-              'Accept': 'application/json',
-            }
-          }
-        );
-
-        if (response.ok) {
-          const result = await response.json();
-          console.log('Geocode.maps.co full response:', result);
-          
-          if (result && result.display_name) {
-            const address = result.display_name;
-            console.log('Full address found via Geocode.maps.co:', address);
-            setFullAddress(address);
-            localStorage.setItem(cacheKey, JSON.stringify({
-              address: address,
-              timestamp: Date.now()
-            }));
-            return;
-          }
-        }
-      } catch (geocodeMapsError) {
-        console.log('Geocode.maps.co service failed:', geocodeMapsError);
-      }
-
-      await delay(1500);
-
-      // Try 2: BigDataCloud with full address construction
+      // Try BigDataCloud for full address construction
       try {
         console.log('Trying BigDataCloud for full address...');
         const response = await fetch(
@@ -244,13 +149,8 @@ const TaskLocation = () => {
         if (response.ok) {
           const result = await response.json();
           console.log('BigDataCloud full response:', result);
-          
-          // Build FULL comprehensive address from ALL available components
           const parts: string[] = [];
-          
-          // Extract street/locality from informative section first (most specific)
           if (result.localityInfo?.informative) {
-            // Look for street names, building names, or specific areas
             const streetItems = result.localityInfo.informative.filter((item: any) => 
               item.description?.includes('human settlement') ||
               item.description?.includes('street') ||
@@ -262,24 +162,20 @@ const TaskLocation = () => {
                !isUnwantedGeographicItem(item.name, item.description))
             );
             
-            // Add the most specific street/settlement name
             streetItems.forEach((item: any) => {
               if (item.name && !parts.includes(item.name)) {
                 parts.push(item.name);
               }
             });
           }
-          
-          // Building number / premise (if available in different format)
           if (result.localityInfo?.informative) {
             const building = result.localityInfo.informative.find((item: any) => 
               item.description === 'building' || item.description === 'house'
             );
             if (building && building.name && !parts.includes(building.name)) {
-              parts.unshift(building.name); // Add building name at the beginning
+              parts.unshift(building.name);
             }
             
-            // Street/Road
             const road = result.localityInfo.informative.find((item: any) => 
               item.description === 'road' || item.description === 'street'
             );
@@ -288,7 +184,6 @@ const TaskLocation = () => {
             }
           }
           
-          // Neighborhood/Suburb from administrative section
           if (result.localityInfo?.administrative) {
             const neighborhood = result.localityInfo.administrative.find((item: any) => 
               (item.order === 8 || item.order === 9 || item.description?.includes('City Corporation')) &&
@@ -299,17 +194,14 @@ const TaskLocation = () => {
             }
           }
           
-          // Locality/Town
           if (result.locality && !parts.includes(result.locality)) {
             parts.push(result.locality);
           }
           
-          // City (if different from locality)
           if (result.city && result.city !== result.locality && !parts.includes(result.city)) {
             parts.push(result.city);
           }
           
-          // District/County
           if (result.localityInfo?.administrative) {
             const district = result.localityInfo.administrative.find((item: any) => 
               (item.order === 6 || item.order === 7 || item.description?.includes('district')) &&
@@ -320,17 +212,17 @@ const TaskLocation = () => {
             }
           }
           
-          // State/Province
           if (result.principalSubdivision && !parts.includes(result.principalSubdivision)) {
             parts.push(result.principalSubdivision);
           }
           
-          // Postal code
           if (result.postcode && !parts.includes(result.postcode)) {
             parts.push(result.postcode);
           }
           
-          // Country
+          if (result.countryName && !parts.includes(result.countryName)) {
+            parts.push(result.countryName);
+          }
           if (result.countryName && !parts.includes(result.countryName)) {
             parts.push(result.countryName);
           }
@@ -352,8 +244,6 @@ const TaskLocation = () => {
       }
 
       await delay(1500);
-
-      // Try 3: OpenCage (if API key available) - Excellent full addresses
       try {
         const opencageKey = process.env.NEXT_PUBLIC_OPENCAGE_API_KEY;
         if (opencageKey) {
@@ -423,8 +313,6 @@ const TaskLocation = () => {
       }
 
       await delay(1500);
-
-      // Try 4: LocationIQ (if API key available)
       try {
         const locationiqKey = process.env.NEXT_PUBLIC_LOCATIONIQ_API_KEY;
         if (locationiqKey) {
@@ -461,7 +349,6 @@ const TaskLocation = () => {
 
       await delay(1500);
 
-      // Try 5: Photon (OpenStreetMap based, no API key needed)
       try {
         console.log('Trying Photon for full address...');
         const response = await fetch(
@@ -637,13 +524,19 @@ const TaskLocation = () => {
             <button 
               className="refresh-address-btn"
               onClick={() => {
-                clearCurrentAddressCache();
-                if (location) {
-                  setFullAddress("Refreshing address...");
-                  getAddressFromCoordinates(location);
+                if (!isAddressFetching) {
+                  clearCurrentAddressCache();
+                  if (location) {
+                    setFullAddress("Refreshing address...");
+                    setIsAddressFetching(true);
+                    getAddressFromCoordinates(location).finally(() => {
+                      setIsAddressFetching(false);
+                    });
+                  }
                 }
               }}
               title="Refresh address"
+              disabled={isAddressFetching}
             >
               <FiRotateCcw size={16} />
             </button>
