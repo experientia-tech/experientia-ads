@@ -10,7 +10,7 @@ interface Campaign {
 }
 
 interface PageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export const metadata: Metadata = {
@@ -18,7 +18,8 @@ export const metadata: Metadata = {
 };
 
 export default async function ReportPage({ params }: PageProps) {
-  const campaignId = params.id;
+  const resolvedParams = await params;
+  const campaignId = resolvedParams.id;
   
   // This would typically be a database query in a real app
   const campaign: Campaign = {
