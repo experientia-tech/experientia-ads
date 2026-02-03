@@ -43,8 +43,21 @@ const TaskCapture = () => {
     
     // Delay camera start to ensure video element is mounted
     const timer = setTimeout(() => {
-      startCamera();
-    }, 100);
+      // Check if video element exists before starting camera
+      if (videoRef.current) {
+        startCamera();
+      } else {
+        console.log('Video element not ready, retrying...');
+        // Retry after additional delay
+        setTimeout(() => {
+          if (videoRef.current) {
+            startCamera();
+          } else {
+            console.error('Video element still not found');
+          }
+        }, 500);
+      }
+    }, 500);
     
     return () => clearTimeout(timer);
   }, []);
@@ -208,16 +221,8 @@ const TaskCapture = () => {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error('Camera API is not supported in this browser');
       }
-
-      // Wait for video element to be available
-      let attempts = 0;
-      while (!videoRef.current && attempts < 10) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        attempts++;
-      }
-
       if (!videoRef.current) {
-        throw new Error('Video element not found after multiple attempts');
+        throw new Error('Video element not found');
       }
 
       console.log('Video element found, requesting camera access...');
@@ -247,14 +252,13 @@ const TaskCapture = () => {
         errorMessage += 'No camera device found.';
       } else if (error.name === 'NotReadableError') {
         errorMessage += 'Camera is already in use by another application.';
-      } else if (error.name === 'OverconstrainedError') {
-        errorMessage += 'Camera does not support the required constraints.';
+      } else if (error.message === 'Video element not found') {
+        errorMessage += 'Camera initialization failed. Please refresh the page.';
       } else {
-        errorMessage += error.message || 'Please check permissions and try again.';
+        errorMessage += error.message || 'Unknown error occurred.';
       }
       
       alert(errorMessage);
-      setIsCameraActive(false);
     } finally {
       setIsCameraLoading(false);
     }
