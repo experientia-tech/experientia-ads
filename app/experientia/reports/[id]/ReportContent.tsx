@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiDownload, FiMail, FiChevronLeft, FiSearch, FiFilter, FiCalendar, FiMapPin, FiFlag, FiToggleLeft, FiToggleRight } from 'react-icons/fi';
 import Link from 'next/link';
 import TaskOverview from '@/app/experientia/components/task_overview/task_overview';
@@ -20,6 +20,76 @@ const ReportContent = ({ campaignId, campaign }: { campaignId: string; campaign:
     geofenced: false
   });
   const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch tasks from API
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/campaigns/${campaignId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch campaign');
+        }
+
+        const data = await response.json();
+        console.log('API Response:', data);
+        if (data.success && data.data && data.data.tasks) {
+          // Format the tasks for ReportCard component
+          const formattedTasks = data.data.tasks.map((task: any) => {
+            const metadata = task.metadata as any || {};
+            const location = metadata.location || {};
+            
+            return {
+              id: task.id,
+              taskId: task.id,
+              productName: campaign.name || 'Campaign Task',
+              productImage: metadata.images?.[0]?.url || '/path/to/product-image.jpg',
+              date: task.createdAt ? new Date(task.createdAt).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric' 
+              }) : 'Unknown',
+              time: task.createdAt ? new Date(task.createdAt).toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+              }) : 'Unknown',
+              location: location.address || campaign.address || 'Unknown Location',
+              inGeofence: location.accuracy ? parseFloat(location.accuracy) <= 100 : true,
+              distance: location.accuracy ? `${Math.round(parseFloat(location.accuracy))}m` : 'Unknown',
+              timeLater: '0s',
+              executorName: task.executor ? `${task.executor.firstName} ${task.executor.lastName}` : 'Unknown Executor',
+              status: task.status,
+              flagged: task.flagged,
+              startedAt: task.startedAt,
+              completedAt: task.completedAt,
+              metadata: task.metadata,
+            };
+          });
+          setTasks(formattedTasks);
+        } else {
+          console.error('API Error:', data.message);
+          setTasks([]);
+        }
+      } catch (error) {
+        console.error('Error fetching tasks:', error);
+        setTasks([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (campaignId) {
+      fetchTasks();
+    }
+  }, [campaignId, campaign]);
 
   const executors = [
     { id: 'all', name: 'All Executors' },
@@ -177,74 +247,37 @@ const ReportContent = ({ campaignId, campaign }: { campaignId: string; campaign:
         </div>
       </div>
 <div className={styles.reportGrid}>
-<ReportCard
-  productName="Product Name"
-  productImage="/path/to/product-image.jpg"
-  taskId="TASK-12345"
-  date="Oct 25, 2023"
-  time="14:30"
-  location="123 Main St, New York, NY"
-  inGeofence={true}
-  distance="28m"
-  timeLater="36s"
-  executorName="executor 1"
-  onClick={() => setSelectedTask({
-    taskId: "TASK-12345",
-    executorName: "executor 1",
-    date: "Oct 25, 2023",
-    time: "14:30",
-    location: "123 Main St, New York, NY",
-    inGeofence: true,
-    distance: "28m",
-    timeLater: "36s"
-  })}
-/>
-
-<ReportCard
-  productName="Product Name"
-  productImage="/path/to/product-image.jpg"
-  taskId="TASK-12345"
-  date="Oct 25, 2023"
-  time="14:30"
-  location="123 Main St, New York, NY"
-  inGeofence={true}
-  distance="28m"
-  timeLater="36s"
-  executorName="executor 2"
-  onClick={() => setSelectedTask({
-    taskId: "TASK-12345",
-    executorName: "executor 2",
-    date: "Oct 25, 2023",
-    time: "14:30",
-    location: "123 Main St, New York, NY",
-    inGeofence: true,
-    distance: "28m",
-    timeLater: "36s"
-  })}
-/>
-
-<ReportCard
-  productName="Product Name"
-  productImage="/path/to/product-image.jpg"
-  taskId="TASK-12345"
-  date="Oct 25, 2023"
-  time="14:30"
-  location="123 Main St, New York, NY"
-  inGeofence={true}
-  distance="28m"
-  timeLater="36s"
-  executorName="executor 3"
-  onClick={() => setSelectedTask({
-    taskId: "TASK-12345",
-    executorName: "executor 3",
-    date: "Oct 25, 2023",
-    time: "14:30",
-    location: "123 Main St, New York, NY",
-    inGeofence: true,
-    distance: "28m",
-    timeLater: "36s"
-  })}
-/>
+  {loading ? (
+    <div>Loading tasks...</div>
+  ) : tasks.length === 0 ? (
+    <div>No tasks found for this campaign.</div>
+  ) : (
+    tasks.map((task) => (
+      <ReportCard
+        key={task.id}
+        productName={task.productName}
+        productImage={task.productImage}
+        taskId={task.taskId}
+        date={task.date}
+        time={task.time}
+        location={task.location}
+        inGeofence={task.inGeofence}
+        distance={task.distance}
+        timeLater={task.timeLater}
+        executorName={task.executorName}
+        onClick={() => setSelectedTask({
+          taskId: task.taskId,
+          executorName: task.executorName,
+          date: task.date,
+          time: task.time,
+          location: task.location,
+          inGeofence: task.inGeofence,
+          distance: task.distance,
+          timeLater: task.timeLater
+        })}
+      />
+    ))
+  )}
 </div>
 {selectedTask && (
   <TaskDetail
