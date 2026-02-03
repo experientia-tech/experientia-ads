@@ -8,14 +8,7 @@ export const dashboardService = {
       const completedTasks = await prisma.task.count({
         where: { status: 'COMPLETED' }
       });
-      const pendingTasks = await prisma.task.count({
-        where: { 
-          OR: [
-            { status: 'PENDING' },
-            { status: 'IN_PROGRESS' }
-          ]
-        }
-      });
+      const pendingTasks = totalTasks - completedTasks;
       const flaggedTasks = await prisma.task.count({
         where: { flagged: true }
       });
