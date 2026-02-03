@@ -32,8 +32,16 @@ const ReportContent = ({ campaignId, campaign }: { campaignId: string; campaign:
     geofenced: false
   });
   const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [campaignData, setCampaignData] = useState<any>(null);
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Calculate task overview statistics from real data
+  const totalTasks = campaignData?.totalTasks ?? 0;
+  const completedTasks = tasks.length;
+  const remainingTasks = totalTasks - completedTasks;
+  const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+  const flaggedTasks = tasks.filter(task => task.flagged).length;
 
   // Fetch tasks from API
   useEffect(() => {
@@ -54,6 +62,9 @@ const ReportContent = ({ campaignId, campaign }: { campaignId: string; campaign:
         const data = await response.json();
         console.log('API Response:', data);
         if (data.success && data.data && data.data.tasks) {
+          // Set campaign data for task overview
+          setCampaignData(data.data);
+          
           // Sort tasks by creation date to calculate time differences correctly
           const sortedTasks = data.data.tasks.sort((a: any, b: any) => 
             new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
@@ -148,7 +159,7 @@ const ReportContent = ({ campaignId, campaign }: { campaignId: string; campaign:
     if (campaignId) {
       fetchTasks();
     }
-  }, [campaignId, campaign]);
+  }, [campaignId]);
 
   const executors = [
     { id: 'all', name: 'All Executors' },
@@ -210,11 +221,11 @@ const ReportContent = ({ campaignId, campaign }: { campaignId: string; campaign:
 
       <div className={styles.reportContent}>
         <TaskOverview 
-          totalTasks={12}
-          completedTasks={8}
-          remainingTasks={4}
-          progress={67}
-          flaggedTasks={2}
+          totalTasks={totalTasks}
+          completedTasks={completedTasks}
+          remainingTasks={remainingTasks}
+          progress={progress}
+          flaggedTasks={flaggedTasks}
         />
 
         <div className={styles.filtersSection}>

@@ -93,6 +93,14 @@ export async function createCampaignTask(campaignId: string, taskData: CampaignT
       },
       include: {
         campaign: true,
+        executor: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+          },
+        },
       },
     });
 
