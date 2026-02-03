@@ -85,9 +85,20 @@ const CreateCampaignForm = ({ onClose }: { onClose: () => void }) => {
       }
 
       const data = await response.json();
+      console.log("Campaign created successfully:", data);
       alert("Campaign created successfully!");
       onClose();
+      
+      // Dispatch custom event to notify other components
+      window.dispatchEvent(new CustomEvent('campaignCreated', { 
+        detail: { campaign: data.data || data }
+      }));
+      
+      // Refresh the current page to show the new campaign
       router.refresh();
+      
+      // Optional: If we want to navigate to a specific page after creation
+      // router.push('/experientia/campaigns');
     } catch (error) {
       console.error("Error creating campaign:", error);
       alert(

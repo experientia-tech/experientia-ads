@@ -1,31 +1,103 @@
-'use client';
+"use client";
 
-import { FiMapPin, FiClock, FiUser, FiFlag, FiNavigation, FiMap } from 'react-icons/fi';
+import React, { useState } from 'react';
+import { FiMapPin, FiClock, FiUser, FiFlag, FiNavigation, FiMap, FiX, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import dynamic from 'next/dynamic';
 import styles from './TaskDetail.module.scss';
+
+// Dynamically import map component from executor to avoid SSR issues
+const MapComponent = dynamic(() => import('../../../executor/tasks/location/MapComponent'), {
+  ssr: false,
+  loading: () => (
+    <div className={styles.mapLoading}>
+      <p>Loading map...</p>
+    </div>
+  ),
+});
 
 interface TaskDetailProps {
   task: {
     id: string;
     executorName: string;
+    executorId: string;
     completedOn: string;
     isFlagged: boolean;
     distance: string;
     timeFromPrevious: string;
     inGeofence: boolean;
     location: string;
+    latitude?: number;
+    longitude?: number;
+    metadata?: any;
   };
   onClose: () => void;
 }
 
 const TaskDetail = ({ task, onClose }: TaskDetailProps) => {
+  const images = task.metadata?.images || [];
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  const handlePreviousImage = () => {
+    setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  };
+  
+  const handleNextImage = () => {
+    setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+  };
+  
+  const currentImage = images[currentImageIndex];
+  const progressPercentage = images.length > 0 ? ((currentImageIndex + 1) / images.length) * 100 : 0;
+  
   return (
     <div className={styles.taskDetailContainer}>
       <div className={styles.mapContainer}>
-        {/* Map will be rendered here */}
-        <div className={styles.mapPlaceholder}>
-          <FiMap size={48} />
-          <p>Map View</p>
-        </div>
+        {images.length > 0 ? (
+          <div className={styles.imageGallery}>
+            <div className={styles.imageContainer}>
+              <img 
+                src={currentImage?.url || currentImage} 
+                alt={`Task image ${currentImageIndex + 1}`}
+                className={styles.taskImage}
+              />
+            </div>
+            
+            <div className={styles.imageNavigation}>
+              <button 
+                className={styles.navButton}
+                onClick={handlePreviousImage}
+                disabled={images.length <= 1}
+                title="Previous image"
+              >
+                <FiChevronLeft size={20} />
+              </button>
+              
+              <span className={styles.imageCounter}>
+                {currentImageIndex + 1}/{images.length}
+              </span>
+              
+              <button 
+                className={styles.navButton}
+                onClick={handleNextImage}
+                disabled={images.length <= 1}
+                title="Next image"
+              >
+                <FiChevronRight size={20} />
+              </button>
+            </div>
+            
+            <div className={styles.imageScrollbar}>
+              <div 
+                className={styles.scrollbarProgress}
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className={styles.mapPlaceholder}>
+            <FiMap size={48} />
+            <p>No images available</p>
+          </div>
+        )}
       </div>
       
       <div className={styles.taskInfo}>
@@ -63,6 +135,34 @@ const TaskDetail = ({ task, onClose }: TaskDetailProps) => {
               <span>{task.location}</span>
             </div>
           </div>
+          
+          {task.latitude && task.longitude && (
+            <>
+              <div className={styles.metaItem}>
+                <span className={styles.metaLabel}>Coordinates</span>
+                <div className={styles.coordinatesInfo}>
+                  <div className={styles.coordItem}>
+                    <span className={styles.coordLabel}>Latitude:</span>
+                    <span className={styles.coordValue}>{task.latitude.toFixed(6)}</span>
+                  </div>
+                  <div className={styles.coordItem}>
+                    <span className={styles.coordLabel}>Longitude:</span>
+                    <span className={styles.coordValue}>{task.longitude.toFixed(6)}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className={styles.metaItem}>
+                <span className={styles.metaLabel}>Map View</span>
+                <div className={styles.mapWrapper}>
+                  <MapComponent 
+                    lat={task.latitude}
+                    lng={task.longitude}
+                  />
+                </div>
+              </div>
+            </>
+          )}
           
           <div className={styles.metaItem}>
             <span className={styles.metaLabel}>Distance from Previous</span>

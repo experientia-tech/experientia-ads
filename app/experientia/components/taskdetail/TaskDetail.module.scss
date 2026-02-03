@@ -17,6 +17,7 @@
   align-items: center;
   justify-content: center;
   border-right: 1px solid #e0e0e0;
+  overflow-y: auto;
   
   .mapPlaceholder {
     text-align: center;
@@ -25,6 +26,90 @@
     p {
       margin-top: 10px;
       font-weight: 500;
+    }
+  }
+  
+  .imageGallery {
+    width: 100%;
+    height: 100%;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    
+    .imageContainer {
+      width: 100%;
+      max-width: 90%;
+      height: 80%;
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      background: white;
+      
+      .taskImage {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+      }
+    }
+    
+    .imageNavigation {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 20px;
+      
+      .navButton {
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s;
+        
+        &:hover {
+          background: rgba(0, 0, 0, 0.9);
+        }
+        
+        &:disabled {
+          background: rgba(0, 0, 0, 0.3);
+          cursor: not-allowed;
+        }
+      }
+      
+      .imageCounter {
+        color: #666;
+        font-size: 0.9rem;
+        font-weight: 500;
+        min-width: 50px;
+        text-align: center;
+      }
+    }
+    
+    .imageScrollbar {
+      width: 80%;
+      height: 6px;
+      background: #e0e0e0;
+      border-radius: 3px;
+      margin-top: 16px;
+      position: relative;
+      
+      .scrollbarProgress {
+        height: 100%;
+        background: #3b82f6;
+        border-radius: 3px;
+        transition: width 0.3s ease;
+      }
     }
   }
 }
@@ -95,9 +180,60 @@
 .executorInfo,
 .timeInfo,
 .locationInfo,
-.distanceInfo {
+.distanceInfo,
+.coordinatesInfo {
   display: flex;
   align-items: center;
+}
+
+.coordinatesInfo {
+  flex-direction: column;
+  gap: 4px;
+  
+  .coordItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    
+    .coordLabel {
+      font-size: 0.85rem;
+      color: #666;
+      font-weight: 500;
+    }
+    
+    .coordValue {
+      font-size: 0.85rem;
+      color: #333;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-weight: 400;
+    }
+  }
+}
+
+.mapWrapper {
+  margin-top: 8px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
+  height: 250px;
+  position: relative;
+  
+  .taskMap {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.mapLoading {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  color: #666;
+  font-size: 0.9rem;
 }
 
 .statusBadge {
