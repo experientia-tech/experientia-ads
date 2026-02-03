@@ -161,7 +161,7 @@ const SignIn = () => {
         <div className="signin-card">
           {step === "phone" ? (
             <div className="signin-step">
-              <h1 className="signin-title">Welcome Back Admin</h1>
+              <h1 className="signin-title">Welcome Admin</h1>
               <p className="signin-subtitle">
                 Enter your phone number to receive a secure login code.
               </p>
