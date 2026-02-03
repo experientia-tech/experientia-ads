@@ -71,9 +71,9 @@ export async function GET(
           minute: '2-digit' 
         }) : 'Unknown',
         location: location.address || task.campaign.address || 'Unknown Location',
-        inGeofence: location.accuracy ? parseFloat(location.accuracy) <= 100 : true, // Assume in geofence if accuracy <= 100m
+        inGeofence: location.accuracy ? parseFloat(location.accuracy) <= 100 : true,
         distance: location.accuracy ? `${Math.round(parseFloat(location.accuracy))}m` : 'Unknown',
-        timeLater: '0s', // You might want to calculate this based on previous task
+        timeLater: '0s',
         executorName: `${task.executor.firstName} ${task.executor.lastName}`,
         status: task.status,
         flagged: task.flagged,

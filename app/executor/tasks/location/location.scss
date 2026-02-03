@@ -98,6 +98,30 @@
           font-size: 16px;
           font-weight: 700;
           color: #1a1a1a;
+          flex: 1;
+        }
+
+        .refresh-address-btn {
+          background: none;
+          border: 1px solid var(--executor-border);
+          border-radius: 6px;
+          padding: 6px;
+          cursor: pointer;
+          color: #64748b;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+
+          &:hover {
+            background: var(--executor-surface);
+            color: #1a1a1a;
+            border-color: #1a1a1a;
+          }
+
+          &:active {
+            transform: rotate(180deg);
+          }
         }
       }
 
