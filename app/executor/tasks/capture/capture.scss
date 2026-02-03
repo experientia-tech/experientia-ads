@@ -362,7 +362,7 @@
 }
 
 // Responsive adjustments
-@media (max-width: 480px) {
+@media (max-width: 768px) {
   .task-capture-page {
     .camera-controls {
       padding: 16px;
@@ -371,9 +371,58 @@
         width: 40px;
         height: 40px;
       }
+
+      .right-controls {
+        gap: 8px;
+      }
+    }
+
+    .service-info {
+      padding: 12px 16px;
+
+      h3 {
+        font-size: 16px;
+      }
+    }
+
+    .photo-preview-section {
+      padding: 12px 16px;
+
+      .photo-preview-grid {
+        gap: 8px;
+
+        .photo-preview-item {
+          width: 70px;
+          height: 70px;
+
+          .delete-photo-btn {
+            width: 20px;
+            height: 20px;
+          }
+        }
+      }
+    }
+
+    .photo-counter {
+      padding: 12px 16px;
+
+      .counter-text {
+        font-size: 14px;
+      }
+    }
+
+    .location-accuracy {
+      padding: 10px 16px;
+
+      .accuracy-text {
+        font-size: 13px;
+      }
     }
 
     .capture-section {
+      padding: 20px 16px 32px;
+      gap: 16px;
+
       .capture-btn .capture-btn-inner {
         width: 70px;
         height: 70px;
@@ -382,6 +431,236 @@
           width: 50px;
           height: 50px;
         }
+      }
+
+      .proceed-btn {
+        padding: 10px 24px;
+        font-size: 14px;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .task-capture-page {
+    height: 100vh;
+    height: 100dvh; // Dynamic viewport height for mobile browsers
+
+    .camera-controls {
+      padding: 12px;
+
+      .back-btn, .flash-btn, .switch-camera-btn {
+        width: 36px;
+        height: 36px;
+      }
+
+      .right-controls {
+        gap: 6px;
+      }
+    }
+
+    .service-info {
+      padding: 10px 12px;
+
+      h3 {
+        font-size: 14px;
+      }
+    }
+
+    .photo-preview-section {
+      padding: 10px 12px;
+
+      .photo-preview-grid {
+        gap: 6px;
+
+        .photo-preview-item {
+          width: 60px;
+          height: 60px;
+          border-radius: 6px;
+
+          .delete-photo-btn {
+            width: 18px;
+            height: 18px;
+            top: 2px;
+            right: 2px;
+          }
+        }
+      }
+    }
+
+    .photo-counter {
+      padding: 10px 12px;
+
+      .counter-text {
+        font-size: 13px;
+      }
+
+      .progress-dots {
+        gap: 6px;
+
+        .dot {
+          width: 6px;
+          height: 6px;
+        }
+      }
+    }
+
+    .location-accuracy {
+      padding: 8px 12px;
+
+      .accuracy-text {
+        font-size: 12px;
+      }
+
+      .accuracy-indicator {
+        width: 10px;
+        height: 10px;
+      }
+    }
+
+    .capture-section {
+      padding: 16px 12px 28px;
+      gap: 14px;
+
+      .capture-btn .capture-btn-inner {
+        width: 60px;
+        height: 60px;
+
+        .capture-circle {
+          width: 44px;
+          height: 44px;
+          border-width: 3px;
+        }
+      }
+
+      .proceed-btn {
+        padding: 8px 20px;
+        font-size: 13px;
+        border-radius: 20px;
+      }
+    }
+  }
+}
+
+@media (max-width: 360px) {
+  .task-capture-page {
+    .camera-controls {
+      padding: 10px;
+
+      .back-btn, .flash-btn, .switch-camera-btn {
+        width: 32px;
+        height: 32px;
+      }
+    }
+
+    .photo-preview-section {
+      .photo-preview-grid {
+        .photo-preview-item {
+          width: 50px;
+          height: 50px;
+        }
+      }
+    }
+
+    .capture-section {
+      .capture-btn .capture-btn-inner {
+        width: 56px;
+        height: 56px;
+
+        .capture-circle {
+          width: 40px;
+          height: 40px;
+        }
+      }
+    }
+  }
+}
+
+// Landscape mode adjustments for mobile
+@media (max-height: 600px) and (orientation: landscape) {
+  .task-capture-page {
+    .service-info {
+      padding: 8px 16px;
+
+      h3 {
+        font-size: 14px;
+      }
+    }
+
+    .photo-preview-section {
+      padding: 8px 16px;
+
+      .photo-preview-grid {
+        .photo-preview-item {
+          width: 50px;
+          height: 50px;
+        }
+      }
+    }
+
+    .photo-counter,
+    .location-accuracy {
+      padding: 6px 16px;
+    }
+
+    .capture-section {
+      padding: 12px 16px 20px;
+      gap: 12px;
+
+      .capture-btn .capture-btn-inner {
+        width: 50px;
+        height: 50px;
+
+        .capture-circle {
+          width: 36px;
+          height: 36px;
+        }
+      }
+
+      .proceed-btn {
+        padding: 6px 16px;
+        font-size: 12px;
+      }
+    }
+  }
+}
+
+// Touch device optimizations
+@media (hover: none) and (pointer: coarse) {
+  .task-capture-page {
+    .back-btn,
+    .flash-btn,
+    .switch-camera-btn,
+    .capture-btn,
+    .proceed-btn,
+    .delete-photo-btn {
+      &:hover {
+        transform: none;
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      &:active {
+        transform: scale(0.95);
+      }
+    }
+
+    .capture-btn .capture-btn-inner {
+      &:hover {
+        transform: none;
+      }
+
+      &:active {
+        transform: scale(0.9);
+      }
+    }
+
+    .delete-photo-btn {
+      &:hover {
+        transform: none;
+      }
+
+      &:active {
+        transform: scale(0.9);
       }
     }
   }
