@@ -35,6 +35,13 @@ const ReportContent = ({ campaignId, campaign }: { campaignId: string; campaign:
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Calculate task overview statistics from real data
+  const totalTasks = tasks.length;
+  const completedTasks = tasks.filter(task => task.status === 'completed').length;
+  const remainingTasks = totalTasks - completedTasks;
+  const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+  const flaggedTasks = tasks.filter(task => task.flagged).length;
+
   // Fetch tasks from API
   useEffect(() => {
     const fetchTasks = async () => {
@@ -210,11 +217,11 @@ const ReportContent = ({ campaignId, campaign }: { campaignId: string; campaign:
 
       <div className={styles.reportContent}>
         <TaskOverview 
-          totalTasks={12}
-          completedTasks={8}
-          remainingTasks={4}
-          progress={67}
-          flaggedTasks={2}
+          totalTasks={totalTasks}
+          completedTasks={completedTasks}
+          remainingTasks={remainingTasks}
+          progress={progress}
+          flaggedTasks={flaggedTasks}
         />
 
         <div className={styles.filtersSection}>
