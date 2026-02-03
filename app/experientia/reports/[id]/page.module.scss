@@ -16,7 +16,7 @@
   text-decoration: none;
   font-weight: 500;
   margin-bottom: 16px;
-
+  
   &:hover {
     text-decoration: underline;
   }
@@ -59,7 +59,7 @@
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid #eee;
-
+  
   .logo {
     width: 100%;
     height: 100%;
@@ -99,7 +99,7 @@
   background: #4a90e2;
   color: white;
   border: none;
-
+  
   &:hover {
     background: #3a7bc8;
   }
@@ -109,7 +109,7 @@
   background: white;
   border: 1px solid #e0e0e0;
   color: #333;
-
+  
   &:hover {
     background: #f5f5f5;
   }
@@ -295,15 +295,10 @@
   @media (max-width: 1024px) {
     grid-template-columns: repeat(2, 1fr);
   }
-
+  
   @media (max-width: 640px) {
     grid-template-columns: 1fr;
   }
-}
-
-.reportMapContainer {
-  margin-top: 24px;
-  width: 100%;
 }
 
 @media (max-width: 1024px) {
@@ -335,7 +330,7 @@
   .actions {
     width: 100%;
     flex-direction: column;
-
+    
     button {
       width: 100%;
       justify-content: center;
