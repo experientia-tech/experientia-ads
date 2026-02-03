@@ -36,14 +36,11 @@ const TaskCapture = () => {
   useEffect(() => {
     const campaignId = sessionStorage.getItem('currentCampaignId');
     if (campaignId) {
-      // Fetch campaign data to get target location
       fetchCampaignData(campaignId);
     }
     getCurrentLocation();
     
-    // Delay camera start to ensure video element is mounted
     const timer = setTimeout(() => {
-      // Check if video element exists before starting camera
       if (videoRef.current) {
         startCamera();
       } else {
@@ -100,7 +97,6 @@ const TaskCapture = () => {
     let debounceTimer: NodeJS.Timeout;
     let lastCalculatedDistance: number | null = null;
 
-    // Debounced distance calculation
     const debouncedDistanceCalculation = (currentLat: number, currentLng: number, targetLat: number, targetLng: number) => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
@@ -112,10 +108,9 @@ const TaskCapture = () => {
           lastCalculatedDistance = distance;
           sessionStorage.setItem('locationAccuracy', JSON.stringify(distance));
         }
-      }, 100); // 100ms debounce
+      }, 100);
     };
 
-    // Get immediate location first
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const location = {
@@ -140,7 +135,6 @@ const TaskCapture = () => {
       }
     );
 
-    // Then watch for updates with optimized frequency
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
         const location = {
@@ -150,7 +144,6 @@ const TaskCapture = () => {
         };
         setCurrentLocation(location);
         
-        // Calculate distance from target if available (with debouncing)
         if (targetLocation) {
           debouncedDistanceCalculation(
             location.lat,
@@ -159,7 +152,6 @@ const TaskCapture = () => {
             targetLocation.lng
           );
         } else {
-          // Update GPS accuracy if no target
           sessionStorage.setItem('locationAccuracy', JSON.stringify(position.coords.accuracy));
         }
       },
@@ -168,8 +160,8 @@ const TaskCapture = () => {
       },
       {
         enableHighAccuracy: true,
-        timeout: 3000,
-        maximumAge: 1000 // Allow 1 second cache to reduce updates
+        timeout: 10000,
+        maximumAge: 2000
       }
     );
 
@@ -179,7 +171,6 @@ const TaskCapture = () => {
     };
   }, [targetLocation]);
 
-  // Calculate distance when both currentLocation and targetLocation are available
   useEffect(() => {
     if (currentLocation && targetLocation) {
       const distance = calculateDistance(
@@ -192,32 +183,50 @@ const TaskCapture = () => {
     }
   }, [currentLocation, targetLocation]);
 
-  // Optimized distance calculation using Haversine formula with early returns
+  const refreshLocation = useCallback(() => {
+    console.log('Manually refreshing location...');
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const location = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+        };
+        setCurrentLocation(location);
+        setLocationAccuracy(position.coords.accuracy);
+        console.log('Location refreshed successfully:', location);
+      },
+      (error) => {
+        console.error('Manual refresh failed:', error);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0 
+      }
+    );
+  }, []);
+
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    // Early return if coordinates are identical
     if (lat1 === lat2 && lon1 === lon2) return 0;
     
-    // Convert to radians
-    const φ1 = lat1 * 0.017453292519943295; // Math.PI / 180
+    const φ1 = lat1 * 0.017453292519943295;
     const φ2 = lat2 * 0.017453292519943295;
     const Δφ = (lat2 - lat1) * 0.017453292519943295;
     const Δλ = (lon2 - lon1) * 0.017453292519943295;
 
-    // Haversine formula
     const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
               Math.cos(φ1) * Math.cos(φ2) *
               Math.sin(Δλ/2) * Math.sin(Δλ/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 
-    return 6371000 * c; // Earth's radius in meters
+    return 6371000 * c;
   };
 
-  // Camera functions
   const startCamera = async () => {
     try {
       setIsCameraLoading(true);
-      
-      // Check if mediaDevices is supported
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error('Camera API is not supported in this browser');
       }
@@ -227,7 +236,6 @@ const TaskCapture = () => {
 
       console.log('Video element found, requesting camera access...');
 
-      // Request camera permission with specific constraints
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: facingMode,
@@ -422,91 +430,99 @@ const TaskCapture = () => {
               </button>
             </div>
           </div>
-        </div>
 
-        {/* Service Name */}
-        <div className="service-info">
-          <h3>{campaignData?.serviceType || 'Campaign Task'}</h3>
-        </div>
-
-        {/* Photo Preview Section */}
-        {capturedPhotos.length > 0 && (
-          <div className="photo-preview-section">
-            <div className="photo-preview-grid">
-              {capturedPhotos.map((photo, index) => (
-                <div key={index} className="photo-preview-item">
-                  <img src={photo.dataUrl} alt={`Captured ${index + 1}`} />
+          {/* Location Status Overlay */}
+          {!currentLocation && (
+            <div className="location-status-overlay">
+              <div className="location-status-content">
+                <FiMapPin size={20} />
+                <span className="location-text">
+                  {isCameraLoading ? 'Getting your location...' : 'Location not available'}
+                </span>
+                {!isCameraLoading && (
                   <button 
-                    className="delete-photo-btn"
-                    onClick={() => deletePhoto(index)}
-                    title="Delete photo"
+                    className="refresh-location-btn"
+                    onClick={() => window.location.reload()}
+                    title="Refresh page"
                   >
-                    <FiX size={16} />
+                    <FiRotateCw size={16} />
                   </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Coordinates Overlay */}
+          {currentLocation && (
+            <div className="coordinates-overlay">
+              <div className="coordinates-text">
+                <span className="coord-label">Lat:</span>
+                <span className="coord-value">{currentLocation.lat.toFixed(6)}</span>
+                <span className="coord-label">Lon:</span>
+                <span className="coord-value">{currentLocation.lng.toFixed(6)}</span>
+              </div>
+              {locationAccuracy !== null && (
+                <div className="accuracy-indicator-small">
+                  <FiMapPin size={12} />
+                  <span>±{locationAccuracy.toFixed(1)}m</span>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Photo Counter */}
-        <div className="photo-counter">
-          <span className="counter-text">{capturedPhotos.length}/3 photos taken</span>
-          <div className="progress-dots">
-            {[1, 2, 3].map((num) => (
-              <div 
-                key={num}
-                className={`dot ${num <= capturedPhotos.length ? 'filled' : ''}`}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Location Accuracy */}
-        <div className="location-accuracy">
-          <div className="accuracy-info">
-            <FiMapPin size={16} />
-            <span className="accuracy-text">
-              {currentLocation ? (
-                locationAccuracy !== null 
-                  ? `Location accuracy: ${locationAccuracy.toFixed(1)}m`
-                  : targetLocation 
-                    ? 'Calculating distance to target...'
-                    : 'Loading target location...'
-              ) : (
-                'Getting your location...'
               )}
-            </span>
-          </div>
-          {locationAccuracy !== null && (
-            <div className={`accuracy-indicator ${
-              locationAccuracy <= 10 ? 'good' : 
-              locationAccuracy <= 25 ? 'fair' : 'poor'
-            }`} />
+            </div>
           )}
-        </div>
 
-        {/* Capture Button */}
-        <div className="capture-section">
-          <button 
-            className={`capture-btn ${capturedPhotos.length >= 3 ? 'disabled' : ''}`}
-            onClick={isCameraActive ? capturePhoto : toggleCamera}
-            disabled={capturedPhotos.length >= 3}
-          >
-            <div className="capture-btn-inner">
-              {isCameraActive ? (
-                <div className="capture-circle" />
-              ) : (
-                <FiCamera size={32} />
-              )}
+          {/* Photo Preview Overlay */}
+          {capturedPhotos.length > 0 && (
+            <div className="photo-preview-overlay">
+              <div className="photo-preview-grid">
+                {capturedPhotos.map((photo, index) => (
+                  <div key={index} className="photo-preview-item">
+                    <img src={photo.dataUrl} alt={`Captured ${index + 1}`} />
+                    <button 
+                      className="delete-photo-btn"
+                      onClick={() => deletePhoto(index)}
+                      title="Delete photo"
+                    >
+                      <FiX size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="photo-counter-overlay">
+                <span className="counter-text">{capturedPhotos.length}/3</span>
+                <div className="progress-dots">
+                  {[1, 2, 3].map((num) => (
+                    <div 
+                      key={num}
+                      className={`dot ${num <= capturedPhotos.length ? 'filled' : ''}`}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
-          </button>
-          
-          {capturedPhotos.length >= 3 && (
-            <button className="proceed-btn" onClick={handleProceed}>
-              Proceed
+          )}
+
+          {/* Capture Button Overlay */}
+          <div className="capture-button-overlay">
+            <button 
+              className={`capture-btn ${capturedPhotos.length >= 3 ? 'disabled' : ''}`}
+              onClick={isCameraActive ? capturePhoto : toggleCamera}
+              disabled={capturedPhotos.length >= 3}
+            >
+              <div className="capture-btn-inner">
+                {isCameraActive ? (
+                  <div className="capture-circle" />
+                ) : (
+                  <FiCamera size={32} />
+                )}
+              </div>
             </button>
-          )}
+            
+            {capturedPhotos.length >= 3 && (
+              <button className="proceed-btn-overlay" onClick={handleProceed}>
+                Proceed
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
