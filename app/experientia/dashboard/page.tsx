@@ -100,12 +100,12 @@ const DashboardPage = () => {
           icon={<FiClock size={20} />}
           color="#f59e0b"
         />
-        <SummaryCard
+        {/* <SummaryCard
           title="Flagged Tasks"
           value={flaggedTasks}
           icon={<FiFlag size={20} />}
           color="#ef4444"
-        />
+        /> */}
       </div>
 
       <Filters />

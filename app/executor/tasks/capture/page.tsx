@@ -1,11 +1,21 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { FiChevronLeft, FiCamera, FiRotateCw, FiZap, FiX, FiMapPin } from "react-icons/fi";
+import {
+  FiChevronLeft,
+  FiCamera,
+  FiRotateCw,
+  FiZap,
+  FiX,
+  FiMapPin,
+  FiLoader,
+} from "react-icons/fi";
 import "./capture.scss";
+import { uploadFileToS3 } from "@/app/constants/upload";
 
 interface CapturedPhoto {
   dataUrl: string;
+  s3Url?: string;
   timestamp: Date;
   view?: string | null;
 }
@@ -27,13 +37,20 @@ const TaskCapture = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  
+
   const [capturedPhotos, setCapturedPhotos] = useState<CapturedPhoto[]>([]);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isFlashOn, setIsFlashOn] = useState(false);
-  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
-  const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
-  const [targetLocation, setTargetLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [facingMode, setFacingMode] = useState<"user" | "environment">(
+    "environment",
+  );
+  const [currentLocation, setCurrentLocation] = useState<LocationData | null>(
+    null,
+  );
+  const [targetLocation, setTargetLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
   const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
   const [campaignData, setCampaignData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,41 +64,41 @@ const TaskCapture = () => {
 
   // Get campaign data and target location from sessionStorage
   useEffect(() => {
-    const campaignId = sessionStorage.getItem('currentCampaignId');
+    const campaignId = sessionStorage.getItem("currentCampaignId");
     if (campaignId) {
       fetchCampaignData(campaignId);
     }
     getCurrentLocation();
-    
+
     const timer = setTimeout(() => {
       if (videoRef.current) {
         startCamera();
       } else {
-        console.log('Video element not ready, retrying...');
+        console.log("Video element not ready, retrying...");
         // Retry after additional delay
         setTimeout(() => {
           if (videoRef.current) {
             startCamera();
           } else {
-            console.error('Video element still not found');
+            console.error("Video element still not found");
           }
         }, 500);
       }
     }, 500);
-    
+
     return () => clearTimeout(timer);
   }, []);
 
   const fetchCampaignData = async (campaignId: string) => {
     try {
-      const token = localStorage.getItem('executor_token');
+      const token = localStorage.getItem("executor_token");
       const response = await fetch(`/api/campaigns/${campaignId}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
@@ -89,13 +106,13 @@ const TaskCapture = () => {
           if (data.data.latitude && data.data.longitude) {
             setTargetLocation({
               lat: data.data.latitude,
-              lng: data.data.longitude
+              lng: data.data.longitude,
             });
           }
         }
       }
     } catch (error) {
-      console.error('Error fetching campaign data:', error);
+      console.error("Error fetching campaign data:", error);
     } finally {
       setIsLoading(false);
     }
@@ -103,23 +120,36 @@ const TaskCapture = () => {
 
   const getCurrentLocation = useCallback(() => {
     if (!navigator.geolocation) {
-      console.error('Geolocation is not supported');
+      console.error("Geolocation is not supported");
       return;
     }
 
     let debounceTimer: NodeJS.Timeout;
     let lastCalculatedDistance: number | null = null;
 
-    const debouncedDistanceCalculation = (currentLat: number, currentLng: number, targetLat: number, targetLng: number) => {
+    const debouncedDistanceCalculation = (
+      currentLat: number,
+      currentLng: number,
+      targetLat: number,
+      targetLng: number,
+    ) => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
-        const distance = calculateDistance(currentLat, currentLng, targetLat, targetLng);
-        
+        const distance = calculateDistance(
+          currentLat,
+          currentLng,
+          targetLat,
+          targetLng,
+        );
+
         // Only update if distance changed significantly (more than 0.1 meters)
-        if (lastCalculatedDistance === null || Math.abs(distance - lastCalculatedDistance) > 0.1) {
+        if (
+          lastCalculatedDistance === null ||
+          Math.abs(distance - lastCalculatedDistance) > 0.1
+        ) {
           setLocationAccuracy(distance);
           lastCalculatedDistance = distance;
-          sessionStorage.setItem('locationAccuracy', JSON.stringify(distance));
+          sessionStorage.setItem("locationAccuracy", JSON.stringify(distance));
         }
       }, 100);
     };
@@ -129,23 +159,26 @@ const TaskCapture = () => {
         const location = {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
-          accuracy: position.coords.accuracy
+          accuracy: position.coords.accuracy,
         };
         setCurrentLocation(location);
-        console.log('Initial location obtained:', location);
-        
+        console.log("Initial location obtained:", location);
+
         // Store GPS accuracy immediately
-        sessionStorage.setItem('locationAccuracy', JSON.stringify(position.coords.accuracy));
+        sessionStorage.setItem(
+          "locationAccuracy",
+          JSON.stringify(position.coords.accuracy),
+        );
         setLocationAccuracy(position.coords.accuracy);
       },
       (error) => {
-        console.error('Error getting initial location:', error);
+        console.error("Error getting initial location:", error);
       },
       {
         enableHighAccuracy: true,
         timeout: 3000,
-        maximumAge: 0
-      }
+        maximumAge: 0,
+      },
     );
 
     const watchId = navigator.geolocation.watchPosition(
@@ -153,29 +186,32 @@ const TaskCapture = () => {
         const location = {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
-          accuracy: position.coords.accuracy
+          accuracy: position.coords.accuracy,
         };
         setCurrentLocation(location);
-        
+
         if (targetLocation) {
           debouncedDistanceCalculation(
             location.lat,
             location.lng,
             targetLocation.lat,
-            targetLocation.lng
+            targetLocation.lng,
           );
         } else {
-          sessionStorage.setItem('locationAccuracy', JSON.stringify(position.coords.accuracy));
+          sessionStorage.setItem(
+            "locationAccuracy",
+            JSON.stringify(position.coords.accuracy),
+          );
         }
       },
       (error) => {
-        console.error('Error watching location:', error);
+        console.error("Error watching location:", error);
       },
       {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 2000
-      }
+        maximumAge: 2000,
+      },
     );
 
     return () => {
@@ -216,15 +252,15 @@ const TaskCapture = () => {
         currentLocation.lat,
         currentLocation.lng,
         targetLocation.lat,
-        targetLocation.lng
+        targetLocation.lng,
       );
       setLocationAccuracy(distance);
     }
   }, [currentLocation, targetLocation]);
 
   const refreshLocation = useCallback(() => {
-    console.log('Manually refreshing location...');
-    
+    console.log("Manually refreshing location...");
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const location = {
@@ -234,31 +270,36 @@ const TaskCapture = () => {
         };
         setCurrentLocation(location);
         setLocationAccuracy(position.coords.accuracy);
-        console.log('Location refreshed successfully:', location);
+        console.log("Location refreshed successfully:", location);
       },
       (error) => {
-        console.error('Manual refresh failed:', error);
+        console.error("Manual refresh failed:", error);
       },
       {
         enableHighAccuracy: true,
         timeout: 15000,
-        maximumAge: 0 
-      }
+        maximumAge: 0,
+      },
     );
   }, []);
 
-  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const calculateDistance = (
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number,
+  ) => {
     if (lat1 === lat2 && lon1 === lon2) return 0;
-    
+
     const φ1 = lat1 * 0.017453292519943295;
     const φ2 = lat2 * 0.017453292519943295;
     const Δφ = (lat2 - lat1) * 0.017453292519943295;
     const Δλ = (lon2 - lon1) * 0.017453292519943295;
 
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
     return 6371000 * c;
   };
@@ -267,44 +308,45 @@ const TaskCapture = () => {
     try {
       setIsCameraLoading(true);
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('Camera API is not supported in this browser');
+        throw new Error("Camera API is not supported in this browser");
       }
       if (!videoRef.current) {
-        throw new Error('Video element not found');
+        throw new Error("Video element not found");
       }
 
-      console.log('Video element found, requesting camera access...');
+      console.log("Video element found, requesting camera access...");
 
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: facingMode,
           width: { ideal: 1920, max: 1920 },
-          height: { ideal: 1080, max: 1080 }
+          height: { ideal: 1080, max: 1080 },
         },
-        audio: false
+        audio: false,
       });
-      
+
       videoRef.current.srcObject = stream;
       streamRef.current = stream;
       setIsCameraActive(true);
-      console.log('Camera started successfully');
-      
+      console.log("Camera started successfully");
     } catch (error: any) {
-      console.error('Error accessing camera:', error);
-      let errorMessage = 'Unable to access camera. ';
-      
-      if (error.name === 'NotAllowedError') {
-        errorMessage += 'Please grant camera permissions in your browser settings.';
-      } else if (error.name === 'NotFoundError') {
-        errorMessage += 'No camera device found.';
-      } else if (error.name === 'NotReadableError') {
-        errorMessage += 'Camera is already in use by another application.';
-      } else if (error.message === 'Video element not found') {
-        errorMessage += 'Camera initialization failed. Please refresh the page.';
+      console.error("Error accessing camera:", error);
+      let errorMessage = "Unable to access camera. ";
+
+      if (error.name === "NotAllowedError") {
+        errorMessage +=
+          "Please grant camera permissions in your browser settings.";
+      } else if (error.name === "NotFoundError") {
+        errorMessage += "No camera device found.";
+      } else if (error.name === "NotReadableError") {
+        errorMessage += "Camera is already in use by another application.";
+      } else if (error.message === "Video element not found") {
+        errorMessage +=
+          "Camera initialization failed. Please refresh the page.";
       } else {
-        errorMessage += error.message || 'Unknown error occurred.';
+        errorMessage += error.message || "Unknown error occurred.";
       }
-      
+
       alert(errorMessage);
     } finally {
       setIsCameraLoading(false);
@@ -313,7 +355,7 @@ const TaskCapture = () => {
 
   const stopCamera = () => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
       setIsCameraActive(false);
     }
@@ -321,7 +363,7 @@ const TaskCapture = () => {
 
   const toggleCamera = () => {
     if (isCameraLoading) return;
-    
+
     if (isCameraActive) {
       stopCamera();
     } else {
@@ -330,9 +372,9 @@ const TaskCapture = () => {
   };
 
   const switchCamera = () => {
-    const newMode = facingMode === 'user' ? 'environment' : 'user';
+    const newMode = facingMode === "user" ? "environment" : "user";
     setFacingMode(newMode);
-    
+
     if (isCameraActive) {
       stopCamera();
       setTimeout(() => {
@@ -349,7 +391,7 @@ const TaskCapture = () => {
         const capabilities = videoTrack.getCapabilities() as any;
         if (capabilities.torch) {
           videoTrack.applyConstraints({
-            advanced: [{ torch: !isFlashOn }] as any
+            advanced: [{ torch: !isFlashOn }] as any,
           });
           setIsFlashOn(!isFlashOn);
         }
@@ -368,8 +410,8 @@ const TaskCapture = () => {
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
-      const context = canvas.getContext('2d');
-      
+      const context = canvas.getContext("2d");
+
       if (context) {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
@@ -393,7 +435,7 @@ const TaskCapture = () => {
   };
 
   const deletePhoto = (index: number) => {
-    setCapturedPhotos(prev => prev.filter((_, i) => i !== index));
+    setCapturedPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleBack = () => {
@@ -457,9 +499,9 @@ const TaskCapture = () => {
             ref={videoRef}
             autoPlay
             playsInline
-            className={`camera-feed ${isCameraActive ? 'active' : 'hidden'}`}
+            className={`camera-feed ${isCameraActive ? "active" : "hidden"}`}
           />
-          
+
           {!isCameraActive && (
             <div className="camera-placeholder">
               {isCameraLoading ? (
@@ -475,23 +517,23 @@ const TaskCapture = () => {
               )}
             </div>
           )}
-          
+
           {/* Camera Controls Overlay */}
           <div className="camera-controls">
             <button className="back-btn" onClick={handleBack}>
               <FiChevronLeft size={24} />
             </button>
-            
+
             <div className="right-controls">
-              <button 
-                className={`flash-btn ${isFlashOn ? 'active' : ''}`}
+              <button
+                className={`flash-btn ${isFlashOn ? "active" : ""}`}
                 onClick={toggleFlash}
                 title="Toggle Flash"
               >
                 <FiZap size={20} />
               </button>
-              
-              <button 
+
+              <button
                 className="switch-camera-btn"
                 onClick={switchCamera}
                 title="Switch Camera"
@@ -507,10 +549,12 @@ const TaskCapture = () => {
               <div className="location-status-content">
                 <FiMapPin size={20} />
                 <span className="location-text">
-                  {isCameraLoading ? 'Getting your location...' : 'Location not available'}
+                  {isCameraLoading
+                    ? "Getting your location..."
+                    : "Location not available"}
                 </span>
                 {!isCameraLoading && (
-                  <button 
+                  <button
                     className="refresh-location-btn"
                     onClick={() => window.location.reload()}
                     title="Refresh page"
@@ -527,9 +571,13 @@ const TaskCapture = () => {
             <div className="coordinates-overlay">
               <div className="coordinates-text">
                 <span className="coord-label">Lat:</span>
-                <span className="coord-value">{currentLocation.lat.toFixed(6)}</span>
+                <span className="coord-value">
+                  {currentLocation.lat.toFixed(6)}
+                </span>
                 <span className="coord-label">Lon:</span>
-                <span className="coord-value">{currentLocation.lng.toFixed(6)}</span>
+                <span className="coord-value">
+                  {currentLocation.lng.toFixed(6)}
+                </span>
               </div>
               {locationAccuracy !== null && (
                 <div className="accuracy-indicator-small">
@@ -547,7 +595,7 @@ const TaskCapture = () => {
                 {capturedPhotos.map((photo, index) => (
                   <div key={index} className="photo-preview-item">
                     <img src={photo.dataUrl} alt={`Captured ${index + 1}`} />
-                    <button 
+                    <button
                       className="delete-photo-btn"
                       onClick={() => deletePhoto(index)}
                       title="Delete photo"
@@ -719,7 +767,7 @@ const TaskCapture = () => {
       )}
 
       {/* Hidden canvas for photo capture */}
-      <canvas ref={canvasRef} style={{ display: 'none' }} />
+      <canvas ref={canvasRef} style={{ display: "none" }} />
     </div>
   );
 };

@@ -91,7 +91,7 @@ const ExecutorDashboard = () => {
       <div className="list-section">
         <div className="section-header">
           <h2 className="section-title">Your Campaigns</h2>
-          <button className="see-all">See All</button>
+          {/* <button className="see-all">See All</button> */}
         </div>
 
         <div className="campaign-list">

@@ -1,8 +1,54 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateUploadUrl } from "../generate-url/route";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { s3Client } from "@/utils/s3";
+import { randomUUID } from "crypto";
 
 export async function POST(request: NextRequest) {
-  const { fileName, fileType, contentType } = await request.json();
+  try {
+    // Get data from request
+    const { fileName, fileType, contentType } = await request.json();
 
-  return await generateUploadUrl("executor-documents", fileType, contentType);
+    // Validate required fields
+    if (!fileName || !contentType) {
+      return NextResponse.json(
+        { error: "Missing required fields: fileName and contentType" },
+        { status: 400 },
+      );
+    }
+
+    // Extract file extension
+    const extension =
+      fileName.split(".").pop() || contentType.split("/")[1] || "jpg";
+
+    // Generate unique filename with folder path
+    const key = `gig-management/executor/${randomUUID()}.${extension}`;
+
+    // Create S3 command
+    const command = new PutObjectCommand({
+      Bucket: process.env.S3_BUCKET_NAME!,
+      Key: key,
+      ContentType: contentType,
+    });
+
+    // Generate pre-signed URL (valid for 1 hour)
+    const uploadUrl = await getSignedUrl(s3Client, command, {
+      expiresIn: 3600, // 1 hour
+    });
+
+    // Generate the final image URL that will be accessible after upload
+    const imageUrl = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+
+    // Return both URLs
+    return NextResponse.json({
+      uploadUrl, // Temporary URL for uploading
+      imageUrl, // Permanent URL for accessing the file
+    });
+  } catch (error) {
+    console.error("Error generating presigned URL:", error);
+    return NextResponse.json(
+      { error: "Failed to generate presigned URL" },
+      { status: 500 },
+    );
+  }
 }
