@@ -204,6 +204,46 @@ const ReportContent = ({
     }
   }, [campaignId]);
 
+  const handleExportToExcel = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`/api/campaigns/${campaignId}/export`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to export tasks");
+      }
+
+      // Get the filename from the response headers or create a default one
+      const contentDisposition = response.headers.get('content-disposition');
+      let filename = 'tasks.xlsx';
+      
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      // Convert the response to blob and download it
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      // You could show a toast or alert here
+    }
+  };
+
   const executors = [
     { id: "all", name: "All Executors" },
     { id: "exec1", name: "John Doe" },
@@ -258,7 +298,7 @@ const ReportContent = ({
           </div>
         </div>
         <div className={styles.actions}>
-          <button className={styles.exportButton}>
+          <button className={styles.exportButton} onClick={handleExportToExcel}>
             <FiDownload size={16} />
             <span>Export to Excel</span>
           </button>
