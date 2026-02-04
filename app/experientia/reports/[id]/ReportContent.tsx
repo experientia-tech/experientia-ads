@@ -305,10 +305,10 @@ const ReportContent = ({
             <FiDownload size={16} />
             <span>Export to Excel</span>
           </button>
-          <button className={styles.emailButton}>
+          {/* <button className={styles.emailButton}>
             <FiMail size={16} />
             <span>Email Report</span>
-          </button>
+          </button> */}
         </div>
       </div>
 

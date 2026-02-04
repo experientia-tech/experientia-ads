@@ -110,6 +110,7 @@ export class CampaignService {
           startDate: data.startDate ? new Date(data.startDate) : null,
           endDate: data.endDate ? new Date(data.endDate) : null,
           totalTasks: data.totalTasks || 0,
+          logo: data.logo ?? null,
         },
       });
 
@@ -153,6 +154,7 @@ export class CampaignService {
       serviceType: campaign.serviceType || undefined,
       startDate: campaign.startDate,
       endDate: campaign.endDate,
+      logo: campaign.logo || undefined,
       totalTasks: campaign.totalTasks,
       members: campaign.members.map((member: any) => ({
         id: member.id,
@@ -323,6 +325,7 @@ async updateCampaign(
       startDate: data.startDate ? new Date(data.startDate) : null,
       endDate: data.endDate ? new Date(data.endDate) : null,
       totalTasks: data.totalTasks,
+      logo: data.logo,
     };
 
     const updatedCampaign = await prisma.campaign.update({
