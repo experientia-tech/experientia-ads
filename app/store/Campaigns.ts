@@ -17,7 +17,14 @@ interface CampaignState {
     id: string,
   ) => Promise<{ success: boolean; data?: ICampaign; error?: string }>;
   clearError: () => void;
+
   setCampaigns: (campaigns: ICampaign[]) => void;
+
+  //Edit Campaign
+  editCampaign: (
+    id: string,
+    data: Partial<ICampaign>,
+  ) => Promise<{ success: boolean; data?: ICampaign; error?: string }>;
 }
 
 export const useCampaignStore = create<CampaignState>((set) => ({
@@ -90,6 +97,40 @@ export const useCampaignStore = create<CampaignState>((set) => ({
   },
 
   clearError: () => set({ error: null }),
+
+  editCampaign: async (campaignId: string, data: Partial<ICampaign>) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await authenticatedFetch(
+        `/api/campaigns/${campaignId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        },
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        const errorMessage = `Failed to edit campaign: ${response.status} ${response.statusText}`;
+        set({ isLoading: false, error: errorMessage });
+        return { success: false, error: errorMessage };
+      }
+
+      const responseData = await response.json();
+      const campaignData = responseData.data || responseData;
+      set({ selectedCampaign: campaignData, isLoading: false });
+      return { success: true, data: campaignData };
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "An error occurred";
+      console.error("Error editing campaign:", err);
+      set({ isLoading: false, error: errorMessage });
+      return { success: false, error: errorMessage };
+    }
+  },
 }));
 
 export const fetchCampaigns = () =>

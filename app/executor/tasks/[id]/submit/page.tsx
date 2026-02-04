@@ -9,8 +9,24 @@ import {
   FiRefreshCw,
 } from "react-icons/fi";
 import "./submit-task.scss";
+import SuccessModal from "@/app/experientia/components/success_modal/SuccessModal";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const SubmitTask = () => {
+  const [showSuccess, setShowSuccess] = useState(false);
+  const router = useRouter();
+
+  const handleSubmit = () => {
+    // In a real app, this would be an API call
+    setShowSuccess(true);
+  };
+
+  const handleSuccessClose = () => {
+    setShowSuccess(false);
+    router.push("/executor/tasks");
+  };
+
   return (
     <div className="submit-task-page">
       <header className="details-header">
@@ -91,10 +107,17 @@ const SubmitTask = () => {
       </section>
 
       <div className="footer-action">
-        <button className="primary-button submit-btn">
+        <button className="primary-button submit-btn" onClick={handleSubmit}>
           Submit Task <FiCheck size={20} />
         </button>
       </div>
+
+      <SuccessModal
+        isOpen={showSuccess}
+        onClose={handleSuccessClose}
+        title="Task Submitted!"
+        message="Your task evidence has been successfully submitted for review."
+      />
     </div>
   );
 };

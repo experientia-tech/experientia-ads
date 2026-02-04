@@ -1,12 +1,25 @@
 "use client";
 import Image from "next/image";
 import TaskOverview from "../../components/task_overview/task_overview";
-import { FiEdit2, FiAlertCircle, FiRefreshCw, FiFileText, FiArrowLeft, FiBriefcase, FiUsers, FiUserCheck, FiPlus, FiUserPlus } from "react-icons/fi";
+import {
+  FiEdit2,
+  FiAlertCircle,
+  FiRefreshCw,
+  FiFileText,
+  FiArrowLeft,
+  FiBriefcase,
+  FiUsers,
+  FiUserCheck,
+  FiPlus,
+  FiUserPlus,
+} from "react-icons/fi";
 import SupervisorModal from "@/app/experientia/components/supervisor_modal/SupervisorModal";
 import ExecutorModal from "@/app/experientia/components/executor_modal/ExecutorModal";
 import Link from "next/link";
 import styles from "./page.module.scss";
 import TeamMemberTable from "../../components/team_member_table/TeamMemberTable";
+import CreateCampaignForm from "../../create_campaign/CreateCampaignForm";
+import ComingSoonModal from "../../components/coming_soon_modal/ComingSoonModal";
 
 import { fetchCampaignById } from "@/app/store/Campaigns";
 import { ICampaign } from "@/app/constants/interface";
@@ -31,6 +44,8 @@ const CampaignDetailsPage = ({
   const [isExecutorModalOpen, setIsExecutorModalOpen] = useState(false);
   const [isAddingSupervisor, setIsAddingSupervisor] = useState(false);
   const [isAddingExecutor, setIsAddingExecutor] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isComingSoonModalOpen, setIsComingSoonModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,17 +55,26 @@ const CampaignDetailsPage = ({
         if (res.success) {
           setCampaign(res.data || null);
         } else {
-          throw new Error(res.error || 'Failed to fetch campaign');
+          throw new Error(res.error || "Failed to fetch campaign");
         }
       } catch (err) {
-        console.error('Error fetching campaign:', err);
-        setError(err instanceof Error ? err.message : 'An error occurred');
+        console.error("Error fetching campaign:", err);
+        setError(err instanceof Error ? err.message : "An error occurred");
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
+
+    const handleUpdate = () => {
+      fetchData();
+    };
+
+    window.addEventListener("campaignUpdated", handleUpdate);
+    return () => {
+      window.removeEventListener("campaignUpdated", handleUpdate);
+    };
   }, [id]);
 
   const handleRefresh = () => {
@@ -59,7 +83,7 @@ const CampaignDetailsPage = ({
       if (res.success) {
         setCampaign(res.data || null);
       } else {
-        setError(res.error || 'Failed to refresh data');
+        setError(res.error || "Failed to refresh data");
       }
     });
   };
@@ -95,7 +119,10 @@ const CampaignDetailsPage = ({
         </div>
 
         <div className={styles.actionButtons}>
-          <button className={styles.editButton}>
+          <button
+            className={styles.editButton}
+            onClick={() => setIsEditModalOpen(true)}
+          >
             <FiEdit2 size={16} />
             <span>Edit Campaign</span>
           </button>
@@ -119,7 +146,7 @@ const CampaignDetailsPage = ({
             ? ((campaign?.tasks?.length ?? 0) / campaign.totalTasks) * 100
             : 0
         }
-        flaggedTasks={campaign?.flaggedTasks || 0}
+        // flaggedTasks={campaign?.flaggedTasks || 0}
       />
 
       <div className={styles.campaignInfoSection}>
@@ -158,15 +185,15 @@ const CampaignDetailsPage = ({
                 <FiBriefcase size={24} />
               </div>
               <div className={styles.teamInfo}>
-               {/*  <span className={styles.teamCount}>
+                {/*  <span className={styles.teamCount}>
                   {campaign?.brands?.length || 0}
                 </span> */}
                 <span className={styles.teamLabel}>Brands</span>
               </div>
             </div>
-            <button 
+            <button
               className={styles.addButton}
-              onClick={() => setIsSupervisorModalOpen(true)}
+              onClick={() => setIsComingSoonModalOpen(true)}
             >
               <FiPlus size={20} />
             </button>
@@ -184,9 +211,9 @@ const CampaignDetailsPage = ({
                 <span className={styles.teamLabel}>Agencies</span>
               </div>
             </div>
-            <button 
+            <button
               className={styles.addButton}
-              onClick={() => setIsSupervisorModalOpen(true)}
+              onClick={() => setIsComingSoonModalOpen(true)}
             >
               <FiPlus size={20} />
             </button>
@@ -198,13 +225,14 @@ const CampaignDetailsPage = ({
                 <FiUserCheck size={24} />
               </div>
               <div className={styles.teamInfo}>
-                 <span className={styles.teamCount}>
-                  {campaign?.members?.filter(m => m.role === 'SUPERVISOR').length || 0}
+                <span className={styles.teamCount}>
+                  {campaign?.members?.filter((m) => m.role === "SUPERVISOR")
+                    .length || 0}
                 </span>
                 <span className={styles.teamLabel}>Supervisors</span>
               </div>
             </div>
-            <button 
+            <button
               className={styles.addButton}
               onClick={() => setIsSupervisorModalOpen(true)}
             >
@@ -219,12 +247,13 @@ const CampaignDetailsPage = ({
               </div>
               <div className={styles.teamInfo}>
                 <span className={styles.teamCount}>
-                  {campaign?.members?.filter(m => m.role === 'EXECUTOR').length || 0}
+                  {campaign?.members?.filter((m) => m.role === "EXECUTOR")
+                    .length || 0}
                 </span>
                 <span className={styles.teamLabel}>Executors</span>
               </div>
             </div>
-            <button 
+            <button
               className={styles.addButton}
               onClick={() => setIsExecutorModalOpen(true)}
             >
@@ -233,35 +262,34 @@ const CampaignDetailsPage = ({
           </div>
         </div>
         <div className={styles.teamMemberSection}>
-            {loading ? (
-              <div className={styles.loadingState}>
-                <div className={styles.spinner}></div>
-                <p>Loading team members...</p>
-              </div>
-            ) : error ? (
-              <div className={styles.errorState}>
-                <FiAlertCircle size={24} />
-                <p>{error}</p>
-                <button 
-                  onClick={handleRefresh}
-                  className={styles.retryButton}
-                >
-                  <FiRefreshCw size={16} /> Retry
-                </button>
-              </div>
-            ) : (
-              <TeamMemberTable
-                members={(campaign?.members || []).map(member => ({
-                  id: member.id,
-                  name: `${member.user?.firstName || ''} ${member.user?.lastName || ''}`.trim() || 'Unnamed User',
-                  contactNumber: member.user?.phone || 'N/A',
-                  role: member.role,
-                  location: campaign?.name || 'N/A',
-                  assignedBy: member.assignedBy,
-                  status: member.active ? 'active' : 'inactive',
-                }))}
-              />
-            )}
+          {loading ? (
+            <div className={styles.loadingState}>
+              <div className={styles.spinner}></div>
+              <p>Loading team members...</p>
+            </div>
+          ) : error ? (
+            <div className={styles.errorState}>
+              <FiAlertCircle size={24} />
+              <p>{error}</p>
+              <button onClick={handleRefresh} className={styles.retryButton}>
+                <FiRefreshCw size={16} /> Retry
+              </button>
+            </div>
+          ) : (
+            <TeamMemberTable
+              members={(campaign?.members || []).map((member) => ({
+                id: member.id,
+                name:
+                  `${member.user?.firstName || ""} ${member.user?.lastName || ""}`.trim() ||
+                  "Unnamed User",
+                contactNumber: member.user?.phone || "N/A",
+                role: member.role,
+                location: campaign?.name || "N/A",
+                assignedBy: member.assignedBy,
+                status: member.active ? "active" : "inactive",
+              }))}
+            />
+          )}
         </div>
       </div>
 
@@ -271,40 +299,47 @@ const CampaignDetailsPage = ({
         onClose={() => !isAddingSupervisor && setIsSupervisorModalOpen(false)}
         onSelect={async (supervisor) => {
           if (isAddingSupervisor) return;
-          
+
           try {
             setIsAddingSupervisor(true);
-            const addResponse = await authenticatedFetch('/api/campaign-members', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
+            const addResponse = await authenticatedFetch(
+              "/api/campaign-members",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  campaignId: id,
+                  userId: supervisor.id,
+                  role: "SUPERVISOR",
+                }),
               },
-              body: JSON.stringify({
-                campaignId: id,
-                userId: supervisor.id,
-                role: 'SUPERVISOR'
-              }),
-            });
+            );
 
             if (!addResponse.ok) {
               const errorData = await addResponse.json();
-              throw new Error(errorData.error || 'Failed to add supervisor');
+              throw new Error(errorData.error || "Failed to add supervisor");
             }
             setIsSupervisorModalOpen(false);
             const updatedResponse = await fetchCampaignById(id);
             if (updatedResponse.success && updatedResponse.data) {
               setCampaign(updatedResponse.data);
             }
-            
-            console.log('Successfully added supervisor');
+
+            console.log("Successfully added supervisor");
           } catch (error) {
-            console.error('Error adding supervisor:', error);
-            alert(error instanceof Error ? error.message : 'Failed to add supervisor');
+            console.error("Error adding supervisor:", error);
+            alert(
+              error instanceof Error
+                ? error.message
+                : "Failed to add supervisor",
+            );
           } finally {
             setIsAddingSupervisor(false);
           }
         }}
-        existingSupervisors={campaign?.members?.map(m => m.userId) || []}
+        existingSupervisors={campaign?.members?.map((m) => m.userId) || []}
         isLoading={isAddingSupervisor}
       />
 
@@ -314,41 +349,58 @@ const CampaignDetailsPage = ({
         onClose={() => !isAddingExecutor && setIsExecutorModalOpen(false)}
         onSelect={async (executor) => {
           if (isAddingExecutor) return;
-          
+
           try {
             setIsAddingExecutor(true);
-            const addResponse = await authenticatedFetch('/api/campaign-members', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
+            const addResponse = await authenticatedFetch(
+              "/api/campaign-members",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  campaignId: id,
+                  userId: executor.id,
+                  role: "EXECUTOR",
+                }),
               },
-              body: JSON.stringify({
-                campaignId: id,
-                userId: executor.id,
-                role: 'EXECUTOR'
-              }),
-            });
+            );
 
             if (!addResponse.ok) {
               const errorData = await addResponse.json();
-              throw new Error(errorData.error || 'Failed to add executor');
+              throw new Error(errorData.error || "Failed to add executor");
             }
             setIsExecutorModalOpen(false);
             const updatedResponse = await fetchCampaignById(id);
             if (updatedResponse.success && updatedResponse.data) {
               setCampaign(updatedResponse.data);
             }
-            
-            console.log('Successfully added executor');
+
+            console.log("Successfully added executor");
           } catch (error) {
-            console.error('Error adding executor:', error);
-            alert(error instanceof Error ? error.message : 'Failed to add executor');
+            console.error("Error adding executor:", error);
+            alert(
+              error instanceof Error ? error.message : "Failed to add executor",
+            );
           } finally {
             setIsAddingExecutor(false);
           }
         }}
-        existingExecutors={campaign?.members?.map(m => m.userId) || []}
+        existingExecutors={campaign?.members?.map((m) => m.userId) || []}
         isLoading={isAddingExecutor}
+      />
+
+      {isEditModalOpen && (
+        <CreateCampaignForm
+          onClose={() => setIsEditModalOpen(false)}
+          isEdit={true}
+          initialData={campaign}
+        />
+      )}
+      <ComingSoonModal
+        isOpen={isComingSoonModalOpen}
+        onClose={() => setIsComingSoonModalOpen(false)}
       />
     </div>
   );

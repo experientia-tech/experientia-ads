@@ -9,7 +9,6 @@ import {
   FiFilter,
   FiCalendar,
   FiMapPin,
-  FiFlag,
   FiToggleLeft,
   FiToggleRight,
 } from "react-icons/fi";
@@ -56,9 +55,13 @@ const ReportContent = ({
     stateBackground: "",
     geofenced: false,
   });
+
   const [selectedTask, setSelectedTask] = useState<any>(null);
+
   const [campaignData, setCampaignData] = useState<any>(null);
+
   const [tasks, setTasks] = useState<any[]>([]);
+
   const [loading, setLoading] = useState(true);
 
   // Calculate task overview statistics from real data
@@ -315,7 +318,6 @@ const ReportContent = ({
           completedTasks={completedTasks}
           remainingTasks={remainingTasks}
           progress={progress}
-          flaggedTasks={flaggedTasks}
         />
 
         <div className={styles.filtersSection}>
