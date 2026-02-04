@@ -71,6 +71,7 @@ model Campaign {
   startDate       DateTime?
   endDate         DateTime?
   serviceType     String?
+  logo            String? 
   isActive        Boolean   @default(true)
   totalTasks      Int       @default(1)
   createdAt       DateTime  @default(now()) @db.Timestamptz
