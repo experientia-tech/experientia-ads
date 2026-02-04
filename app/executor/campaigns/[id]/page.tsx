@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import {
   FiChevronLeft,
   FiMoreHorizontal,
@@ -9,49 +9,129 @@ import {
 } from "react-icons/fi";
 import "./campaign-details.scss";
 import { useExecutorStore } from "@/app/store/Executor";
+import { getExecutorToken } from "@/app/store/Executor";
+
+interface Campaign {
+  id: string;
+  name: string;
+  description: string;
+  status: string;
+  startDate: string;
+  endDate: string;
+  serviceType: string;
+  address?: string;
+  organizationId?: string;
+}
+
+interface Task {
+  id: string;
+  status: string;
+  address: string;
+  type: string;
+  size: string;
+  active?: boolean;
+}
 
 const CampaignDetails = () => {
   const router = useRouter();
+  const params = useParams();
+  const campaignId = params.id as string;
 
   const { getCampaigns } = useExecutorStore();
-
-  const [activeTab, setActiveTab] = useState<"tasks" | "completed">("tasks");
+  const [campaign, setCampaign] = useState<Campaign | null>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getCampaigns();
-  }, []);
+    if (campaignId) {
+      fetchCampaignDetails();
+      fetchCampaignTasks();
+    }
+  }, [campaignId]);
 
-  const tasks = [
-    {
-      id: "NYC-5021",
-      status: "Pending",
-      address: "5th Ave & 42nd St",
-      type: "Digital",
-      size: "14x48",
-    },
-    {
-      id: "NYC-5022",
-      status: "Pending",
-      address: "Broadway & W 34th St",
-      type: "Static",
-      size: "10x30",
-    },
-    {
-      id: "NYC-5025",
-      status: "In Progress",
-      address: "7th Ave & W 48th St",
-      type: "Digital",
-      size: "14x48",
-      active: true,
-    },
-    {
-      id: "NYC-5030",
-      status: "Pending",
-      address: "Lexington Ave & E 52nd St",
-      type: "Static",
-      size: "12x24",
-    },
-  ];
+  const fetchCampaignDetails = async () => {
+    try {
+      const token = getExecutorToken();
+      if (!token) {
+        router.push('/executor/login');
+        return;
+      }
+
+      const response = await fetch(`/api/campaigns/${campaignId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data) {
+          setCampaign(data.data);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching campaign:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCampaignTasks = async () => {
+    try {
+      const token = getExecutorToken();
+      if (!token) return;
+
+      // You'll need to create this API endpoint or use existing one
+      const response = await fetch(`/api/executor/campaigns/${campaignId}/tasks`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data) {
+          setTasks(data.data);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      // Keep mock data as fallback
+      setTasks([
+        {
+          id: "NYC-5021",
+          status: "Pending",
+          address: "5th Ave & 42nd St",
+          type: "Digital",
+          size: "14x48",
+        },
+        {
+          id: "NYC-5022",
+          status: "Pending",
+          address: "Broadway & W 34th St",
+          type: "Static",
+          size: "10x30",
+        },
+        {
+          id: "NYC-5025",
+          status: "In Progress",
+          address: "7th Ave & W 48th St",
+          type: "Digital",
+          size: "14x48",
+          active: true,
+        },
+        {
+          id: "NYC-5030",
+          status: "Pending",
+          address: "Lexington Ave & E 52nd St",
+          type: "Static",
+          size: "12x24",
+        },
+      ]);
+    }
+  };
 
   return (
     <div className="campaign-details-page">
@@ -67,17 +147,14 @@ const CampaignDetails = () => {
 
       <div className="campaign-banner">
         <div className="client-logo">
-          <span className="logo-placeholder">✔️</span>
+          <span className="logo-placeholder">📢</span>
         </div>
         <div className="banner-info">
-          <p className="client-name">NIKE INC.</p>
-          <h2 className="campaign-name">Nike Air Max Launch</h2>
+          <p className="client-name">{campaign?.serviceType || 'CAMPAIGN'}</p>
+          <h2 className="campaign-name">{campaign?.name || 'Loading...'}</h2>
           <div className="meta-row">
             <span className="meta-item">
-              <FiClock size={14} /> Due Oct 24
-            </span>
-            <span className="meta-item">
-              <FiMap size={14} /> 16 Locs
+              <FiClock size={14} /> {campaign?.endDate ? `Ends ${new Date(campaign.endDate).toLocaleDateString()}` : 'No end date'}
             </span>
           </div>
         </div>
@@ -93,29 +170,21 @@ const CampaignDetails = () => {
         </div>
         <button
           className="add-task-btn"
-          onClick={() => router.push("/executor/tasks/capture")}
+          onClick={() => {
+            // Store campaign ID in sessionStorage for capture page
+            sessionStorage.setItem('currentCampaignId', campaignId);
+            router.push("/executor/tasks/capture");
+          }}
         >
           <span>+</span>
         </button>
       </div>
 
-      <div className="tab-switcher">
-        <button
-          className={`tab-btn ${activeTab === "tasks" ? "active" : ""}`}
-          onClick={() => setActiveTab("tasks")}
-        >
-          Your Tasks (12)
-        </button>
-        <button
-          className={`tab-btn ${activeTab === "completed" ? "active" : ""}`}
-          onClick={() => setActiveTab("completed")}
-        >
-          Completed (4)
-        </button>
+      <div className="tasks-header">
+        <h3 className="section-title">Your Tasks ({tasks.length})</h3>
       </div>
 
       <section className="task-list-section">
-        <h3 className="section-title">Tasks List</h3>
         <div className="task-list">
           {tasks.map((task) => (
             <div
@@ -123,6 +192,13 @@ const CampaignDetails = () => {
               className={`task-card design-card ${
                 task.active ? "active-border" : ""
               }`}
+              onClick={() => {
+                // Store campaign ID and task data for details page
+                sessionStorage.setItem('currentCampaignId', campaignId);
+                sessionStorage.setItem('selectedTask', JSON.stringify(task));
+                router.push(`/executor/campaigns/${campaignId}/tasks/${task.id}`);
+              }}
+              style={{ cursor: 'pointer' }}
             >
               <div className="task-card-content">
                 <div className="task-icon">
@@ -131,27 +207,12 @@ const CampaignDetails = () => {
                 <div className="task-info">
                   <div className="task-header">
                     <span className="task-id">{task.id}</span>
-                    <span
-                      className={`status-badge ${task.status
-                        .toLowerCase()
-                        .replace(" ", "-")}`}
-                    >
-                      {task.status}
-                    </span>
                   </div>
                   <p className="task-address">{task.address}</p>
                   <p className="task-meta">
                     Billboard Type: {task.type} • {task.size}
                   </p>
                 </div>
-                <button
-                  className={`action-btn ${
-                    task.status === "In Progress" ? "resume" : "start"
-                  }`}
-                  onClick={() => router.push("/executor/tasks/capture")}
-                >
-                  {task.status === "In Progress" ? "Resume" : "Start"}
-                </button>
               </div>
             </div>
           ))}

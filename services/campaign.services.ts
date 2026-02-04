@@ -168,21 +168,27 @@ export class CampaignService {
         return {
           id: task.id,
           campaignId: task.campaignId,
-          status: task.status as 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'REJECTED',
+          //status: task.status as 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'REJECTED',
           executorUserId: task.executorUserId,
           assignedAt: task.assignedAt,
           startedAt: task.startedAt,
           completedAt: task.completedAt,
-          rejectionReason: task.rejectionReason || null,
+          //rejectionReason: task.rejectionReason || null,
           flagged: task.flagged,
           notes: task.notes || null,
           metadata: task.metadata || {},
-          title: metadata.title || 'Untitled Task',
-          description: metadata.description || null,
-          dueDate: metadata.dueDate ? new Date(metadata.dueDate) : null,
-          priority: metadata.priority || 'MEDIUM',
+          //title: metadata.title || 'Untitled Task',
+          //description: metadata.description || null,
+          //dueDate: metadata.dueDate ? new Date(metadata.dueDate) : null,
+          //priority: metadata.priority || 'MEDIUM',
           createdAt: task.createdAt,
           updatedAt: task.updatedAt,
+          executor: task.executor ? {
+            id: task.executor.id,
+            firstName: task.executor.firstName,
+            lastName: task.executor.lastName,
+            phone: task.executor.phone,
+          } : null,
         };
       }),
       createdAt: campaign.createdAt,
@@ -239,7 +245,18 @@ export class CampaignService {
               },
             },
           },
-          tasks: true,
+          tasks: {
+            include: {
+              executor: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  phone: true,
+                },
+              },
+            },
+          },
         },
       });
 

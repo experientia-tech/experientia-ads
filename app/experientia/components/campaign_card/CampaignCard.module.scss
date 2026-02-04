@@ -153,8 +153,16 @@
             color: #10b981;
           }
           
+          &.inProgress {
+            color: #3b82f6;
+          }
+          
           &.pending {
             color: #f59e0b;
+          }
+          
+          &.rejected {
+            color: #ef4444;
           }
         }
         

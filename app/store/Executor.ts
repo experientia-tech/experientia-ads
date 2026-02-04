@@ -227,7 +227,7 @@ export const useExecutorStore = create<ExecutorState>((set, get) => ({
         };
       }
 
-      const campaigns = data || [];
+      const campaigns = data.data || [];
       set({ campaigns });
 
       return {

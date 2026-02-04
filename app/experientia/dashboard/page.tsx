@@ -56,7 +56,13 @@ const DashboardPage = () => {
     0,
   );
 
-  const pendingTasks = Math.max(0, totalTasks - completedTasks);
+  const actualTaskCount = campaignsList.reduce(
+    (sum: number, campaign: ICampaign) =>
+      sum + (Array.isArray(campaign.tasks) ? campaign.tasks.length : 0),
+    0,
+  );
+
+  const pendingTasks = Math.max(0, totalTasks - actualTaskCount);
   const flaggedTasks = campaignsList.reduce(
     (sum: number, campaign: ICampaign) =>
       sum + (Number(campaign.flaggedTasks) || 0),

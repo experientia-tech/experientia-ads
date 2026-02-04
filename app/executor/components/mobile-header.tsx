@@ -90,7 +90,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
                   <p className="user-phone">{phone}</p>
                 </div>
 
-                <div className="dropdown-divider"></div>
+               {/*  <div className="dropdown-divider"></div>
 
                 <div className="dropdown-item">
                   <FiCheckCircle size={18} />
@@ -107,7 +107,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
                 </div>
 
                 <div className="dropdown-divider"></div>
-
+ */}
                 <button
                   className="dropdown-item logout-btn"
                   onClick={handleLogout}

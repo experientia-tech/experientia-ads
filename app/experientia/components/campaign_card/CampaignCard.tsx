@@ -26,17 +26,14 @@ export interface CampaignCardProps {
 }
 
 const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
-  const completedTasks =
-    campaign.completedTasks ??
-    (Array.isArray(campaign.tasks)
-      ? campaign.tasks.filter((task) => task.status === "COMPLETED").length
-      : 0);
-  const totalTasks =
-    campaign.totalTasks ||
-    (Array.isArray(campaign.tasks) ? campaign.tasks.length : 1); // Avoid division by zero
+  const totalTasksFromApi = campaign.totalTasks || 0;
+  const actualTasksCount = Array.isArray(campaign.tasks) ? campaign.tasks.length : 0;
+  const completedTasks = actualTasksCount;
+
+  const pendingTasks = totalTasksFromApi - actualTasksCount;
 
   const progressPercentage = (completed: number, total: number) => {
-    return Math.round((completed / total) * 100);
+    return total > 0 ? Math.round((completed / total) * 100) : 0;
   };
 
   return (
@@ -76,14 +73,14 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
           <div className={styles.progressHeader}>
             <span>Task Progress</span>
             <span>
-              {completedTasks} of {totalTasks} completed
+              {completedTasks} of {totalTasksFromApi} completed
             </span>
           </div>
           <div className={styles.progressBar}>
             <div
               className={styles.progressFill}
               style={{
-                width: `${progressPercentage(completedTasks, totalTasks)}%`,
+                width: `${progressPercentage(completedTasks, totalTasksFromApi)}%`,
               }}
             ></div>
           </div>
@@ -94,7 +91,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
             </span>
             <span className={styles.statusItem}>
               <FiClock className={`${styles.icon} ${styles.pending}`} />
-              {totalTasks - completedTasks} Pending
+              {pendingTasks} Pending
             </span>
           </div>
         </div>

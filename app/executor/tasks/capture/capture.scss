@@ -1,181 +1,1063 @@
 .task-capture-page {
-  min-height: 100%;
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  padding: 0 0 100px 0;
+  background: #000;
+  position: relative;
 
-  .capture-header {
+  .loading-state {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 20px;
-    background: var(--executor-surface);
-    border-bottom: 1px solid var(--executor-border);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-
-    .back-btn {
-      background: none;
-      border: none;
-      padding: 8px;
-      cursor: pointer;
-      color: #1a1a1a;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .header-title {
-      font-size: 18px;
-      font-weight: 700;
-      color: #1a1a1a;
-      margin: 0;
-    }
+    justify-content: center;
+    height: 100vh;
+    color: white;
+    font-size: 16px;
   }
 
-  .capture-content {
+  .camera-container {
     flex: 1;
-    padding: 24px 20px;
     display: flex;
     flex-direction: column;
+    position: relative;
+  }
 
-    .instructions {
-      margin-bottom: 32px;
-      text-align: center;
+  .camera-view {
+    flex: 1;
+    position: relative;
+    background: #000;
 
-      .instructions-title {
-        font-size: 28px;
-        font-weight: 800;
-        color: #1a1a1a;
-        margin: 0 0 8px 0;
+    .camera-feed {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+
+      &.active {
+        display: block;
       }
 
-      .instructions-text {
-        font-size: 15px;
-        color: #64748b;
-        font-weight: 500;
-        margin: 0;
+      &.hidden {
+        display: none;
       }
     }
 
-    .photo-sections {
+    .camera-placeholder {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       display: flex;
       flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
       gap: 16px;
-      margin-bottom: 32px;
 
-      .photo-section {
-        background: var(--executor-surface);
-        border: 2px dashed var(--executor-border);
-        border-radius: 16px;
-        padding: 32px 24px;
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-top: 3px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      p {
+        margin: 0;
+        opacity: 0.7;
+        font-size: 14px;
+      }
+    }
+
+    .camera-controls {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+      z-index: 10;
+
+      .back-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
         display: flex;
-        flex-direction: column;
         align-items: center;
-        gap: 16px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        min-height: 180px;
         justify-content: center;
+        color: white;
+        cursor: pointer;
+        backdrop-filter: blur(10px);
+        transition: all 0.2s ease;
 
         &:hover {
-          border-color: #8b5cf6;
-          background: #faf5ff;
+          background: rgba(255, 255, 255, 0.3);
         }
+      }
 
-        &:active {
-          transform: scale(0.98);
-        }
+      .right-controls {
+        display: flex;
+        gap: 12px;
 
-        &.captured {
-          border-style: solid;
-          border-color: #10b981;
-          background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-
-          .photo-icon-wrapper {
-            background: #10b981;
-
-            .check-icon {
-              color: #ffffff;
-            }
-          }
-
-          .photo-title {
-            color: #065f46;
-          }
-
-          .photo-status {
-            color: #059669;
-          }
-        }
-
-        .photo-icon-wrapper {
-          width: 96px;
-          height: 96px;
-          background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-          border-radius: 20px;
+        .flash-btn, .switch-camera-btn {
+          background: rgba(255, 255, 255, 0.2);
+          border: none;
+          border-radius: 50%;
+          width: 44px;
+          height: 44px;
           display: flex;
           align-items: center;
           justify-content: center;
-          transition: all 0.3s ease;
-          box-shadow: 0 8px 16px rgba(139, 92, 246, 0.3);
+          color: white;
+          cursor: pointer;
+          backdrop-filter: blur(10px);
+          transition: all 0.2s ease;
 
-          .camera-icon {
-            color: #ffffff;
-          }
-        }
-
-        .photo-info {
-          text-align: center;
-
-          .photo-title {
-            font-size: 20px;
-            font-weight: 800;
-            color: #1a1a1a;
-            margin: 0 0 4px 0;
+          &:hover {
+            background: rgba(255, 255, 255, 0.3);
           }
 
-          .photo-status {
-            font-size: 14px;
-            font-weight: 600;
-            color: #8b5cf6;
-            margin: 0;
+          &.active {
+            background: rgba(255, 193, 7, 0.8);
           }
         }
       }
     }
 
-    .continue-btn {
-      width: 100%;
-      margin-top: auto;
+    .location-status-overlay {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 12px 16px;
+      z-index: 10;
+      border: 1px solid rgba(255, 255, 255, 0.1);
 
-      &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
+      .location-status-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: white;
+
+        .location-text {
+          flex: 1;
+          font-size: 14px;
+          font-weight: 500;
+          opacity: 0.9;
+        }
+
+        .refresh-location-btn {
+          background: rgba(255, 255, 255, 0.2);
+          border: none;
+          border-radius: 50%;
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          cursor: pointer;
+          backdrop-filter: blur(10px);
+          transition: all 0.2s ease;
+
+          &:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(180deg);
+          }
+
+          &:active {
+            transform: rotate(180deg) scale(0.95);
+          }
+        }
+      }
+    }
+
+    .coordinates-overlay {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 12px 16px;
+      z-index: 10;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+
+      .coordinates-text {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 4px;
+
+        .coord-label {
+          color: rgba(255, 255, 255, 0.7);
+          font-size: 12px;
+          font-weight: 500;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .coord-value {
+          color: white;
+          font-size: 14px;
+          font-weight: 600;
+          font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+          background: rgba(255, 255, 255, 0.1);
+          padding: 2px 6px;
+          border-radius: 4px;
+        }
+      }
+
+      .accuracy-indicator-small {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 11px;
+        font-weight: 500;
+
+        svg {
+          color: #4CAF50;
+        }
+      }
+    }
+
+    .photo-preview-overlay {
+      position: absolute;
+      top: 80px;
+      right: 20px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+
+      .photo-preview-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        .photo-preview-item {
+          position: relative;
+          width: 60px;
+          height: 60px;
+          border-radius: 8px;
+          overflow: hidden;
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          background: rgba(0, 0, 0, 0.5);
+          backdrop-filter: blur(5px);
+
+          img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+
+          .delete-photo-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: rgba(244, 67, 54, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+
+            &:hover {
+              background: rgba(244, 67, 54, 1);
+              transform: scale(1.1);
+            }
+
+            &:active {
+              transform: scale(0.95);
+            }
+          }
+        }
+      }
+
+      .photo-counter-overlay {
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 6px 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+
+        .counter-text {
+          color: white;
+          font-size: 12px;
+          font-weight: 600;
+        }
+
+        .progress-dots {
+          display: flex;
+          gap: 4px;
+
+          .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+
+            &.filled {
+              background: #4CAF50;
+              transform: scale(1.2);
+            }
+          }
+        }
+      }
+    }
+
+    .capture-button-overlay {
+      position: absolute;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+
+      .capture-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &.disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .capture-btn-inner {
+          width: 80px;
+          height: 80px;
+          border-radius: 50%;
+          background: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          transition: all 0.2s ease;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+
+          &:hover {
+            transform: scale(1.05);
+          }
+
+          &:active {
+            transform: scale(0.95);
+          }
+
+          .capture-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #ff4444;
+            border: 4px solid white;
+          }
+        }
+      }
+
+      .proceed-btn-overlay {
+        background: linear-gradient(135deg, #4CAF50, #45a049);
+        border: none;
+        border-radius: 25px;
+        padding: 12px 32px;
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 20px rgba(76, 175, 80, 0.4);
+
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
       }
     }
   }
 
-  .footer-action {
-    padding: 20px;
-    padding-bottom: 100px; // Extra padding to account for bottom nav
-    background: var(--executor-surface);
-    border-top: 1px solid var(--executor-border);
+  .service-info {
+    padding: 16px 20px;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
 
-    .continue-btn {
-      width: 100%;
+    h3 {
+      margin: 0;
+      color: white;
+      font-size: 18px;
+      font-weight: 600;
+      text-align: center;
+    }
+  }
+
+  .photo-preview-section {
+    padding: 16px 20px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+
+    .photo-preview-grid {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding: 4px 0;
+
+      &::-webkit-scrollbar {
+        height: 4px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 2px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 2px;
+      }
+
+      .photo-preview-item {
+        position: relative;
+        flex-shrink: 0;
+        width: 80px;
+        height: 80px;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .delete-photo-btn {
+          position: absolute;
+          top: 4px;
+          right: 4px;
+          background: rgba(244, 67, 54, 0.9);
+          border: none;
+          border-radius: 50%;
+          width: 24px;
+          height: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          backdrop-filter: blur(10px);
+
+          &:hover {
+            background: rgba(244, 67, 54, 1);
+            transform: scale(1.1);
+          }
+
+          &:active {
+            transform: scale(0.95);
+          }
+        }
+      }
+    }
+  }
+
+  .photo-counter {
+    padding: 16px 20px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .counter-text {
+      color: white;
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .progress-dots {
+      display: flex;
+      gap: 8px;
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        transition: all 0.3s ease;
+
+        &.filled {
+          background: #4CAF50;
+          transform: scale(1.2);
+        }
+      }
+    }
+  }
+
+  .location-accuracy {
+    padding: 12px 20px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .accuracy-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .accuracy-text {
+        color: white;
+        font-size: 14px;
+        font-weight: 500;
+      }
+    }
+
+    .accuracy-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+
+      &.good {
+        background: #4CAF50;
+        box-shadow: 0 0 8px rgba(76, 175, 80, 0.6);
+      }
+
+      &.fair {
+        background: #FF9800;
+        box-shadow: 0 0 8px rgba(255, 152, 0, 0.6);
+      }
+
+      &.poor {
+        background: #F44336;
+        box-shadow: 0 0 8px rgba(244, 67, 54, 0.6);
+      }
+    }
+  }
+
+  .capture-section {
+    padding: 24px 20px 40px;
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+
+    .capture-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .capture-btn-inner {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        transition: all 0.2s ease;
+
+        &:hover {
+          transform: scale(1.05);
+        }
+
+        &:active {
+          transform: scale(0.95);
+        }
+
+        .capture-circle {
+          width: 60px;
+          height: 60px;
+          border-radius: 50%;
+          background: #ff4444;
+          border: 4px solid white;
+        }
+      }
+    }
+
+    .proceed-btn {
+      background: linear-gradient(135deg, #4CAF50, #45a049);
+      border: none;
+      border-radius: 25px;
+      padding: 12px 32px;
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(76, 175, 80, 0.4);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
     }
   }
 }
 
 // Responsive adjustments
-@media (min-width: 768px) {
+@media (max-width: 768px) {
   .task-capture-page {
-    .capture-content {
-      max-width: 600px;
-      margin: 0 auto;
-      width: 100%;
+    .camera-controls {
+      padding: 16px;
+
+      .back-btn, .flash-btn, .switch-camera-btn {
+        width: 40px;
+        height: 40px;
+      }
+
+      .right-controls {
+        gap: 8px;
+      }
+    }
+
+    .service-info {
+      padding: 12px 16px;
+
+      h3 {
+        font-size: 16px;
+      }
+    }
+
+    .coordinates-overlay {
+      bottom: 16px;
+      left: 12px;
+      right: 12px;
+      padding: 10px 12px;
+
+      .coordinates-text {
+        gap: 6px;
+
+        .coord-label {
+          font-size: 11px;
+        }
+
+        .coord-value {
+          font-size: 12px;
+          padding: 1px 4px;
+        }
+      }
+
+      .accuracy-indicator-small {
+        font-size: 10px;
+      }
+    }
+
+    .photo-preview-overlay {
+      top: 70px;
+      right: 12px;
+
+      .photo-preview-grid {
+        .photo-preview-item {
+          width: 50px;
+          height: 50px;
+
+          .delete-photo-btn {
+            width: 16px;
+            height: 16px;
+          }
+        }
+      }
+
+      .photo-counter-overlay {
+        padding: 4px 8px;
+
+        .counter-text {
+          font-size: 11px;
+        }
+
+        .progress-dots {
+          gap: 3px;
+
+          .dot {
+            width: 5px;
+            height: 5px;
+          }
+        }
+      }
+    }
+
+    .capture-button-overlay {
+      bottom: 60px;
+
+      .capture-btn .capture-btn-inner {
+        width: 70px;
+        height: 70px;
+
+        .capture-circle {
+          width: 50px;
+          height: 50px;
+        }
+      }
+
+      .proceed-btn-overlay {
+        padding: 10px 24px;
+        font-size: 14px;
+      }
+    }
+
+    .photo-counter {
+      padding: 12px 16px;
+
+      .counter-text {
+        font-size: 14px;
+      }
+    }
+
+    .location-accuracy {
+      padding: 10px 16px;
+
+      .accuracy-text {
+        font-size: 13px;
+      }
+    }
+
+    .capture-section {
+      padding: 20px 16px 32px;
+      gap: 16px;
+
+      .capture-btn .capture-btn-inner {
+        width: 70px;
+        height: 70px;
+
+        .capture-circle {
+          width: 50px;
+          height: 50px;
+        }
+      }
+
+      .proceed-btn {
+        padding: 10px 24px;
+        font-size: 14px;
+      }
     }
   }
+}
+
+@media (max-width: 480px) {
+  .task-capture-page {
+    height: 100vh;
+    height: 100dvh; // Dynamic viewport height for mobile browsers
+
+    .camera-controls {
+      padding: 12px;
+
+      .back-btn, .flash-btn, .switch-camera-btn {
+        width: 36px;
+        height: 36px;
+      }
+
+      .right-controls {
+        gap: 6px;
+      }
+    }
+
+    .service-info {
+      padding: 10px 12px;
+
+      h3 {
+        font-size: 14px;
+      }
+    }
+
+    .coordinates-overlay {
+      bottom: 12px;
+      left: 8px;
+      right: 8px;
+      padding: 8px 10px;
+
+      .coordinates-text {
+        gap: 4px;
+
+        .coord-label {
+          font-size: 10px;
+        }
+
+        .coord-value {
+          font-size: 11px;
+          padding: 1px 3px;
+        }
+      }
+
+      .accuracy-indicator-small {
+        font-size: 9px;
+      }
+    }
+
+    .photo-preview-overlay {
+      top: 60px;
+      right: 8px;
+
+      .photo-preview-grid {
+        .photo-preview-item {
+          width: 40px;
+          height: 40px;
+
+          .delete-photo-btn {
+            width: 14px;
+            height: 14px;
+          }
+        }
+      }
+
+      .photo-counter-overlay {
+        padding: 3px 6px;
+
+        .counter-text {
+          font-size: 10px;
+        }
+
+        .progress-dots {
+          gap: 2px;
+
+          .dot {
+            width: 4px;
+            height: 4px;
+          }
+        }
+      }
+    }
+
+    .capture-button-overlay {
+      bottom: 50px;
+
+      .capture-btn .capture-btn-inner {
+        width: 60px;
+        height: 60px;
+
+        .capture-circle {
+          width: 44px;
+          height: 44px;
+          border-width: 3px;
+        }
+      }
+
+      .proceed-btn-overlay {
+        padding: 8px 20px;
+        font-size: 13px;
+        border-radius: 20px;
+      }
+    }
+
+    .photo-counter {
+      padding: 10px 12px;
+
+      .counter-text {
+        font-size: 13px;
+      }
+
+      .progress-dots {
+        gap: 6px;
+
+        .dot {
+          width: 6px;
+          height: 6px;
+        }
+      }
+    }
+
+    .location-accuracy {
+      padding: 8px 12px;
+
+      .accuracy-text {
+        font-size: 12px;
+      }
+
+      .accuracy-indicator {
+        width: 10px;
+        height: 10px;
+      }
+    }
+
+    .capture-section {
+      padding: 16px 12px 28px;
+      gap: 14px;
+
+      .capture-btn .capture-btn-inner {
+        width: 60px;
+        height: 60px;
+
+        .capture-circle {
+          width: 44px;
+          height: 44px;
+          border-width: 3px;
+        }
+      }
+
+      .proceed-btn {
+        padding: 8px 20px;
+        font-size: 13px;
+        border-radius: 20px;
+      }
+    }
+  }
+}
+
+@media (max-width: 360px) {
+  .task-capture-page {
+    .camera-controls {
+      padding: 10px;
+
+      .back-btn, .flash-btn, .switch-camera-btn {
+        width: 32px;
+        height: 32px;
+      }
+    }
+
+    .photo-preview-section {
+      .photo-preview-grid {
+        .photo-preview-item {
+          width: 50px;
+          height: 50px;
+        }
+      }
+    }
+
+    .capture-section {
+      .capture-btn .capture-btn-inner {
+        width: 56px;
+        height: 56px;
+
+        .capture-circle {
+          width: 40px;
+          height: 40px;
+        }
+      }
+    }
+  }
+}
+
+// Landscape mode adjustments for mobile
+@media (max-height: 600px) and (orientation: landscape) {
+  .task-capture-page {
+    .service-info {
+      padding: 8px 16px;
+
+      h3 {
+        font-size: 14px;
+      }
+    }
+
+    .photo-preview-section {
+      padding: 8px 16px;
+
+      .photo-preview-grid {
+        .photo-preview-item {
+          width: 50px;
+          height: 50px;
+        }
+      }
+    }
+
+    .photo-counter,
+    .location-accuracy {
+      padding: 6px 16px;
+    }
+
+    .capture-section {
+      padding: 12px 16px 20px;
+      gap: 12px;
+
+      .capture-btn .capture-btn-inner {
+        width: 50px;
+        height: 50px;
+
+        .capture-circle {
+          width: 36px;
+          height: 36px;
+        }
+      }
+
+      .proceed-btn {
+        padding: 6px 16px;
+        font-size: 12px;
+      }
+    }
+  }
+}
+
+// Touch device optimizations
+@media (hover: none) and (pointer: coarse) {
+  .task-capture-page {
+    .back-btn,
+    .flash-btn,
+    .switch-camera-btn,
+    .capture-btn,
+    .proceed-btn,
+    .delete-photo-btn {
+      &:hover {
+        transform: none;
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      &:active {
+        transform: scale(0.95);
+      }
+    }
+
+    .capture-btn .capture-btn-inner {
+      &:hover {
+        transform: none;
+      }
+
+      &:active {
+        transform: scale(0.9);
+      }
+    }
+
+    .delete-photo-btn {
+      &:hover {
+        transform: none;
+      }
+
+      &:active {
+        transform: scale(0.9);
+      }
+    }
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }

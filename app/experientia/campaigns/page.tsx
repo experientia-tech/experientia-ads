@@ -57,6 +57,20 @@ const AssignedCampaignsPage = () => {
 
   useEffect(() => {
     fetchCampaigns();
+    
+    // Listen for campaign creation events
+    const handleCampaignCreated = () => {
+      console.log("Campaign created event received, refreshing campaigns...");
+      fetchCampaigns();
+    };
+    
+    // Add event listener for custom campaign creation event
+    window.addEventListener('campaignCreated', handleCampaignCreated);
+    
+    // Cleanup event listener on component unmount
+    return () => {
+      window.removeEventListener('campaignCreated', handleCampaignCreated);
+    };
   }, [fetchCampaigns]);
 
   if (loading) {

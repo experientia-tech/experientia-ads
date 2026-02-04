@@ -1,32 +1,55 @@
-// app/experientia/reports/[id]/page.tsx
-import { Metadata } from 'next';
+"use client";
+import { fetchCampaignById } from "@/app/store/Campaigns";
+import { ICampaign } from "@/app/constants/interface";
+import { useState, useEffect, use } from "react";
 import ReportContent from './ReportContent';
 
-interface Campaign {
-  id: string;
-  name: string;
-  serviceType: string;
-  logo: string;
-}
-
 interface PageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
-export const metadata: Metadata = {
-  title: 'Report Details',
-};
+export default function ReportPage({ params }: PageProps) {
+  const resolvedParams = use(params);
+  const campaignId = resolvedParams.id;
 
-export default async function ReportPage({ params }: PageProps) {
-  const campaignId = params.id;
-  
-  // This would typically be a database query in a real app
-  const campaign: Campaign = {
-    id: campaignId,
-    name: 'Summer Sale 2023',
-    serviceType: 'Social Media Marketing',
-    logo: '/experentia.png',
-  };
+  const [campaign, setCampaign] = useState<ICampaign | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const res = await fetchCampaignById(campaignId);
+        if (res.success) {
+          setCampaign(res.data || null);
+        } else {
+          throw new Error(res.error || 'Failed to fetch campaign');
+        }
+      } catch (err) {
+        console.error('Error fetching campaign:', err);
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (campaignId) {
+      fetchData();
+    }
+  }, [campaignId]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+
+  if (!campaign) {
+    return <div>Campaign not found</div>;
+  }
 
   return <ReportContent campaignId={campaignId} campaign={campaign} />;
 }

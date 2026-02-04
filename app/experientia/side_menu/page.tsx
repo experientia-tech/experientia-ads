@@ -11,18 +11,18 @@ const SideMenu = () => {
       title: 'NAVIGATION',
       items: [
         { name: 'Overview', path: '/experientia/dashboard', icon: '📊' },
-        { name: 'My Campaigns', path: '/experientia/coming-soon', icon: '📢' },
+        //{ name: 'My Campaigns', path: '/experientia/coming-soon', icon: '📢' },
         { name: 'Assigned Campaigns', path: '/experientia/campaigns', icon: '📋' },
         { name: 'Team Management', path: '/experientia/team_management', icon: '👥' },
       ] 
     },
-    {
+   /*  {
       title: 'REPORT',
       items: [
         { name: 'Request Report', path: '/request-report', icon: '📄' },
         { name: 'My Requests', path: '/my-requests', icon: '📋' },
       ]
-    },
+    }, */
     {
       title: 'EXECUTOR',
       items: [
