@@ -4,11 +4,13 @@ import type { CreateCampaignInput, CampaignResponse, CampaignStatus } from '@/ty
 interface GetCampaignsParams {
   search?: string;
   status?: CampaignStatus | null;
+  serviceType?: string;
   page?: number;
   limit?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   organizationId?: string;
+  location?: string;
 }
 
 interface PaginatedResponse<T> {
@@ -26,11 +28,13 @@ export class CampaignService {
     const {
       search = '',
       status = null,
+      serviceType = '',
       page = 1,
       limit = 10,
       sortBy = 'createdAt',
       sortOrder = 'desc',
       organizationId,
+      location,
     } = params;    
     const where: any = {organizationId};
 
@@ -45,6 +49,14 @@ export class CampaignService {
 
     if (status) {
       where.status = status;
+    }
+
+    if (serviceType) {
+      where.serviceType = serviceType;
+    }
+
+    if (location) {
+      where.address = { contains: location, mode: 'insensitive' };
     }
 
     const total = await prisma.campaign.count({ where });

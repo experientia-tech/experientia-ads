@@ -242,10 +242,10 @@ const CreateCampaignForm = ({ onClose }: { onClose: () => void }) => {
               required
             >
               <option value="">Select service type</option>
-              <option value="social_media">Social Media Marketing</option>
-              <option value="influencer">Influencer Marketing</option>
-              <option value="content">Content Creation</option>
-              <option value="event">Event Marketing</option>
+              <option value="Auto Hood">Auto Hood</option>
+              <option value="No Parking Boards">No Parking Boards</option>
+              <option value="Pole Boards">Pole Boards</option>
+              <option value="Shop Branding">Shop Branding</option>
             </select>
           </div>
 
