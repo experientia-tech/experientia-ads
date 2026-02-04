@@ -31,6 +31,7 @@ export interface CreateCampaignInput {
   startDate?: Date | string;
   endDate?: Date | string;
   totalTasks?: number;
+  logo?: string;
 }
 
 export interface CampaignTaskResponse {
@@ -80,6 +81,7 @@ export interface CampaignResponse {
   serviceType?: string;
   startDate: Date | null;
   endDate: Date | null;
+  logo?: string;
   members: CampaignMemberResponse[];
   tasks: CampaignTaskResponse[];
   totalTasks: number;

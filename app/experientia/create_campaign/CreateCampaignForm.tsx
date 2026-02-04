@@ -90,14 +90,50 @@ const CreateCampaignForm = ({
     }
   }, [isEdit, initialData]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setSelectedImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        // Show loading state
+        setSelectedImage(null);
+        
+        // Get presigned URL from API
+        const presignedResponse = await fetch('/api/document/presigned-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileName: `campaign-logo-${Date.now()}.${file.type.split('/')[1]}`,
+            contentType: file.type
+          })
+        });
+
+        if (!presignedResponse.ok) {
+          throw new Error('Failed to get upload URL');
+        }
+
+        const { uploadUrl, imageUrl } = await presignedResponse.json();
+
+        // Upload file to S3
+        const uploadResponse = await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': file.type },
+          body: file
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload image');
+        }
+        setSelectedImage(imageUrl);
+        
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        alert('Failed to upload image. Please try again.');
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setSelectedImage(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
@@ -163,6 +199,8 @@ const CreateCampaignForm = ({
         const lngNum = longitude ? parseFloat(longitude) : null;
         if (lngNum !== initialData.longitude) updatedFields.longitude = lngNum;
 
+        if (selectedImage !== initialData.logo) updatedFields.logo = selectedImage;
+
         // Check if anything actually changed
         if (Object.keys(updatedFields).length === 0) {
           alert("No changes detected.");
@@ -205,6 +243,7 @@ const CreateCampaignForm = ({
             latitude: latitude ? parseFloat(latitude) : null,
             longitude: longitude ? parseFloat(longitude) : null,
             description: "",
+            logo: selectedImage,
           }),
         });
 

@@ -90,7 +90,7 @@ export const GET: RequestHandler = async (request, { params }) => {
         }
       }
 
-      return {
+      const taskData = {
         'Task ID': task.id,
         'Service Type': campaign.data!.serviceType || "N/A",
         'Completed Date': task.createdAt
@@ -129,6 +129,16 @@ export const GET: RequestHandler = async (request, { params }) => {
           return url.length > 100 ? url.substring(0, 100) + '...' : url;
         }).join(', ') || "N/A",
       };
+      if (campaign.data!.serviceType?.toLowerCase() === 'auto hood') {
+        return {
+          ...taskData,
+          'Driver Name': metadata.driverName || "N/A",
+          'Phone Number': metadata.phoneNumber || "N/A",
+          'Vehicle Number': metadata.vehicleNumber || "N/A",
+        };
+      }
+      
+      return taskData;
     });
 
     const wb = XLSX.utils.book_new();
