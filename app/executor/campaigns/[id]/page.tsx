@@ -10,6 +10,7 @@ import {
 import "./campaign-details.scss";
 import { useExecutorStore } from "@/app/store/Executor";
 import { getExecutorToken } from "@/app/store/Executor";
+import { CampaignTaskResponse } from "@/types/campaign";
 
 interface Campaign {
   id: string;
@@ -39,7 +40,7 @@ const CampaignDetails = () => {
 
   const { getCampaigns } = useExecutorStore();
   const [campaign, setCampaign] = useState<Campaign | null>(null);
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<CampaignTaskResponse[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -53,14 +54,14 @@ const CampaignDetails = () => {
     try {
       const token = getExecutorToken();
       if (!token) {
-        router.push('/executor/login');
+        router.push("/executor/login");
         return;
       }
 
       const response = await fetch(`/api/campaigns/${campaignId}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
       });
 
@@ -71,7 +72,7 @@ const CampaignDetails = () => {
         }
       }
     } catch (error) {
-      console.error('Error fetching campaign:', error);
+      console.error("Error fetching campaign:", error);
     } finally {
       setLoading(false);
     }
@@ -83,12 +84,15 @@ const CampaignDetails = () => {
       if (!token) return;
 
       // You'll need to create this API endpoint or use existing one
-      const response = await fetch(`/api/executor/campaigns/${campaignId}/tasks`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `/api/executor/campaigns/${campaignId}/tasks`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         },
-      });
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -97,39 +101,7 @@ const CampaignDetails = () => {
         }
       }
     } catch (error) {
-      console.error('Error fetching tasks:', error);
-      // Keep mock data as fallback
-      setTasks([
-        {
-          id: "NYC-5021",
-          status: "Pending",
-          address: "5th Ave & 42nd St",
-          type: "Digital",
-          size: "14x48",
-        },
-        {
-          id: "NYC-5022",
-          status: "Pending",
-          address: "Broadway & W 34th St",
-          type: "Static",
-          size: "10x30",
-        },
-        {
-          id: "NYC-5025",
-          status: "In Progress",
-          address: "7th Ave & W 48th St",
-          type: "Digital",
-          size: "14x48",
-          active: true,
-        },
-        {
-          id: "NYC-5030",
-          status: "Pending",
-          address: "Lexington Ave & E 52nd St",
-          type: "Static",
-          size: "12x24",
-        },
-      ]);
+      console.error("Error fetching tasks:", error);
     }
   };
 
@@ -141,7 +113,7 @@ const CampaignDetails = () => {
         </button>
         <h1 className="header-title">Campaign Details</h1>
         <button className="menu-btn">
-          <FiMoreHorizontal size={24} />
+          {/* <FiMoreHorizontal size={24} /> */}
         </button>
       </header>
 
@@ -150,11 +122,14 @@ const CampaignDetails = () => {
           <span className="logo-placeholder">📢</span>
         </div>
         <div className="banner-info">
-          <p className="client-name">{campaign?.serviceType || 'CAMPAIGN'}</p>
-          <h2 className="campaign-name">{campaign?.name || 'Loading...'}</h2>
+          <p className="client-name">{campaign?.serviceType || "CAMPAIGN"}</p>
+          <h2 className="campaign-name">{campaign?.name || "Loading..."}</h2>
           <div className="meta-row">
             <span className="meta-item">
-              <FiClock size={14} /> {campaign?.endDate ? `Ends ${new Date(campaign.endDate).toLocaleDateString()}` : 'No end date'}
+              <FiClock size={14} />{" "}
+              {campaign?.endDate
+                ? `Ends ${new Date(campaign.endDate).toLocaleDateString()}`
+                : "No end date"}
             </span>
           </div>
         </div>
@@ -172,7 +147,7 @@ const CampaignDetails = () => {
           className="add-task-btn"
           onClick={() => {
             // Store campaign ID in sessionStorage for capture page
-            sessionStorage.setItem('currentCampaignId', campaignId);
+            sessionStorage.setItem("currentCampaignId", campaignId);
             router.push("/executor/tasks/capture");
           }}
         >
@@ -190,15 +165,17 @@ const CampaignDetails = () => {
             <div
               key={task.id}
               className={`task-card design-card ${
-                task.active ? "active-border" : ""
+                task.status ? "active-border" : ""
               }`}
               onClick={() => {
                 // Store campaign ID and task data for details page
-                sessionStorage.setItem('currentCampaignId', campaignId);
-                sessionStorage.setItem('selectedTask', JSON.stringify(task));
-                router.push(`/executor/campaigns/${campaignId}/tasks/${task.id}`);
+                sessionStorage.setItem("currentCampaignId", campaignId);
+                sessionStorage.setItem("selectedTask", JSON.stringify(task));
+                router.push(
+                  `/executor/campaigns/${campaignId}/tasks/${task.id}`,
+                );
               }}
-              style={{ cursor: 'pointer' }}
+              style={{ cursor: "pointer" }}
             >
               <div className="task-card-content">
                 <div className="task-icon">
@@ -206,11 +183,14 @@ const CampaignDetails = () => {
                 </div>
                 <div className="task-info">
                   <div className="task-header">
-                    <span className="task-id">{task.id}</span>
+                    <span className="task-id">
+                      {task.metadata.location.address}
+                    </span>
                   </div>
-                  <p className="task-address">{task.address}</p>
+                  {/* <p className="task-address">{task.address}</p> */}
                   <p className="task-meta">
-                    Billboard Type: {task.type} • {task.size}
+                    Location: {task.metadata.location.latitude} •{" "}
+                    {task.metadata.location.longitude}
                   </p>
                 </div>
               </div>
