@@ -13,7 +13,6 @@ interface FiltersProps {
 }
 
 const Filters = ({ className = '' }: FiltersProps) => {
-  // Mock data - replace with your actual data
   const types: FilterOption[] = [
     { value: 'all', label: 'All Types' },
     { value: 'social', label: 'Social Media' },
@@ -23,11 +22,11 @@ const Filters = ({ className = '' }: FiltersProps) => {
   ];
 
   const services: FilterOption[] = [
-    { value: 'all', label: 'All Services' },
-    { value: 'design', label: 'Design' },
-    { value: 'development', label: 'Development' },
-    { value: 'marketing', label: 'Marketing' },
-    { value: 'analytics', label: 'Analytics' },
+    { value: 'All', label: 'All Services' },
+    { value: 'Auto Hood', label: 'Auto Hood' },
+    { value: 'No Parking Boards', label: 'No Parking Boards' },
+    { value: 'Pole Boards', label: 'Pole Boards' },
+    { value: 'Shop Branding', label: 'Shop Branding' },
   ];
 
   const locations: FilterOption[] = [

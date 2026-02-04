@@ -88,7 +88,8 @@ export async function createCampaignTask(campaignId: string, taskData: CampaignT
               address: taskData.address || null,
               accuracy: taskData.accuracy || null
             }
-          } : {})
+          } : {}),
+          ...(taskData.metadata || {})
         } as any,
       },
       include: {

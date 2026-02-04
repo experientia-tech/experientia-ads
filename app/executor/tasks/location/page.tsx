@@ -46,7 +46,8 @@ const TaskLocation = () => {
     const storedPhotos = sessionStorage.getItem("capturedPhotos");
     const storedCampaignId = sessionStorage.getItem("currentCampaignId");
     const storedAccuracy = sessionStorage.getItem("locationAccuracy");
-
+    const storedAutoHoodData = sessionStorage.getItem("autoHoodData");
+    
     if (storedLocation && !isAddressFetching) {
       const locationData = JSON.parse(storedLocation);
       setLocation(locationData);
@@ -69,6 +70,12 @@ const TaskLocation = () => {
 
     if (storedAccuracy) {
       setLocationAccuracy(JSON.parse(storedAccuracy));
+    }
+
+    // Store auto hood data for later use in submission
+    if (storedAutoHoodData) {
+      // We'll use this in the handleSubmit function
+      console.log('Auto Hood data found:', JSON.parse(storedAutoHoodData));
     }
   }, [router]);
 
@@ -504,8 +511,12 @@ const TaskLocation = () => {
     setIsSubmitting(true);
 
     try {
-      const token = localStorage.getItem("executor_token");
-
+      const token = localStorage.getItem('executor_token');
+      
+      // Get auto hood data if available
+      const storedAutoHoodData = sessionStorage.getItem('autoHoodData');
+      const autoHoodData = storedAutoHoodData ? JSON.parse(storedAutoHoodData) : null;
+      
       const taskData = {
         images: capturedPhotos.map((photo) => ({
           url: photo.s3Url || photo.dataUrl,
@@ -514,6 +525,13 @@ const TaskLocation = () => {
         longitude: location?.lng,
         address: fullAddress,
         accuracy: locationAccuracy?.toString() || "0",
+        ...(autoHoodData && {
+          metadata: {
+            driverName: autoHoodData.driverName,
+            phoneNumber: autoHoodData.phoneNumber,
+            vehicleNumber: autoHoodData.vehicleNumber,
+          }
+        })
       };
 
       const response = await fetch(
@@ -530,12 +548,13 @@ const TaskLocation = () => {
 
       if (response.ok) {
         const result = await response.json();
-
         sessionStorage.removeItem("capturedPhotos");
         sessionStorage.removeItem("taskLocation");
         sessionStorage.removeItem("locationAccuracy");
-
-        setShowSuccess(true);
+        sessionStorage.removeItem("autoHoodData");
+        
+        alert("Task submitted successfully!");
+        router.push("/executor/dashboard");
       } else {
         const error = await response.json();
         alert(`Failed to submit task: ${error.message || "Unknown error"}`);

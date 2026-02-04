@@ -16,6 +16,7 @@ export interface CampaignTaskInput {
   longitude?: number;
   address?: string;
   accuracy?: number;
+  metadata?: any;
 }
 
 export interface CreateCampaignInput {

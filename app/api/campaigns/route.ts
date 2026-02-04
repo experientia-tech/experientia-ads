@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status') as CampaignStatus | null;
+    const serviceType = searchParams.get('serviceType') || '';
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const sortBy = searchParams.get('sortBy') || 'createdAt';
@@ -23,6 +24,7 @@ export async function GET(request: NextRequest) {
     const campaigns = await campaignService.getCampaigns({
       search,
       status,
+      serviceType,
       page,
       limit,
       sortBy,
