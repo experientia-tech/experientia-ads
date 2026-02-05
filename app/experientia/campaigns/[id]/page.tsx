@@ -284,8 +284,8 @@ const CampaignDetailsPage = ({
                   "Unnamed User",
                 contactNumber: member.user?.phone || "N/A",
                 role: member.role,
-                location: campaign?.name || "N/A",
-                assignedBy: member.assignedBy,
+                location: member.location || campaign?.name || "N/A",
+                assignedBy: member.assignedByName || "Unknown",
                 status: member.active ? "active" : "inactive",
               }))}
             />
@@ -346,6 +346,7 @@ const CampaignDetailsPage = ({
       <ExecutorModal
         isOpen={isExecutorModalOpen}
         campaignId={id}
+        organizationId={campaign?.organizationId || ''}
         onClose={() => !isAddingExecutor && setIsExecutorModalOpen(false)}
         onSelect={async (executor) => {
           if (isAddingExecutor) return;

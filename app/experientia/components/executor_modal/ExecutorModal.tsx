@@ -1,14 +1,14 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { FiSearch, FiX, FiUserPlus, FiCheck, FiAlertCircle } from 'react-icons/fi';
+import { FiSearch, FiX, FiUserPlus, FiCheck, FiAlertCircle, FiPlus } from 'react-icons/fi';
 import styles from './ExecutorModal.module.scss';
 import { authenticatedFetch } from '../../../constants/api';
+import AddExecutorModal from './AddExecutorModal';
 
 export interface Executor {
   id: string;
   name: string;
   role: string;
-  email: string;
   phone?: string;
 }
 
@@ -19,6 +19,7 @@ interface ExecutorModalProps {
   existingExecutors?: string[];
   campaignId: string;
   isLoading?: boolean;
+  organizationId: string;
 }
 
 const ExecutorModal: React.FC<ExecutorModalProps> = ({
@@ -27,13 +28,15 @@ const ExecutorModal: React.FC<ExecutorModalProps> = ({
   onSelect,
   existingExecutors = [],
   campaignId,
-  isLoading = false
+  isLoading = false,
+  organizationId
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedExecutor, setSelectedExecutor] = useState<Executor | null>(null);
   const [executors, setExecutors] = useState<Executor[]>([]);
   const [isLoadingState, setIsLoadingState] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAddExecutorModalOpen, setIsAddExecutorModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchExecutors = async () => {
@@ -54,7 +57,6 @@ const ExecutorModal: React.FC<ExecutorModalProps> = ({
           id: user.id,
           name: `${user.firstName} ${user.lastName || ''}`.trim() || 'Unnamed Executor',
           role: user.role || 'EXECUTOR',
-          email: user.email || '',
           phone: user.phone || ''
         }));
         
@@ -72,11 +74,48 @@ const ExecutorModal: React.FC<ExecutorModalProps> = ({
     }
   }, [isOpen]);
 
+  const handleAddExecutorSuccess = (newExecutor: any) => {
+    // Refresh the executor list
+    fetchExecutors();
+    setIsAddExecutorModalOpen(false);
+    // Close the main ExecutorModal since the executor is now automatically added to the campaign
+    onClose();
+  };
+
+  const fetchExecutors = async () => {
+    try {
+      setIsLoadingState(true);
+      const response = await authenticatedFetch('/api/executors');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch executors');
+      }
+      
+      const responseData = await response.json();
+      const executorsData = Array.isArray(responseData) 
+        ? responseData 
+        : responseData.data || [];
+      
+      const formattedExecutors = executorsData.map((user: any) => ({
+        id: user.id,
+        name: `${user.firstName} ${user.lastName || ''}`.trim() || 'Unnamed Executor',
+        role: user.role || 'EXECUTOR',
+        phone: user.phone || ''
+      }));
+      
+      setExecutors(formattedExecutors);
+    } catch (err) {
+      console.error('Error fetching executors:', err);
+      setError('Failed to load executors. Please try again.');
+    } finally {
+      setIsLoadingState(false);
+    }
+  };
+
   const filteredExecutors = executors.filter(
     (executor) =>
       !existingExecutors?.includes(executor.id) &&
-      (executor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        executor.email.toLowerCase().includes(searchTerm.toLowerCase()))
+      executor.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (!isOpen) return null;
@@ -86,9 +125,19 @@ const ExecutorModal: React.FC<ExecutorModalProps> = ({
       <div className={styles.modal}>
         <div className={styles.modalHeader}>
           <h3>Add Executor</h3>
-          <button onClick={onClose} className={styles.closeButton}>
-            <FiX size={20} />
-          </button>
+          <div className={styles.headerActions}>
+            <button 
+              onClick={() => setIsAddExecutorModalOpen(true)} 
+              className={styles.addNewButton}
+              title="Add new executor"
+            >
+              <FiPlus size={16} />
+              <span>Add New</span>
+            </button>
+            <button onClick={onClose} className={styles.closeButton}>
+              <FiX size={20} />
+            </button>
+          </div>
         </div>
         
         <div className={styles.searchContainer}>
@@ -131,7 +180,6 @@ const ExecutorModal: React.FC<ExecutorModalProps> = ({
               >
                 <div className={styles.supervisorInfo}>
                   <div className={styles.supervisorName}>{executor.name}</div>
-                  <div className={styles.supervisorEmail}>{executor.email}</div>
                 </div>
                 {selectedExecutor?.id === executor.id && (
                   <FiCheck className={styles.checkIcon} />
@@ -166,6 +214,14 @@ const ExecutorModal: React.FC<ExecutorModalProps> = ({
           </button>
         </div>
       </div>
+      
+      <AddExecutorModal
+        isOpen={isAddExecutorModalOpen}
+        onClose={() => setIsAddExecutorModalOpen(false)}
+        onSuccess={handleAddExecutorSuccess}
+        organizationId={organizationId}
+        campaignId={campaignId}
+      />
     </div>
   );
 };

@@ -79,6 +79,13 @@ export class CampaignService {
                 phone: true,
               },
             },
+            assignedByUser: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
           },
         },
         tasks: true,
@@ -127,6 +134,13 @@ export class CampaignService {
                   phone: true,
                 },
               },
+              assignedByUser: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                },
+              },
             },
           },
           tasks: true,
@@ -161,9 +175,13 @@ export class CampaignService {
         campaignId: member.campaignId,
         userId: member.userId,
         assignedBy: member.assignedBy,
+        assignedByName: member.assignedByUser ? 
+          `${member.assignedByUser.firstName} ${member.assignedByUser.lastName}`.trim() : 
+          'Unknown',
         role: member.role as 'CAMPAIGN_MANAGER' | 'SUPERVISOR' | 'EXECUTOR' | 'BRAND_VIEWER',
         assignedAt: member.assignedAt,
         active: member.active,
+        location: member.location,
         user: member.user ? {
           id: member.user.id,
           firstName: member.user.firstName,
@@ -227,6 +245,13 @@ export class CampaignService {
                 phone: true,
               },
             },
+            assignedByUser: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
           },
         },
         tasks: true,
@@ -255,6 +280,13 @@ export class CampaignService {
                   firstName: true,
                   lastName: true,
                   phone: true,
+                },
+              },
+              assignedByUser: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
                 },
               },
             },
@@ -340,6 +372,13 @@ async updateCampaign(
                 firstName: true,
                 lastName: true,
                 phone: true,
+              },
+            },
+            assignedByUser: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
               },
             },
           },

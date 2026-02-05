@@ -108,7 +108,6 @@ const AssignedCampaignsPage = () => {
             <option>All services</option>
             <option>Social Media</option>
             <option>Influencer Marketing</option>
-            <option>Email Campaigns</option>
           </select>
         </div>
 

@@ -66,8 +66,6 @@ const CreateCampaignForm = ({
       setOrganizationId(payload.orgld);
     }
   }, []);
-
-  // Update state if initialData changes
   useEffect(() => {
     if (isEdit && initialData) {
       setBrandName(initialData.name || "");

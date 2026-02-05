@@ -8,7 +8,6 @@ export interface Supervisor {
   id: string;
   name: string;
   role: string;
-  email: string;
   phone?: string;
 }
 
@@ -54,7 +53,6 @@ const SupervisorModal: React.FC<SupervisorModalProps> = ({
           id: user.id,
           name: `${user.firstName} ${user.lastName || ''}`.trim() || 'Unnamed Supervisor',
           role: user.role || 'SUPERVISOR',
-          email: user.email || '',
           phone: user.phone || ''
         }));
         
@@ -75,8 +73,7 @@ const SupervisorModal: React.FC<SupervisorModalProps> = ({
   const filteredSupervisors = supervisors.filter(
     (supervisor) =>
       !existingSupervisors?.includes(supervisor.id) &&
-      (supervisor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        supervisor.email.toLowerCase().includes(searchTerm.toLowerCase()))
+      supervisor.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (!isOpen) return null;
@@ -131,7 +128,6 @@ const SupervisorModal: React.FC<SupervisorModalProps> = ({
               >
                 <div className={styles.supervisorInfo}>
                   <div className={styles.supervisorName}>{supervisor.name}</div>
-                  <div className={styles.supervisorEmail}>{supervisor.email}</div>
                 </div>
                 {selectedSupervisor?.id === supervisor.id && (
                   <FiCheck className={styles.checkIcon} />
