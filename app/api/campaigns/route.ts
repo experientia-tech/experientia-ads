@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status') as CampaignStatus | null;
     const serviceType = searchParams.get('serviceType') || '';
+    const location = searchParams.get('location') || '';
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const sortBy = searchParams.get('sortBy') || 'createdAt';
@@ -25,6 +26,7 @@ export async function GET(request: NextRequest) {
       search,
       status,
       serviceType,
+      location,
       page,
       limit,
       sortBy,
