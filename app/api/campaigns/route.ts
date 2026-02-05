@@ -13,19 +13,20 @@ export async function GET(request: NextRequest) {
     if (auth instanceof NextResponse) return auth;
 
     const { searchParams } = new URL(request.url);
-    const search = searchParams.get("search") || "";
-    const status = searchParams.get("status") as CampaignStatus | null;
-    const serviceType = searchParams.get("serviceType") || "";
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "10");
-    const sortBy = searchParams.get("sortBy") || "createdAt";
-    const sortOrder =
-      (searchParams.get("sortOrder") as "asc" | "desc") || "desc";
+    const search = searchParams.get('search') || '';
+    const status = searchParams.get('status') as CampaignStatus | null;
+    const serviceType = searchParams.get('serviceType') || '';
+    const location = searchParams.get('location') || '';
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const sortBy = searchParams.get('sortBy') || 'createdAt';
+    const sortOrder = searchParams.get('sortOrder') as 'asc' | 'desc' || 'desc';
 
     const campaigns = await campaignService.getCampaigns({
       search,
       status,
       serviceType,
+      location,
       page,
       limit,
       sortBy,

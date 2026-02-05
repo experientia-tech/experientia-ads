@@ -57,7 +57,7 @@ export class CampaignService {
     }
 
     if (serviceType) {
-      where.serviceType = serviceType;
+      where.serviceType = { contains: serviceType, mode: 'insensitive' };
     }
 
     if (location) {
