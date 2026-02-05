@@ -33,8 +33,6 @@ export async function GET(request: NextRequest) {
       sortOrder,
       organizationId: auth.orgId,
     });
-
-    // Get the authorization token from the request headers
     const authToken = request.headers.get("authorization") || "";
     return NextResponse.json(
       {
@@ -43,11 +41,6 @@ export async function GET(request: NextRequest) {
         token: authToken,
         message: "Campaigns fetched successfully",
         ...campaigns,
-      },
-      {
-        headers: {
-          "Cache-Control": "private, max-age=300", // Cache for 5 minutes
-        },
       },
     );
   } catch (error) {
