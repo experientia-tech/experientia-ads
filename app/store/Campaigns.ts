@@ -25,6 +25,13 @@ interface CampaignState {
     id: string,
     data: Partial<ICampaign>,
   ) => Promise<{ success: boolean; data?: ICampaign; error?: string }>;
+
+  //search campaign
+  searchCampaign: (search: string) => Promise<{
+    success: boolean;
+    data?: ICampaign[];
+    error?: string;
+  }>;
 }
 
 export const useCampaignStore = create<CampaignState>((set) => ({
@@ -127,6 +134,33 @@ export const useCampaignStore = create<CampaignState>((set) => ({
       const errorMessage =
         err instanceof Error ? err.message : "An error occurred";
       console.error("Error editing campaign:", err);
+      set({ isLoading: false, error: errorMessage });
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  searchCampaign: async (search: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await authenticatedFetch(
+        `/api/campaigns?search=${search}`,
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        const errorMessage = `Failed to search campaign: ${response.status} ${response.statusText}`;
+        set({ isLoading: false, error: errorMessage });
+        return { success: false, error: errorMessage };
+      }
+
+      const responseData = await response.json();
+      const campaignData = responseData.data || responseData;
+      set({ selectedCampaign: campaignData, isLoading: false });
+      return { success: true, data: campaignData };
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "An error occurred";
+      console.error("Error searching campaign:", err);
       set({ isLoading: false, error: errorMessage });
       return { success: false, error: errorMessage };
     }

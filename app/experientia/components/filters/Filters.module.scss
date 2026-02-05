@@ -61,8 +61,10 @@
   font-size: 0.9rem;
   appearance: none;
   cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+
   &:focus {
     outline: none;
     border-color: #3b82f6;
@@ -84,7 +86,7 @@
   .filterGrid {
     grid-template-columns: 1fr;
   }
-  
+
   .filtersContainer {
     padding: 16px;
   }
