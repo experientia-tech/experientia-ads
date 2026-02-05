@@ -16,7 +16,6 @@ const Filters = ({ className = '' }: FiltersProps) => {
   const types: FilterOption[] = [
     { value: 'all', label: 'All Types' },
     { value: 'social', label: 'Social Media' },
-    { value: 'email', label: 'Email Marketing' },
     { value: 'content', label: 'Content Creation' },
     { value: 'seo', label: 'SEO' },
   ];

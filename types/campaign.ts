@@ -59,9 +59,11 @@ export interface CampaignMemberResponse {
   campaignId: string;
   userId: string;
   assignedBy:string;
+  assignedByName: string;
   role: 'CAMPAIGN_MANAGER' | 'SUPERVISOR' | 'EXECUTOR' | 'BRAND_VIEWER';
   assignedAt: Date;
   active: boolean;
+  location?: string;
   user?: {
     id: string;
     firstName: string;
