@@ -17,6 +17,7 @@ interface CapturedPhoto {
   dataUrl: string;
   s3Url?: string;
   timestamp: Date;
+  view?: string | null;
 }
 
 interface LocationData {
@@ -49,6 +50,12 @@ const TaskCapture = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isCameraLoading, setIsCameraLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [showAutoHoodForm, setShowAutoHoodForm] = useState(false);
+  const [autoHoodData, setAutoHoodData] = useState({
+    driverName: '',
+    phoneNumber: '',
+    vehicleNumber: ''
+  });
 
   // Get campaign data and target location from sessionStorage
   useEffect(() => {
@@ -83,7 +90,6 @@ const TaskCapture = () => {
       const response = await fetch(`/api/campaigns/${campaignId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
         },
       });
 
@@ -104,6 +110,24 @@ const TaskCapture = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const getRequiredPhotoCount = () => {
+    if (!campaignData?.serviceType) return 3;
+    
+    const serviceType = campaignData.serviceType.toLowerCase();
+    if (serviceType === 'auto hood') {
+      return 3;
+    } else if (serviceType === 'no parking boards' ||
+               serviceType === 'pole boards' ||
+               serviceType === 'shop branding') {
+      return 1;
+    }
+    return 3; // Default to 3 for other service types
+  };
+
+  const needsAutoHoodForm = () => {
+    return campaignData?.serviceType?.toLowerCase() === 'auto hood';
   };
 
   const getCurrentLocation = useCallback(() => {
@@ -373,7 +397,14 @@ const TaskCapture = () => {
     return new File([u8arr], filename, { type: mime });
   };
 
-  const capturePhoto = async () => {
+  const capturePhoto = async (view?: string) => {
+    const requiredCount = getRequiredPhotoCount();
+    
+    if (capturedPhotos.length >= requiredCount) {
+      alert(`You can only capture ${requiredCount} photo(s) for this service type`);
+      return;
+    }
+
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
@@ -395,12 +426,16 @@ const TaskCapture = () => {
             dataUrl,
             s3Url,
             timestamp: new Date(),
+            view: view || null,
           };
 
-          setCapturedPhotos((prev) => [...prev, newPhoto]);
+          setCapturedPhotos(prev => [...prev, newPhoto]);
+          if (needsAutoHoodForm() && capturedPhotos.length + 1 === getRequiredPhotoCount()) {
+            setTimeout(() => setShowAutoHoodForm(true), 500);
+          }
         } catch (error) {
-          console.error("S3 Upload failed:", error);
-          alert("Failed to upload image to S3. Please try again.");
+          console.error("Error uploading photo:", error);
+          alert("Failed to upload photo. Please try again.");
         } finally {
           setIsUploading(false);
         }
@@ -418,19 +453,55 @@ const TaskCapture = () => {
   };
 
   const handleProceed = () => {
-    if (capturedPhotos.length === 3 && currentLocation) {
-      // Store all data
-      sessionStorage.setItem("capturedPhotos", JSON.stringify(capturedPhotos));
-      sessionStorage.setItem("taskLocation", JSON.stringify(currentLocation));
-      sessionStorage.setItem(
-        "locationAccuracy",
-        JSON.stringify(locationAccuracy),
-      );
-
-      router.push("/executor/tasks/location");
-    } else {
-      alert("Please capture 3 photos and ensure location is available");
+    const requiredCount = getRequiredPhotoCount();
+    
+    if (capturedPhotos.length !== requiredCount) {
+      alert(`Please capture exactly ${requiredCount} photo(s) for this service type`);
+      return;
     }
+    
+    if (!currentLocation) {
+      alert('Location is not available. Please wait for GPS to initialize.');
+      return;
+    }
+    
+    // For Auto Hood, show the form instead of proceeding directly
+    if (needsAutoHoodForm()) {
+      setShowAutoHoodForm(true);
+    } else {
+      // For other service types, proceed directly
+      proceedToLocation();
+    }
+  };
+
+  const proceedToLocation = () => {
+    // Store all data
+    sessionStorage.setItem("capturedPhotos", JSON.stringify(capturedPhotos));
+    sessionStorage.setItem("taskLocation", JSON.stringify(currentLocation));
+    sessionStorage.setItem(
+      "locationAccuracy",
+      JSON.stringify(locationAccuracy),
+    );
+
+    // Store auto hood data if needed
+    if (needsAutoHoodForm()) {
+      sessionStorage.setItem("autoHoodData", JSON.stringify(autoHoodData));
+    }
+
+    router.push("/executor/tasks/location");
+  };
+
+  const handleAutoHoodFormSubmit = () => {
+    // Validate form
+    if (!autoHoodData.driverName.trim() || 
+        !autoHoodData.phoneNumber.trim() || 
+        !autoHoodData.vehicleNumber.trim()) {
+      alert('Please fill in all required fields (Driver Name, Phone Number, Vehicle Number)');
+      return;
+    }
+
+    setShowAutoHoodForm(false);
+    proceedToLocation();
   };
 
   useEffect(() => {
@@ -565,12 +636,12 @@ const TaskCapture = () => {
                 ))}
               </div>
               <div className="photo-counter-overlay">
-                <span className="counter-text">{capturedPhotos.length}/3</span>
+                <span className="counter-text">{capturedPhotos.length}/{getRequiredPhotoCount()}</span>
                 <div className="progress-dots">
-                  {[1, 2, 3].map((num) => (
+                  {Array.from({ length: getRequiredPhotoCount() }, (_, num) => (
                     <div
-                      key={num}
-                      className={`dot ${num <= capturedPhotos.length ? "filled" : ""}`}
+                      key={num + 1}
+                      className={`dot ${num + 1 <= capturedPhotos.length ? "filled" : ""}`}
                     />
                   ))}
                 </div>
@@ -580,23 +651,86 @@ const TaskCapture = () => {
 
           {/* Capture Button Overlay */}
           <div className="capture-button-overlay">
-            <button
-              className={`capture-btn ${capturedPhotos.length >= 3 || isUploading ? "disabled" : ""}`}
-              onClick={isCameraActive ? capturePhoto : toggleCamera}
-              disabled={capturedPhotos.length >= 3 || isUploading}
-            >
-              <div className="capture-btn-inner">
-                {isUploading ? (
-                  <FiLoader size={32} className="animate-spin" />
-                ) : isCameraActive ? (
-                  <div className="capture-circle" />
-                ) : (
-                  <FiCamera size={32} />
+            {needsAutoHoodForm() ? (
+              // Auto Hood specific capture buttons - sequential
+              <div className="auto-hood-capture-buttons">
+                {capturedPhotos.length === 0 && (
+                  <button 
+                    className="view-capture-btn"
+                    onClick={isCameraActive ? () => capturePhoto('front') : toggleCamera}
+                    disabled={isUploading}
+                  >
+                    <div className="capture-btn-inner">
+                      {isUploading ? (
+                        <FiLoader size={32} className="animate-spin" />
+                      ) : isCameraActive ? (
+                        <div className="capture-circle" />
+                      ) : (
+                        <FiCamera size={32} />
+                      )}
+                    </div>
+                    <span className="capture-label">Capture Front View</span>
+                  </button>
+                )}
+                
+                {capturedPhotos.length === 1 && (
+                  <button 
+                    className="view-capture-btn"
+                    onClick={isCameraActive ? () => capturePhoto('side') : toggleCamera}
+                    disabled={isUploading}
+                  >
+                    <div className="capture-btn-inner">
+                      {isUploading ? (
+                        <FiLoader size={32} className="animate-spin" />
+                      ) : isCameraActive ? (
+                        <div className="capture-circle" />
+                      ) : (
+                        <FiCamera size={32} />
+                      )}
+                    </div>
+                    <span className="capture-label">Capture Side View</span>
+                  </button>
+                )}
+                
+                {capturedPhotos.length === 2 && (
+                  <button 
+                    className="view-capture-btn"
+                    onClick={isCameraActive ? () => capturePhoto('back') : toggleCamera}
+                    disabled={isUploading}
+                  >
+                    <div className="capture-btn-inner">
+                      {isUploading ? (
+                        <FiLoader size={32} className="animate-spin" />
+                      ) : isCameraActive ? (
+                        <div className="capture-circle" />
+                      ) : (
+                        <FiCamera size={32} />
+                      )}
+                    </div>
+                    <span className="capture-label">Capture Back View</span>
+                  </button>
                 )}
               </div>
-            </button>
+            ) : (
+              // Generic capture button for other service types
+              <button
+                className={`capture-btn ${capturedPhotos.length >= getRequiredPhotoCount() || isUploading ? "disabled" : ""}`}
+                onClick={isCameraActive ? () => capturePhoto() : toggleCamera}
+                disabled={capturedPhotos.length >= getRequiredPhotoCount() || isUploading}
+              >
+                <div className="capture-btn-inner">
+                  {isUploading ? (
+                    <FiLoader size={32} className="animate-spin" />
+                  ) : isCameraActive ? (
+                    <div className="capture-circle" />
+                  ) : (
+                    <FiCamera size={32} />
+                  )}
+                </div>
+              </button>
+            )}
 
-            {capturedPhotos.length >= 3 && (
+            {capturedPhotos.length >= getRequiredPhotoCount() && (
               <button className="proceed-btn-overlay" onClick={handleProceed}>
                 Proceed
               </button>
@@ -604,6 +738,76 @@ const TaskCapture = () => {
           </div>
         </div>
       </div>
+
+      {/* Auto Hood Form Popup */}
+      {showAutoHoodForm && (
+        <div className="auto-hood-form-overlay">
+          <div className="auto-hood-form-modal">
+            <div className="auto-hood-form-header">
+              <h3>Auto Hood Details</h3>
+              <button 
+                className="close-form-btn"
+                onClick={() => setShowAutoHoodForm(false)}
+              >
+                <FiX size={20} />
+              </button>
+            </div>
+            
+            <div className="auto-hood-form-content">
+              <div className="form-field">
+                <label htmlFor="driverName">Driver Name *</label>
+                <input
+                  type="text"
+                  id="driverName"
+                  value={autoHoodData.driverName}
+                  onChange={(e) => setAutoHoodData(prev => ({ ...prev, driverName: e.target.value }))}
+                  placeholder="Enter driver name"
+                  className="form-input"
+                />
+              </div>
+              
+              <div className="form-field">
+                <label htmlFor="phoneNumber">Phone Number *</label>
+                <input
+                  type="tel"
+                  id="phoneNumber"
+                  value={autoHoodData.phoneNumber}
+                  onChange={(e) => setAutoHoodData(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                  placeholder="Enter phone number"
+                  className="form-input"
+                />
+              </div>
+              
+              <div className="form-field">
+                <label htmlFor="vehicleNumber">Vehicle Number *</label>
+                <input
+                  type="text"
+                  id="vehicleNumber"
+                  value={autoHoodData.vehicleNumber}
+                  onChange={(e) => setAutoHoodData(prev => ({ ...prev, vehicleNumber: e.target.value }))}
+                  placeholder="Enter vehicle number"
+                  className="form-input"
+                />
+              </div>
+            </div>
+            
+            <div className="auto-hood-form-actions">
+              <button 
+                className="cancel-btn"
+                onClick={() => setShowAutoHoodForm(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="submit-btn"
+                onClick={handleAutoHoodFormSubmit}
+              >
+                Submit & Proceed
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Hidden canvas for photo capture */}
       <canvas ref={canvasRef} style={{ display: "none" }} />
