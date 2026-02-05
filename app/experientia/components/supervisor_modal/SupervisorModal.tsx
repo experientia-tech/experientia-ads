@@ -1,8 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { FiSearch, FiX, FiUserPlus, FiCheck, FiAlertCircle } from 'react-icons/fi';
+import { FiSearch, FiX, FiUserPlus, FiCheck, FiAlertCircle, FiPlus } from 'react-icons/fi';
 import styles from './SupervisorModal.module.scss';
 import { authenticatedFetch } from '../../../constants/api';
+import AddSupervisorModal from './AddSupervisorModal';
 
 export interface Supervisor {
   id: string;
@@ -18,6 +19,7 @@ interface SupervisorModalProps {
   existingSupervisors?: string[];
   campaignId: string;
   isLoading?: boolean;
+  organizationId: string;
 }
 
 const SupervisorModal: React.FC<SupervisorModalProps> = ({
@@ -26,45 +28,55 @@ const SupervisorModal: React.FC<SupervisorModalProps> = ({
   onSelect,
   existingSupervisors = [],
   campaignId,
-  isLoading = false
+  isLoading = false,
+  organizationId
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSupervisor, setSelectedSupervisor] = useState<Supervisor | null>(null);
   const [supervisors, setSupervisors] = useState<Supervisor[]>([]);
   const [isLoadingState, setIsLoadingState] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAddSupervisorModalOpen, setIsAddSupervisorModalOpen] = useState(false);
+
+  const handleAddSupervisorSuccess = (newSupervisor: any) => {
+    // Refresh supervisor list
+    fetchSupervisors();
+    setIsAddSupervisorModalOpen(false);
+    // Close main SupervisorModal since supervisor is now automatically added to campaign
+    onClose();
+  };
+
+  const fetchSupervisors = async () => {
+    try {
+      setIsLoadingState(true);
+      const response = await authenticatedFetch('/api/supervisors');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch supervisors');
+      }
+      
+      const responseData = await response.json();
+      const supervisorsData = Array.isArray(responseData) 
+        ? responseData 
+        : responseData.data || [];
+      
+      const formattedSupervisors = supervisorsData.map((user: any) => ({
+        id: user.id,
+        name: `${user.firstName} ${user.lastName || ''}`.trim() || 'Unnamed Supervisor',
+        role: user.role || 'SUPERVISOR',
+        phone: user.phone || ''
+      }));
+      
+      setSupervisors(formattedSupervisors);
+    } catch (err) {
+      console.error('Error fetching supervisors:', err);
+      setError('Failed to load supervisors. Please try again.');
+    } finally {
+      setIsLoadingState(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchSupervisors = async () => {
-      try {
-        setIsLoadingState(true);
-        const response = await authenticatedFetch('/api/supervisors');
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch supervisors');
-        }
-        
-        const responseData = await response.json();
-        const supervisorsData = Array.isArray(responseData) 
-          ? responseData 
-          : responseData.data || [];
-        
-        const formattedSupervisors = supervisorsData.map((user: any) => ({
-          id: user.id,
-          name: `${user.firstName} ${user.lastName || ''}`.trim() || 'Unnamed Supervisor',
-          role: user.role || 'SUPERVISOR',
-          phone: user.phone || ''
-        }));
-        
-        setSupervisors(formattedSupervisors);
-      } catch (err) {
-        console.error('Error fetching supervisors:', err);
-        setError('Failed to load supervisors. Please try again.');
-      } finally {
-        setIsLoadingState(false);
-      }
-    };
-
     if (isOpen) {
       fetchSupervisors();
     }
@@ -83,9 +95,19 @@ const SupervisorModal: React.FC<SupervisorModalProps> = ({
       <div className={styles.modal}>
         <div className={styles.modalHeader}>
           <h3>Add Supervisor</h3>
-          <button onClick={onClose} className={styles.closeButton}>
-            <FiX size={20} />
-          </button>
+          <div className={styles.headerActions}>
+            <button 
+              onClick={() => setIsAddSupervisorModalOpen(true)} 
+              className={styles.addNewButton}
+              title="Add new supervisor"
+            >
+              <FiPlus size={14} />
+              <span>Add New</span>
+            </button>
+            <button onClick={onClose} className={styles.closeButton}>
+              <FiX size={20} />
+            </button>
+          </div>
         </div>
         
         <div className={styles.searchContainer}>
@@ -162,6 +184,14 @@ const SupervisorModal: React.FC<SupervisorModalProps> = ({
           </button>
         </div>
       </div>
+      
+      <AddSupervisorModal
+        isOpen={isAddSupervisorModalOpen}
+        onClose={() => setIsAddSupervisorModalOpen(false)}
+        onSuccess={handleAddSupervisorSuccess}
+        organizationId={organizationId}
+        campaignId={campaignId}
+      />
     </div>
   );
 };

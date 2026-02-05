@@ -296,6 +296,7 @@ const CampaignDetailsPage = ({
       <SupervisorModal
         isOpen={isSupervisorModalOpen}
         campaignId={id}
+        organizationId={campaign?.organizationId || ''}
         onClose={() => !isAddingSupervisor && setIsSupervisorModalOpen(false)}
         onSelect={async (supervisor) => {
           if (isAddingSupervisor) return;
