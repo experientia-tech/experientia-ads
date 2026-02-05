@@ -1,11 +1,185 @@
 import { prisma } from '@/lib/prisma';
 import { CampaignTaskInput } from '@/types/campaign';
 
-export async function getAllExecutors() {
+export async function addSupervisor(firstName: string, lastName: string, phone: string, location: string, organizationId: string, campaignId: string, assignedBy: string) {
+  const existingUser = await prisma.user.findUnique({
+    where: { phone },
+    include: {
+      campaignMembers: {
+        where: {
+          role: 'SUPERVISOR',
+          active: true
+        }
+      }
+    }
+  });
+
+  let user;
+  
+  if (existingUser) {
+    if (existingUser.campaignMembers.length > 0) {
+      throw new Error('User with this phone number is already a supervisor');
+    }
+
+    user = await prisma.user.update({
+      where: { id: existingUser.id },
+      data: {
+        firstName,
+        lastName,
+        organizationId,
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        organizationId: true,
+      }
+    });
+  } else {
+    user = await prisma.user.create({
+      data: {
+        firstName,
+        lastName,
+        phone,
+        organizationId,
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        organizationId: true,
+      }
+    });
+  }
+
+  const campaignMember = await prisma.campaignMember.create({
+    data: {
+      campaignId,
+      userId: user.id,
+      assignedBy,
+      role: 'SUPERVISOR',
+      location,
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          organizationId: true,
+        }
+      }
+    }
+  });
+
+  return {
+    id: campaignMember.user.id,
+    firstName: campaignMember.user.firstName,
+    lastName: campaignMember.user.lastName,
+    phone: campaignMember.user.phone,
+    organizationId: campaignMember.user.organizationId,
+    location: campaignMember.location,
+    role: 'SUPERVISOR',
+  };
+}
+
+export async function addExecutor(firstName: string, lastName: string, phone: string, location: string, organizationId: string, campaignId: string, assignedBy: string) {
+  const existingUser = await prisma.user.findUnique({
+    where: { phone },
+    include: {
+      campaignMembers: {
+        where: {
+          role: 'EXECUTOR',
+          active: true
+        }
+      }
+    }
+  });
+
+  let user;
+  
+  if (existingUser) {
+    if (existingUser.campaignMembers.length > 0) {
+      throw new Error('User with this phone number is already an executor');
+    }
+
+    user = await prisma.user.update({
+      where: { id: existingUser.id },
+      data: {
+        firstName,
+        lastName,
+        organizationId,
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        organizationId: true,
+      }
+    });
+  } else {
+    user = await prisma.user.create({
+      data: {
+        firstName,
+        lastName,
+        phone,
+        organizationId,
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        organizationId: true,
+      }
+    });
+  }
+
+  const campaignMember = await prisma.campaignMember.create({
+    data: {
+      campaignId,
+      userId: user.id,
+      assignedBy,
+      role: 'EXECUTOR',
+      location,
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+        }
+      }
+    }
+  });
+
+  return {
+    id: campaignMember.user.id,
+    firstName: campaignMember.user.firstName,
+    lastName: campaignMember.user.lastName,
+    phone: campaignMember.user.phone,
+    organizationId: organizationId,
+    location: campaignMember.location,
+    role: 'EXECUTOR',
+  };
+}
+
+export async function getAllExecutors(organizationId?: string) {
   const executorAssignments = await prisma.campaignMember.findMany({
     where: {
       role: 'EXECUTOR',
       active: true,
+      ...(organizationId && {
+        user: {
+          organizationId: organizationId
+        }
+      })
     },
     distinct: ['userId'],
     include: {
@@ -15,6 +189,7 @@ export async function getAllExecutors() {
           firstName: true,
           lastName: true,
           phone: true,
+          organizationId: true,
         },
       },
     },
@@ -25,6 +200,7 @@ export async function getAllExecutors() {
     firstName: assignment.user.firstName,
     lastName: assignment.user.lastName,
     phone: assignment.user.phone,
+    organizationId: assignment.user.organizationId,
     role: 'EXECUTOR',
   }));
 }
@@ -127,7 +303,6 @@ export async function getCampaignTasks(campaignId: string, userId: string) {
     throw new Error('You are not a member of this campaign');
   }
 
-  // Get tasks for the campaign
   const tasks = await prisma.task.findMany({
     where: {
       campaignId,

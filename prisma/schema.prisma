@@ -87,6 +87,7 @@ model CampaignMember {
   campaignId     String        @db.Uuid
   userId         String        @db.Uuid
   assignedBy     String       @db.Uuid
+  location       String?       @db.Text
 
   role           CampaignRole
   assignedAt     DateTime      @default(now()) @db.Timestamptz

@@ -84,6 +84,13 @@ export class CampaignService {
                 phone: true,
               },
             },
+            assignedByUser: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
           },
         },
         tasks: true,
@@ -115,6 +122,7 @@ export class CampaignService {
           startDate: data.startDate ? new Date(data.startDate) : null,
           endDate: data.endDate ? new Date(data.endDate) : null,
           totalTasks: data.totalTasks || 0,
+          logo: data.logo ?? null,
         },
       });
 
@@ -129,6 +137,13 @@ export class CampaignService {
                   firstName: true,
                   lastName: true,
                   phone: true,
+                },
+              },
+              assignedByUser: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
                 },
               },
             },
@@ -158,27 +173,26 @@ export class CampaignService {
       serviceType: campaign.serviceType || undefined,
       startDate: campaign.startDate,
       endDate: campaign.endDate,
+      logo: campaign.logo || undefined,
       totalTasks: campaign.totalTasks,
       members: campaign.members.map((member: any) => ({
         id: member.id,
         campaignId: member.campaignId,
         userId: member.userId,
         assignedBy: member.assignedBy,
-        role: member.role as
-          | "CAMPAIGN_MANAGER"
-          | "SUPERVISOR"
-          | "EXECUTOR"
-          | "BRAND_VIEWER",
+        assignedByName: member.assignedByUser ? 
+          `${member.assignedByUser.firstName} ${member.assignedByUser.lastName}`.trim() : 
+          'Unknown',
+        role: member.role as 'CAMPAIGN_MANAGER' | 'SUPERVISOR' | 'EXECUTOR' | 'BRAND_VIEWER',
         assignedAt: member.assignedAt,
         active: member.active,
-        user: member.user
-          ? {
-              id: member.user.id,
-              firstName: member.user.firstName,
-              lastName: member.user.lastName,
-              phone: member.user.phone,
-            }
-          : undefined,
+        location: member.location,
+        user: member.user ? {
+          id: member.user.id,
+          firstName: member.user.firstName,
+          lastName: member.user.lastName,
+          phone: member.user.phone,
+        } : undefined,
       })),
       tasks: campaign.tasks.map((task: any) => {
         const metadata =
@@ -242,6 +256,13 @@ export class CampaignService {
                 phone: true,
               },
             },
+            assignedByUser: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
           },
         },
         tasks: true,
@@ -273,6 +294,13 @@ export class CampaignService {
                   firstName: true,
                   lastName: true,
                   phone: true,
+                },
+              },
+              assignedByUser: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
                 },
               },
             },
@@ -333,18 +361,19 @@ export class CampaignService {
         throw new Error("Campaign not found");
       }
 
-      const updateData: any = {
-        name: data.name,
-        description: data.description,
-        status: data.status,
-        latitude: data.latitude,
-        longitude: data.longitude,
-        address: data.address,
-        serviceType: data.serviceType,
-        startDate: data.startDate ? new Date(data.startDate) : null,
-        endDate: data.endDate ? new Date(data.endDate) : null,
-        totalTasks: data.totalTasks,
-      };
+    const updateData: any = {
+      name: data.name,
+      description: data.description,
+      status: data.status,
+      latitude: data.latitude,
+      longitude: data.longitude,
+      address: data.address,
+      serviceType: data.serviceType,
+      startDate: data.startDate ? new Date(data.startDate) : null,
+      endDate: data.endDate ? new Date(data.endDate) : null,
+      totalTasks: data.totalTasks,
+      logo: data.logo,
+    };
 
       const updatedCampaign = await prisma.campaign.update({
         where: { id },
@@ -359,6 +388,13 @@ export class CampaignService {
                   lastName: true,
                   phone: true,
                 },
+              },
+            },
+            assignedByUser: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
               },
             },
           },

@@ -46,6 +46,7 @@ const TaskLocation = () => {
     const storedPhotos = sessionStorage.getItem("capturedPhotos");
     const storedCampaignId = sessionStorage.getItem("currentCampaignId");
     const storedAccuracy = sessionStorage.getItem("locationAccuracy");
+    const storedAutoHoodData = sessionStorage.getItem("autoHoodData");
 
     if (storedLocation && !isAddressFetching) {
       const locationData = JSON.parse(storedLocation);
@@ -71,8 +72,6 @@ const TaskLocation = () => {
       setLocationAccuracy(JSON.parse(storedAccuracy));
     }
   }, [router]);
-
-  // Function to clear all geocoding cache
   const clearGeocodingCache = () => {
     console.log("Clearing all geocoding cache...");
     const keysToRemove = [];
@@ -519,6 +518,16 @@ const TaskLocation = () => {
 
     try {
       const token = localStorage.getItem("executor_token");
+      const storedAutoHoodData = sessionStorage.getItem("autoHoodData");
+      let autoHoodData = {};
+      
+      if (storedAutoHoodData) {
+        try {
+          autoHoodData = JSON.parse(storedAutoHoodData);
+        } catch (error) {
+          console.error("Error parsing Auto Hood data:", error);
+        }
+      }
 
       const taskData = {
         images: capturedPhotos.map((photo) => ({
@@ -528,6 +537,9 @@ const TaskLocation = () => {
         longitude: location?.lng,
         address: fullAddress,
         accuracy: locationAccuracy?.toString() || "0",
+        metadata: {
+          ...autoHoodData,
+        },
       };
 
       const response = await fetch(
@@ -548,6 +560,7 @@ const TaskLocation = () => {
         sessionStorage.removeItem("capturedPhotos");
         sessionStorage.removeItem("taskLocation");
         sessionStorage.removeItem("locationAccuracy");
+        sessionStorage.removeItem("autoHoodData");
 
         setShowSuccess(true);
       } else {
