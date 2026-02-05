@@ -2,7 +2,6 @@ import { prisma } from '@/lib/prisma';
 import { CampaignTaskInput } from '@/types/campaign';
 
 export async function addSupervisor(firstName: string, lastName: string, phone: string, location: string, organizationId: string, campaignId: string, assignedBy: string) {
-  // Check if phone number already exists
   const existingUser = await prisma.user.findUnique({
     where: { phone },
     include: {
@@ -18,12 +17,10 @@ export async function addSupervisor(firstName: string, lastName: string, phone: 
   let user;
   
   if (existingUser) {
-    // Check if user is already a supervisor
     if (existingUser.campaignMembers.length > 0) {
       throw new Error('User with this phone number is already a supervisor');
     }
-    
-    // User exists but is not a supervisor, update their info
+
     user = await prisma.user.update({
       where: { id: existingUser.id },
       data: {
@@ -40,7 +37,6 @@ export async function addSupervisor(firstName: string, lastName: string, phone: 
       }
     });
   } else {
-    // Create new user if phone number doesn't exist
     user = await prisma.user.create({
       data: {
         firstName,
@@ -58,7 +54,6 @@ export async function addSupervisor(firstName: string, lastName: string, phone: 
     });
   }
 
-  // Add user to campaign as supervisor
   const campaignMember = await prisma.campaignMember.create({
     data: {
       campaignId,
@@ -92,7 +87,6 @@ export async function addSupervisor(firstName: string, lastName: string, phone: 
 }
 
 export async function addExecutor(firstName: string, lastName: string, phone: string, location: string, organizationId: string, campaignId: string, assignedBy: string) {
-  // Check if phone number already exists
   const existingUser = await prisma.user.findUnique({
     where: { phone },
     include: {
@@ -108,12 +102,10 @@ export async function addExecutor(firstName: string, lastName: string, phone: st
   let user;
   
   if (existingUser) {
-    // Check if user is already an executor
     if (existingUser.campaignMembers.length > 0) {
       throw new Error('User with this phone number is already an executor');
     }
-    
-    // User exists but is not an executor, update their info
+
     user = await prisma.user.update({
       where: { id: existingUser.id },
       data: {
@@ -130,7 +122,6 @@ export async function addExecutor(firstName: string, lastName: string, phone: st
       }
     });
   } else {
-    // Create new user if phone number doesn't exist
     user = await prisma.user.create({
       data: {
         firstName,
@@ -148,7 +139,6 @@ export async function addExecutor(firstName: string, lastName: string, phone: st
     });
   }
 
-  // Add user to campaign as executor
   const campaignMember = await prisma.campaignMember.create({
     data: {
       campaignId,
@@ -313,7 +303,6 @@ export async function getCampaignTasks(campaignId: string, userId: string) {
     throw new Error('You are not a member of this campaign');
   }
 
-  // Get tasks for the campaign
   const tasks = await prisma.task.findMany({
     where: {
       campaignId,
