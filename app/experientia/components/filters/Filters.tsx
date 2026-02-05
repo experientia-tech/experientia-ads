@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { FiChevronDown, FiFilter } from 'react-icons/fi';
-import styles from './Filters.module.scss';
+import { FiChevronDown, FiFilter } from "react-icons/fi";
+import styles from "./Filters.module.scss";
 
 interface FilterOption {
   value: string;
@@ -12,36 +12,36 @@ interface FiltersProps {
   className?: string;
 }
 
-const Filters = ({ className = '' }: FiltersProps) => {
+const Filters = ({ className = "" }: FiltersProps) => {
   const types: FilterOption[] = [
-    { value: 'all', label: 'All Types' },
-    { value: 'social', label: 'Social Media' },
-    { value: 'email', label: 'Email Marketing' },
-    { value: 'content', label: 'Content Creation' },
-    { value: 'seo', label: 'SEO' },
+    { value: "all", label: "All Types" },
+    { value: "social", label: "Social Media" },
+    { value: "email", label: "Email Marketing" },
+    { value: "content", label: "Content Creation" },
+    { value: "seo", label: "SEO" },
   ];
 
   const services: FilterOption[] = [
-    { value: 'All', label: 'All Services' },
-    { value: 'Auto Hood', label: 'Auto Hood' },
-    { value: 'No Parking Boards', label: 'No Parking Boards' },
-    { value: 'Pole Boards', label: 'Pole Boards' },
-    { value: 'Shop Branding', label: 'Shop Branding' },
+    { value: "All", label: "All Services" },
+    { value: "Auto Hood", label: "Auto Hood" },
+    { value: "No Parking Boards", label: "No Parking Boards" },
+    { value: "Pole Boards", label: "Pole Boards" },
+    { value: "Shop Branding", label: "Shop Branding" },
   ];
 
   const locations: FilterOption[] = [
-    { value: 'all', label: 'All Locations' },
-    { value: 'new-york', label: 'New York' },
-    { value: 'london', label: 'London' },
-    { value: 'tokyo', label: 'Tokyo' },
-    { value: 'sydney', label: 'Sydney' },
+    { value: "all", label: "All Locations" },
+    { value: "new-york", label: "New York" },
+    { value: "london", label: "London" },
+    { value: "tokyo", label: "Tokyo" },
+    { value: "sydney", label: "Sydney" },
   ];
 
   const companies: FilterOption[] = [
-    { value: 'all', label: 'All Companies' },
-    { value: 'company-1', label: 'Company A' },
-    { value: 'company-2', label: 'Company B' },
-    { value: 'company-3', label: 'Company C' },
+    { value: "all", label: "All Companies" },
+    { value: "company-1", label: "Company A" },
+    { value: "company-2", label: "Company B" },
+    { value: "company-3", label: "Company C" },
   ];
 
   return (
@@ -50,7 +50,7 @@ const Filters = ({ className = '' }: FiltersProps) => {
         <FiFilter className={styles.filterIcon} />
         <h3 className={styles.filtersTitle}>Filters</h3>
       </div>
-      
+
       <div className={styles.filterGrid}>
         <div className={styles.filterGroup}>
           <label htmlFor="type-filter" className={styles.filterLabel}>

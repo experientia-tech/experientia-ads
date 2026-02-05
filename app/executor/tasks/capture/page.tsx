@@ -58,21 +58,12 @@ const TaskCapture = () => {
     }
     getCurrentLocation();
 
+    // Start camera immediately when video element is ready
     const timer = setTimeout(() => {
       if (videoRef.current) {
         startCamera();
-      } else {
-        console.log("Video element not ready, retrying...");
-        // Retry after additional delay
-        setTimeout(() => {
-          if (videoRef.current) {
-            startCamera();
-          } else {
-            console.error("Video element still not found");
-          }
-        }, 500);
       }
-    }, 500);
+    }, 100);
 
     return () => clearTimeout(timer);
   }, []);
@@ -281,8 +272,8 @@ const TaskCapture = () => {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: facingMode,
-          width: { ideal: 1920, max: 1920 },
-          height: { ideal: 1080, max: 1080 },
+          width: { ideal: 1280, max: 1920 },
+          height: { ideal: 720, max: 1080 },
         },
         audio: false,
       });
@@ -384,7 +375,7 @@ const TaskCapture = () => {
         canvas.height = video.videoHeight;
         context.drawImage(video, 0, 0);
 
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
 
         try {
           setIsUploading(true);

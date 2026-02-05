@@ -1,13 +1,6 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
-import {
-  FiSearch,
-  FiBell,
-  FiMaximize,
-  FiSettings,
-  FiLogOut,
-  FiUser,
-} from "react-icons/fi";
+import { FiSearch, FiBell, FiMaximize, FiLogOut } from "react-icons/fi";
 import "./navbar.scss";
 
 const ExecutorNavbar = () => {

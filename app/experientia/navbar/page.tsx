@@ -8,12 +8,16 @@ import {
   FiUser,
   FiSettings,
   FiBell,
+  FiArrowRight,
 } from "react-icons/fi";
+import Link from "next/link";
 import dynamic from "next/dynamic";
 import "./page.scss";
 import { useAuthStore } from "@/app/store/Auth";
 //@ts-ignore
 import logo from "@/public/experientia.png";
+import { useCampaignStore } from "@/app/store/Campaigns";
+import { ICampaign } from "@/app/constants/interface";
 const CreateCampaignForm = dynamic(
   () => import("../create_campaign/CreateCampaignForm"),
   { ssr: false },
@@ -25,6 +29,14 @@ const Navbar = () => {
   const [isCampaignFormOpen, setIsCampaignFormOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const [searchedCampaigns, setSearchedCampaigns] = useState<
+    ICampaign[] | null
+  >(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  const { searchCampaign } = useCampaignStore();
 
   // Get user initials for avatar
   const getInitials = () => {
@@ -72,6 +84,12 @@ const Navbar = () => {
         document.body.classList.remove("menu-open");
         document.body.style.overflow = "";
       }
+
+      // Handle search results close
+      if (searchRef.current && !searchRef.current.contains(target)) {
+        setSearchedCampaigns(null);
+        setIsSearching(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -88,6 +106,20 @@ const Navbar = () => {
       document.body.style.overflow = "";
     };
   }, []);
+
+  const handleSearchInputChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const query = e.target.value;
+    if (query.trim().length > 0) {
+      setIsSearching(true);
+      const response = await searchCampaign(query);
+      setSearchedCampaigns(response.data || []);
+    } else {
+      setIsSearching(false);
+      setSearchedCampaigns(null);
+    }
+  };
 
   return (
     <>
@@ -121,15 +153,42 @@ const Navbar = () => {
           </div>
 
           {/* Search Bar */}
-          <div className="search-container">
+          <div className="search-container" ref={searchRef}>
             <div className="search-icon">
               <FiSearch />
             </div>
             <input
               type="text"
-              placeholder="Search..."
+              placeholder="Search for campaigns..."
               className="search-input"
+              onChange={handleSearchInputChange}
             />
+
+            {/* Search Results Modal */}
+            {isSearching && searchedCampaigns !== null && (
+              <div className="search-results-modal">
+                {searchedCampaigns.length > 0 ? (
+                  <div className="results-list">
+                    {searchedCampaigns.map((campaign) => (
+                      <Link
+                        key={campaign.id}
+                        href={`/experientia/campaigns/${campaign.id}`}
+                        className="result-item"
+                        onClick={() => {
+                          setIsSearching(false);
+                          setSearchedCampaigns(null);
+                        }}
+                      >
+                        <span className="campaign-name">{campaign.name}</span>
+                        <FiArrowRight className="arrow-icon" />
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="no-results">No results found</div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="right-section">
@@ -164,7 +223,7 @@ const Navbar = () => {
                   }}
                 >
                   <Image
-                    src=  {logo}
+                    src={logo}
                     alt="Profile"
                     width={36}
                     height={36}
