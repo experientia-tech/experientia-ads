@@ -18,17 +18,20 @@ import { useAuthStore } from "@/app/store/Auth";
 import logo from "@/public/experientia.png";
 import { useCampaignStore } from "@/app/store/Campaigns";
 import { ICampaign } from "@/app/constants/interface";
+import { useRouter } from "next/navigation";
+
 const CreateCampaignForm = dynamic(
   () => import("../create_campaign/CreateCampaignForm"),
   { ssr: false },
 );
 
 const Navbar = () => {
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCampaignFormOpen, setIsCampaignFormOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   const [searchedCampaigns, setSearchedCampaigns] = useState<
     ICampaign[] | null
@@ -55,6 +58,11 @@ const Navbar = () => {
       document.body.classList.remove("menu-open");
       document.body.style.overflow = "";
     }
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    router.push("/signin");
   };
 
   // Handle click outside for dropdown and mobile menu
@@ -236,7 +244,10 @@ const Navbar = () => {
                     <div className="profile-phone">{user?.phone}</div>
                   </div>
 
-                  <button className="dropdown-item logout">
+                  <button
+                    className="dropdown-item logout"
+                    onClick={handleLogout}
+                  >
                     <FiLogOut className="dropdown-icon" />
                     <span>Logout</span>
                   </button>
