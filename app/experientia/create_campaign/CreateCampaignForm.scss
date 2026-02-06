@@ -8,7 +8,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 2000;
   padding: 20px;
 }
 
@@ -76,7 +76,9 @@ form {
     border: 1px solid #d1d5db;
     border-radius: 8px;
     font-size: 14px;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s;
 
     &::placeholder {
       color: #9ca3af;
@@ -120,7 +122,9 @@ form {
     cursor: pointer;
     font-size: 14px;
     color: #374151;
-    transition: background-color 0.2s, border-color 0.2s;
+    transition:
+      background-color 0.2s,
+      border-color 0.2s;
 
     &:hover {
       background-color: #e5e7eb;

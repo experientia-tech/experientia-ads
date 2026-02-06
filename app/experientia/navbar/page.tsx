@@ -222,13 +222,7 @@ const Navbar = () => {
                     position: "relative",
                   }}
                 >
-                  <Image
-                    src={logo}
-                    alt="Profile"
-                    width={36}
-                    height={36}
-                    className="rounded-full"
-                  />
+                  {getInitials()}
                 </div>
               </div>
 

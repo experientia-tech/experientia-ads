@@ -65,7 +65,7 @@ const ExecutorDashboard = () => {
         name={fullName}
         phone={profile?.phone || ""}
       />
-
+      {/* 
       <div className="stats-section">
         <div className="stat-card design-card">
           <div className="icon-box green">
@@ -86,7 +86,7 @@ const ExecutorDashboard = () => {
             <p className="label">Active Tasks</p>
           </div>
         </div>
-      </div>
+      </div> */}
 
       <div className="list-section">
         <div className="section-header">

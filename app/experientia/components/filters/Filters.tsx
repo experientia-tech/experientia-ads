@@ -1,7 +1,7 @@
-"use client";
-
+import { useState, useEffect } from "react";
 import { FiChevronDown, FiFilter } from "react-icons/fi";
 import styles from "./Filters.module.scss";
+import { useCampaignStore } from "@/app/store/Campaigns";
 
 interface FilterOption {
   value: string;
@@ -13,11 +13,14 @@ interface FiltersProps {
 }
 
 const Filters = ({ className = "" }: FiltersProps) => {
-  const types: FilterOption[] = [
-    { value: 'all', label: 'All Types' },
-    { value: 'social', label: 'Social Media' },
-    { value: 'content', label: 'Content Creation' },
-    { value: 'seo', label: 'SEO' },
+  const { filterCampaigns } = useCampaignStore();
+  const [status, setStatus] = useState("all");
+  const [serviceType, setServiceType] = useState("All");
+
+  const statuses: FilterOption[] = [
+    { value: "all", label: "All" },
+    { value: "ACTIVE", label: "Active" },
+    { value: "INACTIVE", label: "Inactive" },
   ];
 
   const services: FilterOption[] = [
@@ -28,20 +31,21 @@ const Filters = ({ className = "" }: FiltersProps) => {
     { value: "Shop Branding", label: "Shop Branding" },
   ];
 
-  const locations: FilterOption[] = [
-    { value: "all", label: "All Locations" },
-    { value: "new-york", label: "New York" },
-    { value: "london", label: "London" },
-    { value: "tokyo", label: "Tokyo" },
-    { value: "sydney", label: "Sydney" },
-  ];
+  useEffect(() => {
+    const filters: Record<string, string> = {};
+    if (status !== "all") filters.status = status;
+    if (serviceType !== "All") filters.serviceType = serviceType;
 
-  const companies: FilterOption[] = [
-    { value: "all", label: "All Companies" },
-    { value: "company-1", label: "Company A" },
-    { value: "company-2", label: "Company B" },
-    { value: "company-3", label: "Company C" },
-  ];
+    filterCampaigns(filters);
+  }, [status, serviceType, filterCampaigns]);
+
+  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setStatus(e.target.value);
+  };
+
+  const handleServiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setServiceType(e.target.value);
+  };
 
   return (
     <div className={`${styles.filtersContainer} ${className}`}>
@@ -52,14 +56,19 @@ const Filters = ({ className = "" }: FiltersProps) => {
 
       <div className={styles.filterGrid}>
         <div className={styles.filterGroup}>
-          <label htmlFor="type-filter" className={styles.filterLabel}>
-            Type
+          <label htmlFor="status-filter" className={styles.filterLabel}>
+            Status
           </label>
           <div className={styles.selectWrapper}>
-            <select id="type-filter" className={styles.filterSelect}>
-              {types.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
+            <select
+              id="status-filter"
+              className={styles.filterSelect}
+              value={status}
+              onChange={handleStatusChange}
+            >
+              {statuses.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
                 </option>
               ))}
             </select>
@@ -72,42 +81,15 @@ const Filters = ({ className = "" }: FiltersProps) => {
             Service
           </label>
           <div className={styles.selectWrapper}>
-            <select id="service-filter" className={styles.filterSelect}>
+            <select
+              id="service-filter"
+              className={styles.filterSelect}
+              value={serviceType}
+              onChange={handleServiceChange}
+            >
               {services.map((service) => (
                 <option key={service.value} value={service.value}>
                   {service.label}
-                </option>
-              ))}
-            </select>
-            <FiChevronDown className={styles.selectIcon} />
-          </div>
-        </div>
-
-        <div className={styles.filterGroup}>
-          <label htmlFor="location-filter" className={styles.filterLabel}>
-            Location
-          </label>
-          <div className={styles.selectWrapper}>
-            <select id="location-filter" className={styles.filterSelect}>
-              {locations.map((location) => (
-                <option key={location.value} value={location.value}>
-                  {location.label}
-                </option>
-              ))}
-            </select>
-            <FiChevronDown className={styles.selectIcon} />
-          </div>
-        </div>
-
-        <div className={styles.filterGroup}>
-          <label htmlFor="company-filter" className={styles.filterLabel}>
-            Company
-          </label>
-          <div className={styles.selectWrapper}>
-            <select id="company-filter" className={styles.filterSelect}>
-              {companies.map((company) => (
-                <option key={company.value} value={company.value}>
-                  {company.label}
                 </option>
               ))}
             </select>

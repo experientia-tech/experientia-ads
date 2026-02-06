@@ -167,14 +167,14 @@ const CampaignDetails = () => {
               className={`task-card design-card ${
                 task.status ? "active-border" : ""
               }`}
-              onClick={() => {
-                // Store campaign ID and task data for details page
-                sessionStorage.setItem("currentCampaignId", campaignId);
-                sessionStorage.setItem("selectedTask", JSON.stringify(task));
-                router.push(
-                  `/executor/campaigns/${campaignId}/tasks/${task.id}`,
-                );
-              }}
+              // onClick={() => {
+              //   // Store campaign ID and task data for details page
+              //   sessionStorage.setItem("currentCampaignId", campaignId);
+              //   sessionStorage.setItem("selectedTask", JSON.stringify(task));
+              //   router.push(
+              //     `/executor/campaigns/${campaignId}/tasks/${task.id}`,
+              //   );
+              // }}
               style={{ cursor: "pointer" }}
             >
               <div className="task-card-content">

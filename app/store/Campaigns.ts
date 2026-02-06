@@ -32,6 +32,13 @@ interface CampaignState {
     data?: ICampaign[];
     error?: string;
   }>;
+
+  //filter campaigns
+  filterCampaigns: (filters: Record<string, string>) => Promise<{
+    success: boolean;
+    data?: ICampaign[];
+    error?: string;
+  }>;
 }
 
 export const useCampaignStore = create<CampaignState>((set) => ({
@@ -161,6 +168,50 @@ export const useCampaignStore = create<CampaignState>((set) => ({
       const errorMessage =
         err instanceof Error ? err.message : "An error occurred";
       console.error("Error searching campaign:", err);
+      set({ isLoading: false, error: errorMessage });
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  filterCampaigns: async (filters: Record<string, string>) => {
+    set({ isLoading: true, error: null });
+    try {
+      const queryParams = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value !== "all" && value !== "All") {
+          queryParams.append(key, value);
+        }
+      });
+
+      const response = await authenticatedFetch(
+        `/api/campaigns?${queryParams.toString()}`,
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        const errorMessage = `Failed to filter campaign: ${response.status} ${response.statusText}`;
+        set({ isLoading: false, error: errorMessage });
+        return { success: false, error: errorMessage };
+      }
+
+      const responseData = await response.json();
+      let campaignsData: ICampaign[] = [];
+      if (Array.isArray(responseData)) {
+        campaignsData = responseData;
+      } else if (responseData.data && Array.isArray(responseData.data.data)) {
+        campaignsData = responseData.data.data;
+      } else if (responseData.data && Array.isArray(responseData.data)) {
+        campaignsData = responseData.data;
+      } else if (responseData.campaigns) {
+        campaignsData = responseData.campaigns;
+      }
+
+      set({ campaigns: campaignsData, isLoading: false });
+      return { success: true, data: campaignsData };
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "An error occurred";
+      console.error("Error filtering campaign:", err);
       set({ isLoading: false, error: errorMessage });
       return { success: false, error: errorMessage };
     }
