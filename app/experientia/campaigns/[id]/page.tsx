@@ -101,6 +101,34 @@ const CampaignDetailsPage = ({
     // router.refresh();
   };
 
+  const handleDeleteMember = async (memberId: string) => {
+    try {
+      const response = await authenticatedFetch(
+        `/api/campaign-members?id=${memberId}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to remove member");
+      }
+
+      // Refresh the list after successful deletion
+      handleRefresh();
+
+    } catch (error) {
+      console.error("Error removing member:", error);
+      setErrorModalConfig({
+        isOpen: true,
+        title: "Failed to remove member",
+        message: error instanceof Error ? error.message : "Failed to remove member"
+      });
+      throw error; // Re-throw to let the table component know
+    }
+  };
+
   const handleErrorClose = () => {
     setErrorModalConfig(prev => ({ ...prev, isOpen: false }));
   };
@@ -305,6 +333,7 @@ const CampaignDetailsPage = ({
                 assignedBy: member.assignedByName || "Unknown",
                 status: member.active ? "active" : "inactive",
               }))}
+              onDelete={handleDeleteMember}
             />
           )}
         </div>

@@ -11,7 +11,7 @@ type RequestHandler = (
 
 export const GET: RequestHandler = async (request) => {
   try {
-    const auth = authorize(request, [ROLES.ADMIN, ROLES.EXECUTOR]);
+    const auth = authorize(request, [ROLES.ADMIN]);
     if (auth instanceof NextResponse) return auth;
 
     const { searchParams } = new URL(request.url);
@@ -34,7 +34,7 @@ export const GET: RequestHandler = async (request) => {
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch campaign members';
     const statusCode = error instanceof Error && error.message === 'Campaign not found' ? 404 : 500;
     const authToken = request.headers.get('authorization')?.split(' ')[1] || '';
-    
+
     return NextResponse.json(
       response(false, statusCode, authToken, errorMessage),
       { status: statusCode }
@@ -71,7 +71,7 @@ export const POST: RequestHandler = async (request) => {
     );
   } catch (error) {
     console.error('Error adding campaign member:', error);
-    
+
     let statusCode = 500;
     if (error instanceof Error) {
       if (error.message === 'Campaign not found' || error.message === 'User not found') {
@@ -80,13 +80,47 @@ export const POST: RequestHandler = async (request) => {
         statusCode = 400;
       }
     }
-    
+
     const errorMessage = error instanceof Error ? error.message : 'Failed to add campaign member';
     const authToken = request.headers.get('authorization')?.split(' ')[1] || '';
-    
+
     return NextResponse.json(
       response(false, statusCode, authToken, errorMessage),
       { status: statusCode }
+    );
+  }
+};
+
+export const DELETE: RequestHandler = async (request) => {
+  try {
+    const auth = authorize(request, [ROLES.ADMIN]);
+    if (auth instanceof NextResponse) return auth;
+
+    const authToken = request.headers.get('authorization')?.split(' ')[1] || '';
+    const { searchParams } = new URL(request.url);
+    const memberId = searchParams.get('id');
+
+    if (!memberId) {
+      return NextResponse.json(
+        response(false, 400, authToken, 'Member ID is required'),
+        { status: 400 }
+      );
+    }
+
+    await campaignMemberService.removeCampaignMember(memberId);
+
+    return NextResponse.json(
+      response(true, 200, authToken, 'Campaign member removed successfully'),
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Error removing campaign member:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to remove campaign member';
+    const authToken = request.headers.get('authorization')?.split(' ')[1] || '';
+
+    return NextResponse.json(
+      response(false, 500, authToken, errorMessage),
+      { status: 500 }
     );
   }
 };

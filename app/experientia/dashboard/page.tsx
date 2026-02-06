@@ -30,11 +30,36 @@ const DashboardPage = () => {
     }
   }, [router]);
 
-  const { campaigns, fetchCampaigns } = useCampaignStore();
+  const { campaigns, fetchCampaigns, pagination, isLoading } = useCampaignStore();
+  const [currentPage, setCurrentPage] = useState(1);
+  const limit = 10;
+  const loaderRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetchCampaigns();
-  }, [fetchCampaigns]);
+    fetchCampaigns(currentPage, limit);
+  }, [fetchCampaigns, currentPage]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0];
+        if (first.isIntersecting && !isLoading && currentPage < pagination.totalPages) {
+          setCurrentPage((prev) => prev + 1);
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    if (loaderRef.current) {
+      observer.observe(loaderRef.current);
+    }
+
+    return () => {
+      if (loaderRef.current) {
+        observer.unobserve(loaderRef.current);
+      }
+    };
+  }, [isLoading, currentPage, pagination.totalPages]);
 
   // Calculate summary metrics
   const campaignsList = Array.isArray(campaigns) ? campaigns : [];
@@ -112,26 +137,33 @@ const DashboardPage = () => {
 
       <div className="campaignsList">
         {campaigns.length > 0 ? (
-          <div className={styles.campaignsGrid}>
-            {campaigns.map((campaign: ICampaign) => (
-              <CampaignCard
-                key={campaign.id}
-                campaign={{
-                  ...campaign,
-                  serviceType: campaign.serviceType || "General",
-                  description: campaign.description || "",
-                  organizationId: campaign.organizationId || "",
-                  address: campaign.address || "",
-                  totalTasks: campaign.totalTasks || 0,
-                  completedTasks: campaign.completedTasks || 0,
-                  members: campaign.members || [],
-                  tasks: campaign.tasks || [],
-                  createdAt: campaign.createdAt || new Date().toISOString(),
-                  updatedAt: campaign.updatedAt || new Date().toISOString(),
-                }}
-              />
-            ))}
-          </div>
+          <>
+            <div className={styles.campaignsGrid}>
+              {campaigns.map((campaign: ICampaign) => (
+                <CampaignCard
+                  key={campaign.id}
+                  campaign={{
+                    ...campaign,
+                    serviceType: campaign.serviceType || "General",
+                    description: campaign.description || "",
+                    organizationId: campaign.organizationId || "",
+                    address: campaign.address || "",
+                    totalTasks: campaign.totalTasks || 0,
+                    completedTasks: campaign.completedTasks || 0,
+                    members: campaign.members || [],
+                    tasks: campaign.tasks || [],
+                    createdAt: campaign.createdAt || new Date().toISOString(),
+                    updatedAt: campaign.updatedAt || new Date().toISOString(),
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Infinite Scroll Loader */}
+            <div ref={loaderRef} style={{ height: '20px', margin: '20px 0', textAlign: 'center' }}>
+              {isLoading && <p>Loading more...</p>}
+            </div>
+          </>
         ) : (
           <div className={styles.emptyState}>
             <FiInbox size={48} />

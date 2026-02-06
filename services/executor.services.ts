@@ -190,7 +190,7 @@ export async function addExecutor(firstName: string, lastName: string, phone: st
   };
 }
 
-export async function getAllExecutors(organizationId?: string) {
+export async function getAllExecutors(organizationId?: string, executorId?: string, search?: string) {
   const executorAssignments = await prisma.campaignMember.findMany({
     where: {
       role: 'EXECUTOR',
@@ -198,6 +198,18 @@ export async function getAllExecutors(organizationId?: string) {
       ...(organizationId && {
         user: {
           organizationId: organizationId
+        }
+      }),
+      ...(executorId && {
+        userId: executorId
+      }),
+      ...(search && {
+        user: {
+          OR: [
+            { firstName: { contains: search, mode: 'insensitive' } },
+            { lastName: { contains: search, mode: 'insensitive' } },
+            { phone: { contains: search, mode: 'insensitive' } }
+          ]
         }
       })
     },

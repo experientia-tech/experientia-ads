@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { FiSearch, FiFilter, FiChevronDown, FiChevronUp } from 'react-icons/fi';
+import { FiSearch, FiFilter, FiChevronDown, FiChevronUp, FiTrash2 } from 'react-icons/fi';
 import styles from './TeamMemberTable.module.scss';
 
 interface TeamMember {
@@ -15,26 +15,43 @@ interface TeamMember {
 
 interface TeamMemberTableProps {
   members: TeamMember[];
+  onDelete?: (memberId: string) => Promise<void>;
 }
 
-const TeamMemberTable: React.FC<TeamMemberTableProps> = ({ members = [] }) => {
+const TeamMemberTable: React.FC<TeamMemberTableProps> = ({ members = [], onDelete }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const roles = ['all', ...Array.from(new Set(members.map(member => member.role)))];
 
   const filteredMembers = members.filter(member => {
-    const matchesSearch = 
+    const matchesSearch =
       member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.contactNumber.includes(searchTerm) ||
       member.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.assignedBy.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesRole = roleFilter === 'all' || member.role === roleFilter;
-    
+
     return matchesSearch && matchesRole;
   });
+
+  const handleDelete = async (memberId: string) => {
+    if (!onDelete) return;
+    if (window.confirm('Are you sure you want to remove this member?')) {
+      try {
+        setDeletingId(memberId);
+        await onDelete(memberId);
+      } catch (error) {
+        console.error('Error deleting member:', error);
+        alert('Failed to delete member');
+      } finally {
+        setDeletingId(null);
+      }
+    }
+  };
 
   return (
     <div className={styles.teamMemberTable}>
@@ -51,7 +68,7 @@ const TeamMemberTable: React.FC<TeamMemberTableProps> = ({ members = [] }) => {
             />
           </div>
           <div className={styles.filterDropdown}>
-            <button 
+            <button
               className={styles.filterButton}
               onClick={() => setIsFilterOpen(!isFilterOpen)}
             >
@@ -89,6 +106,7 @@ const TeamMemberTable: React.FC<TeamMemberTableProps> = ({ members = [] }) => {
               <th>Location</th>
               <th>Assigned By</th>
               <th>Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -125,11 +143,22 @@ const TeamMemberTable: React.FC<TeamMemberTableProps> = ({ members = [] }) => {
                       {member.status.charAt(0).toUpperCase() + member.status.slice(1)}
                     </span>
                   </td>
+                  <td>
+                    <button
+                      className={styles.deleteButton}
+                      onClick={() => handleDelete(member.id)}
+                      disabled={deletingId === member.id}
+                      title="Remove member"
+                      style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#EF4444' }}
+                    >
+                      <FiTrash2 size={18} />
+                    </button>
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={6} className={styles.noResults}>
+                <td colSpan={7} className={styles.noResults}>
                   No team members found
                 </td>
               </tr>

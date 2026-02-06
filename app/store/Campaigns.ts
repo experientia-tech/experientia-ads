@@ -8,7 +8,14 @@ interface CampaignState {
   isLoading: boolean;
   error: string | null;
 
-  fetchCampaigns: () => Promise<{
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+
+  fetchCampaigns: (page?: number, limit?: number) => Promise<{
     success: boolean;
     data?: ICampaign[];
     error?: string;
@@ -46,13 +53,19 @@ export const useCampaignStore = create<CampaignState>((set) => ({
   selectedCampaign: null,
   isLoading: false,
   error: null,
+  pagination: {
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+  },
 
   setCampaigns: (campaigns) => set({ campaigns }),
 
-  fetchCampaigns: async () => {
+  fetchCampaigns: async (page = 1, limit = 10) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await authenticatedFetch("/api/campaigns");
+      const response = await authenticatedFetch(`/api/campaigns?page=${page}&limit=${limit}`);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -64,17 +77,27 @@ export const useCampaignStore = create<CampaignState>((set) => ({
 
       const responseData = await response.json();
       let campaignsData: ICampaign[] = [];
-      if (Array.isArray(responseData)) {
-        campaignsData = responseData;
-      } else if (responseData.data && Array.isArray(responseData.data.data)) {
-        campaignsData = responseData.data.data;
-      } else if (responseData.data && Array.isArray(responseData.data)) {
+      let paginationData = {
+        total: 0,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+      };
+
+      if (responseData.data && Array.isArray(responseData.data)) {
         campaignsData = responseData.data;
-      } else if (responseData.campaigns) {
-        campaignsData = responseData.campaigns;
+        if (responseData.pagination) {
+          paginationData = responseData.pagination;
+        }
+      } else if (Array.isArray(responseData)) {
+        campaignsData = responseData;
       }
 
-      set({ campaigns: campaignsData, isLoading: false });
+      set({
+        campaigns: campaignsData,
+        pagination: paginationData,
+        isLoading: false
+      });
       return { success: true, data: campaignsData };
     } catch (err) {
       const errorMessage =
@@ -218,7 +241,7 @@ export const useCampaignStore = create<CampaignState>((set) => ({
   },
 }));
 
-export const fetchCampaigns = () =>
-  useCampaignStore.getState().fetchCampaigns();
+export const fetchCampaigns = (page?: number, limit?: number) =>
+  useCampaignStore.getState().fetchCampaigns(page, limit);
 export const fetchCampaignById = (id: string) =>
   useCampaignStore.getState().fetchCampaignById(id);

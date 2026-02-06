@@ -17,8 +17,10 @@ export const GET: RequestHandler = async (request) => {
     const authToken = request.headers.get('authorization')?.split(' ')[1] || '';
     const { searchParams } = new URL(request.url);
     const organizationId = searchParams.get('organizationId') || undefined;
-    
-    const executors = await getAllExecutors(organizationId);
+    const executorId = searchParams.get('id') || searchParams.get('executorId') || undefined;
+    const search = searchParams.get('search') || searchParams.get('name') || undefined;
+
+    const executors = await getAllExecutors(organizationId, executorId, search);
 
     return NextResponse.json(
       response(true, 200, authToken, 'Executors fetched successfully', executors)
@@ -27,7 +29,7 @@ export const GET: RequestHandler = async (request) => {
     console.error('Error fetching executors:', error);
     const errorMessage = 'Failed to fetch executors';
     const authToken = request.headers.get('authorization')?.split(' ')[1] || '';
-    
+
     return NextResponse.json(
       response(false, 500, authToken, errorMessage),
       { status: 500 }
@@ -42,7 +44,7 @@ export const POST: RequestHandler = async (request) => {
 
     const authToken = request.headers.get('authorization')?.split(' ')[1] || '';
     const body = await request.json();
-    
+
     const { firstName, lastName, phone, location, organizationId, campaignId } = body;
     const assignedBy = auth.sub; // Get current user ID from JWT token
 
@@ -70,7 +72,7 @@ export const POST: RequestHandler = async (request) => {
         { status: 409 }
       );
     }
-    
+
     return NextResponse.json(
       response(false, 500, authToken, errorMessage),
       { status: 500 }
