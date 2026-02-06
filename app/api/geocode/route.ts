@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
   try {
     let url: string;
-    let timeout = 5000; // Reduced from 10s to 5s for faster failure detection
+    let timeout = 5000;
 
     switch (provider) {
       case "bigdatacloud":

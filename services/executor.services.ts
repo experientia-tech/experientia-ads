@@ -106,6 +106,26 @@ export async function addExecutor(firstName: string, lastName: string, phone: st
       throw new Error('User with this phone number is already an executor');
     }
 
+    const activeCampaignMembership = await prisma.campaignMember.findFirst({
+      where: {
+        userId: existingUser.id,
+        role: 'EXECUTOR',
+        active: true,
+        campaign: {
+          status: {
+            notIn: ['Completed', 'Cancelled']
+          }
+        }
+      },
+      include: {
+        campaign: true
+      }
+    });
+
+    if (activeCampaignMembership) {
+      throw new Error(`This executor is already assigned to another active campaign: ${activeCampaignMembership.campaign.name}`);
+    }
+
     user = await prisma.user.update({
       where: { id: existingUser.id },
       data: {

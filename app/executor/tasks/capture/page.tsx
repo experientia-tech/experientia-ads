@@ -105,13 +105,13 @@ const TaskCapture = () => {
 
   const getRequiredPhotoCount = () => {
     if (!campaignData?.serviceType) return 3;
-    
+
     const serviceType = campaignData.serviceType.toLowerCase();
     if (serviceType === 'auto hood') {
       return 3;
     } else if (serviceType === 'no parking boards' ||
-               serviceType === 'pole boards' ||
-               serviceType === 'shop branding') {
+      serviceType === 'pole boards' ||
+      serviceType === 'shop branding') {
       return 1;
     }
     return 3; // Default to 3 for other service types
@@ -175,11 +175,37 @@ const TaskCapture = () => {
         setLocationAccuracy(position.coords.accuracy);
       },
       (error) => {
-        console.error("Error getting initial location:", error);
+        console.error("Error getting initial location, retrying with lower accuracy:", error);
+        // Retry with lower accuracy if high accuracy fails
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const location = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+              accuracy: position.coords.accuracy,
+            };
+            setCurrentLocation(location);
+            console.log("Retry location obtained:", location);
+            sessionStorage.setItem(
+              "locationAccuracy",
+              JSON.stringify(position.coords.accuracy),
+            );
+            setLocationAccuracy(position.coords.accuracy);
+          },
+          (retryError) => {
+            console.error("Retry location failed:", retryError);
+            alert("Could not extract location. Please ensure GPS is enabled.");
+          },
+          {
+            enableHighAccuracy: false,
+            timeout: 20000,
+            maximumAge: 0
+          }
+        );
       },
       {
         enableHighAccuracy: true,
-        timeout: 3000,
+        timeout: 15000,
         maximumAge: 0,
       },
     );
@@ -390,7 +416,7 @@ const TaskCapture = () => {
 
   const capturePhoto = async (view?: string) => {
     const requiredCount = getRequiredPhotoCount();
-    
+
     if (capturedPhotos.length >= requiredCount) {
       alert(`You can only capture ${requiredCount} photo(s) for this service type`);
       return;
@@ -445,17 +471,17 @@ const TaskCapture = () => {
 
   const handleProceed = () => {
     const requiredCount = getRequiredPhotoCount();
-    
+
     if (capturedPhotos.length !== requiredCount) {
       alert(`Please capture exactly ${requiredCount} photo(s) for this service type`);
       return;
     }
-    
+
     if (!currentLocation) {
       alert('Location is not available. Please wait for GPS to initialize.');
       return;
     }
-    
+
     // For Auto Hood, show the form instead of proceeding directly
     if (needsAutoHoodForm()) {
       setShowAutoHoodForm(true);
@@ -484,9 +510,9 @@ const TaskCapture = () => {
 
   const handleAutoHoodFormSubmit = () => {
     // Validate form
-    if (!autoHoodData.driverName.trim() || 
-        !autoHoodData.phoneNumber.trim() || 
-        !autoHoodData.vehicleNumber.trim()) {
+    if (!autoHoodData.driverName.trim() ||
+      !autoHoodData.phoneNumber.trim() ||
+      !autoHoodData.vehicleNumber.trim()) {
       alert('Please fill in all required fields (Driver Name, Phone Number, Vehicle Number)');
       return;
     }
@@ -646,7 +672,7 @@ const TaskCapture = () => {
               // Auto Hood specific capture buttons - sequential
               <div className="auto-hood-capture-buttons">
                 {capturedPhotos.length === 0 && (
-                  <button 
+                  <button
                     className="view-capture-btn"
                     onClick={isCameraActive ? () => capturePhoto('front') : toggleCamera}
                     disabled={isUploading}
@@ -663,9 +689,9 @@ const TaskCapture = () => {
                     <span className="capture-label">Capture Front View</span>
                   </button>
                 )}
-                
+
                 {capturedPhotos.length === 1 && (
-                  <button 
+                  <button
                     className="view-capture-btn"
                     onClick={isCameraActive ? () => capturePhoto('side') : toggleCamera}
                     disabled={isUploading}
@@ -682,9 +708,9 @@ const TaskCapture = () => {
                     <span className="capture-label">Capture Side View</span>
                   </button>
                 )}
-                
+
                 {capturedPhotos.length === 2 && (
-                  <button 
+                  <button
                     className="view-capture-btn"
                     onClick={isCameraActive ? () => capturePhoto('back') : toggleCamera}
                     disabled={isUploading}
@@ -736,14 +762,14 @@ const TaskCapture = () => {
           <div className="auto-hood-form-modal">
             <div className="auto-hood-form-header">
               <h3>Auto Hood Details</h3>
-              <button 
+              <button
                 className="close-form-btn"
                 onClick={() => setShowAutoHoodForm(false)}
               >
                 <FiX size={20} />
               </button>
             </div>
-            
+
             <div className="auto-hood-form-content">
               <div className="form-field">
                 <label htmlFor="driverName">Driver Name *</label>
@@ -756,7 +782,7 @@ const TaskCapture = () => {
                   className="form-input"
                 />
               </div>
-              
+
               <div className="form-field">
                 <label htmlFor="phoneNumber">Phone Number *</label>
                 <input
@@ -768,7 +794,7 @@ const TaskCapture = () => {
                   className="form-input"
                 />
               </div>
-              
+
               <div className="form-field">
                 <label htmlFor="vehicleNumber">Vehicle Number *</label>
                 <input
@@ -781,15 +807,15 @@ const TaskCapture = () => {
                 />
               </div>
             </div>
-            
+
             <div className="auto-hood-form-actions">
-              <button 
+              <button
                 className="cancel-btn"
                 onClick={() => setShowAutoHoodForm(false)}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 className="submit-btn"
                 onClick={handleAutoHoodFormSubmit}
               >

@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
 import TaskOverview from "../../components/task_overview/task_overview";
+import ErrorModal from "../../components/error_modal/ErrorModal";
 import {
   FiEdit2,
   FiAlertCircle,
@@ -44,6 +45,11 @@ const CampaignDetailsPage = ({
   const [error, setError] = useState<string | null>(null);
   const [isSupervisorModalOpen, setIsSupervisorModalOpen] = useState(false);
   const [isExecutorModalOpen, setIsExecutorModalOpen] = useState(false);
+  const [errorModalConfig, setErrorModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: ''
+  });
   const [isAddingSupervisor, setIsAddingSupervisor] = useState(false);
   const [isAddingExecutor, setIsAddingExecutor] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -92,14 +98,18 @@ const CampaignDetailsPage = ({
 
   const handleMemberAdded = () => {
     handleRefresh();
-    router.refresh();
+    // router.refresh();
+  };
+
+  const handleErrorClose = () => {
+    setErrorModalConfig(prev => ({ ...prev, isOpen: false }));
   };
 
   return (
     <div className={styles.campaignDetailsPage}>
       <div className={styles.header}>
         <button
-          onClick={() => window.history.back()}
+          onClick={() => router.push('/experientia/dashboard')}
           className={styles.backButton}
         >
           <FiArrowLeft size={20} />
@@ -328,7 +338,7 @@ const CampaignDetailsPage = ({
 
             if (!addResponse.ok) {
               const errorData = await addResponse.json();
-              throw new Error(errorData.error || "Failed to add supervisor");
+              throw new Error(errorData.message || "Failed to add supervisor");
             }
             setIsSupervisorModalOpen(false);
             const updatedResponse = await fetchCampaignById(id);
@@ -340,11 +350,11 @@ const CampaignDetailsPage = ({
             router.refresh();
           } catch (error) {
             console.error("Error adding supervisor:", error);
-            alert(
-              error instanceof Error
-                ? error.message
-                : "Failed to add supervisor",
-            );
+            setErrorModalConfig({
+              isOpen: true,
+              title: "Failed to add supervisor",
+              message: error instanceof Error ? error.message : "Failed to add supervisor"
+            });
           } finally {
             setIsAddingSupervisor(false);
           }
@@ -381,7 +391,7 @@ const CampaignDetailsPage = ({
 
             if (!addResponse.ok) {
               const errorData = await addResponse.json();
-              throw new Error(errorData.error || "Failed to add executor");
+              throw new Error(errorData.message || "Failed to add executor");
             }
             setIsExecutorModalOpen(false);
             const updatedResponse = await fetchCampaignById(id);
@@ -393,9 +403,11 @@ const CampaignDetailsPage = ({
             router.refresh();
           } catch (error) {
             console.error("Error adding executor:", error);
-            alert(
-              error instanceof Error ? error.message : "Failed to add executor",
-            );
+            setErrorModalConfig({
+              isOpen: true,
+              title: "Failed to add executor",
+              message: error instanceof Error ? error.message : "Failed to add executor"
+            });
           } finally {
             setIsAddingExecutor(false);
           }
@@ -414,6 +426,14 @@ const CampaignDetailsPage = ({
       <ComingSoonModal
         isOpen={isComingSoonModalOpen}
         onClose={() => setIsComingSoonModalOpen(false)}
+      />
+
+      <ErrorModal
+        isOpen={errorModalConfig.isOpen}
+        onClose={handleErrorClose}
+        title={errorModalConfig.title}
+        message={errorModalConfig.message}
+        buttonText="Close"
       />
     </div>
   );
