@@ -94,7 +94,7 @@ const CreateCampaignForm = ({
       try {
         // Show loading state
         setSelectedImage(null);
-        
+
         // Get presigned URL from API
         const presignedResponse = await fetch('/api/document/presigned-url', {
           method: 'POST',
@@ -122,7 +122,7 @@ const CreateCampaignForm = ({
           throw new Error('Failed to upload image');
         }
         setSelectedImage(imageUrl);
-        
+
       } catch (error) {
         console.error('Error uploading image:', error);
         alert('Failed to upload image. Please try again.');
@@ -275,6 +275,7 @@ const CreateCampaignForm = ({
   const handleSuccessClose = () => {
     setSuccessConfig((prev) => ({ ...prev, isOpen: false }));
     onClose();
+    useCampaignStore.getState().fetchCampaigns();
     router.refresh();
   };
 

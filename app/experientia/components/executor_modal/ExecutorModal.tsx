@@ -20,6 +20,7 @@ interface ExecutorModalProps {
   campaignId: string;
   isLoading?: boolean;
   organizationId: string;
+  onAddSuccess?: () => void;
 }
 
 const ExecutorModal: React.FC<ExecutorModalProps> = ({
@@ -29,7 +30,8 @@ const ExecutorModal: React.FC<ExecutorModalProps> = ({
   existingExecutors = [],
   campaignId,
   isLoading = false,
-  organizationId
+  organizationId,
+  onAddSuccess
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedExecutor, setSelectedExecutor] = useState<Executor | null>(null);
@@ -43,23 +45,23 @@ const ExecutorModal: React.FC<ExecutorModalProps> = ({
       try {
         setIsLoadingState(true);
         const response = await authenticatedFetch('/api/executors');
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch executors');
         }
-        
+
         const responseData = await response.json();
-        const executorsData = Array.isArray(responseData) 
-          ? responseData 
+        const executorsData = Array.isArray(responseData)
+          ? responseData
           : responseData.data || [];
-        
+
         const formattedExecutors = executorsData.map((user: any) => ({
           id: user.id,
           name: `${user.firstName} ${user.lastName || ''}`.trim() || 'Unnamed Executor',
           role: user.role || 'EXECUTOR',
           phone: user.phone || ''
         }));
-        
+
         setExecutors(formattedExecutors);
       } catch (err) {
         console.error('Error fetching executors:', err);
@@ -78,6 +80,10 @@ const ExecutorModal: React.FC<ExecutorModalProps> = ({
     // Refresh the executor list
     fetchExecutors();
     setIsAddExecutorModalOpen(false);
+    // Trigger success callback if provided
+    if (onAddSuccess) {
+      onAddSuccess();
+    }
     // Close the main ExecutorModal since the executor is now automatically added to the campaign
     onClose();
   };
@@ -86,23 +92,23 @@ const ExecutorModal: React.FC<ExecutorModalProps> = ({
     try {
       setIsLoadingState(true);
       const response = await authenticatedFetch('/api/executors');
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch executors');
       }
-      
+
       const responseData = await response.json();
-      const executorsData = Array.isArray(responseData) 
-        ? responseData 
+      const executorsData = Array.isArray(responseData)
+        ? responseData
         : responseData.data || [];
-      
+
       const formattedExecutors = executorsData.map((user: any) => ({
         id: user.id,
         name: `${user.firstName} ${user.lastName || ''}`.trim() || 'Unnamed Executor',
         role: user.role || 'EXECUTOR',
         phone: user.phone || ''
       }));
-      
+
       setExecutors(formattedExecutors);
     } catch (err) {
       console.error('Error fetching executors:', err);
@@ -126,8 +132,8 @@ const ExecutorModal: React.FC<ExecutorModalProps> = ({
         <div className={styles.modalHeader}>
           <h3>Add Executor</h3>
           <div className={styles.headerActions}>
-            <button 
-              onClick={() => setIsAddExecutorModalOpen(true)} 
+            <button
+              onClick={() => setIsAddExecutorModalOpen(true)}
               className={styles.addNewButton}
               title="Add new executor"
             >
@@ -139,7 +145,7 @@ const ExecutorModal: React.FC<ExecutorModalProps> = ({
             </button>
           </div>
         </div>
-        
+
         <div className={styles.searchContainer}>
           <div className={styles.searchBox}>
             <FiSearch className={styles.searchIcon} />
@@ -162,7 +168,7 @@ const ExecutorModal: React.FC<ExecutorModalProps> = ({
             <div className={styles.errorState}>
               <FiAlertCircle size={24} />
               <p>{error}</p>
-              <button 
+              <button
                 onClick={() => window.location.reload()}
                 className={styles.retryButton}
               >
@@ -173,9 +179,8 @@ const ExecutorModal: React.FC<ExecutorModalProps> = ({
             filteredExecutors.map((executor) => (
               <div
                 key={executor.id}
-                className={`${styles.supervisorItem} ${
-                  selectedExecutor?.id === executor.id ? styles.selected : ''
-                }`}
+                className={`${styles.supervisorItem} ${selectedExecutor?.id === executor.id ? styles.selected : ''
+                  }`}
                 onClick={() => setSelectedExecutor(executor)}
               >
                 <div className={styles.supervisorInfo}>
@@ -203,9 +208,8 @@ const ExecutorModal: React.FC<ExecutorModalProps> = ({
             Cancel
           </button>
           <button
-            className={`${styles.button} ${styles.addButton} ${
-              !selectedExecutor ? styles.disabled : ''
-            }`}
+            className={`${styles.button} ${styles.addButton} ${!selectedExecutor ? styles.disabled : ''
+              }`}
             onClick={() => selectedExecutor && onSelect(selectedExecutor)}
             disabled={!selectedExecutor || isLoadingState}
             type="button"
@@ -214,7 +218,7 @@ const ExecutorModal: React.FC<ExecutorModalProps> = ({
           </button>
         </div>
       </div>
-      
+
       <AddExecutorModal
         isOpen={isAddExecutorModalOpen}
         onClose={() => setIsAddExecutorModalOpen(false)}

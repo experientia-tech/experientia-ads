@@ -24,6 +24,7 @@ import ComingSoonModal from "../../components/coming_soon_modal/ComingSoonModal"
 import { fetchCampaignById } from "@/app/store/Campaigns";
 import { ICampaign } from "@/app/constants/interface";
 import { useState, useEffect, use, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { authenticatedFetch } from "@/app/constants/api";
 import { formatDate } from "@/app/constants/date";
 
@@ -34,6 +35,7 @@ const CampaignDetailsPage = ({
 }) => {
   // Use the 'use' hook to unwrap params Promise in Next.js 15+
   const { id } = use(params);
+  const router = useRouter();
 
   console.log(id, "The Params");
 
@@ -86,6 +88,11 @@ const CampaignDetailsPage = ({
         setError(res.error || "Failed to refresh data");
       }
     });
+  };
+
+  const handleMemberAdded = () => {
+    handleRefresh();
+    router.refresh();
   };
 
   return (
@@ -146,7 +153,7 @@ const CampaignDetailsPage = ({
             ? ((campaign?.tasks?.length ?? 0) / campaign.totalTasks) * 100
             : 0
         }
-        // flaggedTasks={campaign?.flaggedTasks || 0}
+      // flaggedTasks={campaign?.flaggedTasks || 0}
       />
 
       <div className={styles.campaignInfoSection}>
@@ -298,6 +305,7 @@ const CampaignDetailsPage = ({
         campaignId={id}
         organizationId={campaign?.organizationId || ''}
         onClose={() => !isAddingSupervisor && setIsSupervisorModalOpen(false)}
+        onAddSuccess={handleMemberAdded}
         onSelect={async (supervisor) => {
           if (isAddingSupervisor) return;
 
@@ -329,6 +337,7 @@ const CampaignDetailsPage = ({
             }
 
             console.log("Successfully added supervisor");
+            router.refresh();
           } catch (error) {
             console.error("Error adding supervisor:", error);
             alert(
@@ -349,6 +358,7 @@ const CampaignDetailsPage = ({
         campaignId={id}
         organizationId={campaign?.organizationId || ''}
         onClose={() => !isAddingExecutor && setIsExecutorModalOpen(false)}
+        onAddSuccess={handleMemberAdded}
         onSelect={async (executor) => {
           if (isAddingExecutor) return;
 
@@ -380,6 +390,7 @@ const CampaignDetailsPage = ({
             }
 
             console.log("Successfully added executor");
+            router.refresh();
           } catch (error) {
             console.error("Error adding executor:", error);
             alert(

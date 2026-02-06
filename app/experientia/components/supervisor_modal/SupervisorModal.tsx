@@ -20,6 +20,7 @@ interface SupervisorModalProps {
   campaignId: string;
   isLoading?: boolean;
   organizationId: string;
+  onAddSuccess?: () => void;
 }
 
 const SupervisorModal: React.FC<SupervisorModalProps> = ({
@@ -29,7 +30,8 @@ const SupervisorModal: React.FC<SupervisorModalProps> = ({
   existingSupervisors = [],
   campaignId,
   isLoading = false,
-  organizationId
+  organizationId,
+  onAddSuccess
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSupervisor, setSelectedSupervisor] = useState<Supervisor | null>(null);
@@ -42,6 +44,10 @@ const SupervisorModal: React.FC<SupervisorModalProps> = ({
     // Refresh supervisor list
     fetchSupervisors();
     setIsAddSupervisorModalOpen(false);
+    // Trigger success callback if provided
+    if (onAddSuccess) {
+      onAddSuccess();
+    }
     // Close main SupervisorModal since supervisor is now automatically added to campaign
     onClose();
   };
@@ -50,23 +56,23 @@ const SupervisorModal: React.FC<SupervisorModalProps> = ({
     try {
       setIsLoadingState(true);
       const response = await authenticatedFetch('/api/supervisors');
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch supervisors');
       }
-      
+
       const responseData = await response.json();
-      const supervisorsData = Array.isArray(responseData) 
-        ? responseData 
+      const supervisorsData = Array.isArray(responseData)
+        ? responseData
         : responseData.data || [];
-      
+
       const formattedSupervisors = supervisorsData.map((user: any) => ({
         id: user.id,
         name: `${user.firstName} ${user.lastName || ''}`.trim() || 'Unnamed Supervisor',
         role: user.role || 'SUPERVISOR',
         phone: user.phone || ''
       }));
-      
+
       setSupervisors(formattedSupervisors);
     } catch (err) {
       console.error('Error fetching supervisors:', err);
@@ -96,8 +102,8 @@ const SupervisorModal: React.FC<SupervisorModalProps> = ({
         <div className={styles.modalHeader}>
           <h3>Add Supervisor</h3>
           <div className={styles.headerActions}>
-            <button 
-              onClick={() => setIsAddSupervisorModalOpen(true)} 
+            <button
+              onClick={() => setIsAddSupervisorModalOpen(true)}
               className={styles.addNewButton}
               title="Add new supervisor"
             >
@@ -109,7 +115,7 @@ const SupervisorModal: React.FC<SupervisorModalProps> = ({
             </button>
           </div>
         </div>
-        
+
         <div className={styles.searchContainer}>
           <div className={styles.searchBox}>
             <FiSearch className={styles.searchIcon} />
@@ -132,7 +138,7 @@ const SupervisorModal: React.FC<SupervisorModalProps> = ({
             <div className={styles.errorState}>
               <FiAlertCircle size={24} />
               <p>{error}</p>
-              <button 
+              <button
                 onClick={() => window.location.reload()}
                 className={styles.retryButton}
               >
@@ -143,9 +149,8 @@ const SupervisorModal: React.FC<SupervisorModalProps> = ({
             filteredSupervisors.map((supervisor) => (
               <div
                 key={supervisor.id}
-                className={`${styles.supervisorItem} ${
-                  selectedSupervisor?.id === supervisor.id ? styles.selected : ''
-                }`}
+                className={`${styles.supervisorItem} ${selectedSupervisor?.id === supervisor.id ? styles.selected : ''
+                  }`}
                 onClick={() => setSelectedSupervisor(supervisor)}
               >
                 <div className={styles.supervisorInfo}>
@@ -173,9 +178,8 @@ const SupervisorModal: React.FC<SupervisorModalProps> = ({
             Cancel
           </button>
           <button
-            className={`${styles.button} ${styles.addButton} ${
-              !selectedSupervisor ? styles.disabled : ''
-            }`}
+            className={`${styles.button} ${styles.addButton} ${!selectedSupervisor ? styles.disabled : ''
+              }`}
             onClick={() => selectedSupervisor && onSelect(selectedSupervisor)}
             disabled={!selectedSupervisor || isLoadingState}
             type="button"
@@ -184,7 +188,7 @@ const SupervisorModal: React.FC<SupervisorModalProps> = ({
           </button>
         </div>
       </div>
-      
+
       <AddSupervisorModal
         isOpen={isAddSupervisorModalOpen}
         onClose={() => setIsAddSupervisorModalOpen(false)}

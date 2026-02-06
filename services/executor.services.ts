@@ -15,7 +15,7 @@ export async function addSupervisor(firstName: string, lastName: string, phone: 
   });
 
   let user;
-  
+
   if (existingUser) {
     if (existingUser.campaignMembers.length > 0) {
       throw new Error('User with this phone number is already a supervisor');
@@ -100,7 +100,7 @@ export async function addExecutor(firstName: string, lastName: string, phone: st
   });
 
   let user;
-  
+
   if (existingUser) {
     if (existingUser.campaignMembers.length > 0) {
       throw new Error('User with this phone number is already an executor');
@@ -194,7 +194,7 @@ export async function getAllExecutors(organizationId?: string) {
       },
     },
   });
-  
+
   return executorAssignments.map((assignment) => ({
     id: assignment.userId,
     firstName: assignment.user.firstName,
@@ -202,21 +202,22 @@ export async function getAllExecutors(organizationId?: string) {
     phone: assignment.user.phone,
     organizationId: assignment.user.organizationId,
     role: 'EXECUTOR',
+    location: assignment.location,
   }));
 }
 
 export async function getCampaigns(userId: string) {
-    const campaignMembers = await prisma.campaignMember.findMany({
-        where: {
-            userId: userId,
-            role: 'EXECUTOR',
-        },
-        include: {
-            campaign: true,
-        },
-    });
+  const campaignMembers = await prisma.campaignMember.findMany({
+    where: {
+      userId: userId,
+      role: 'EXECUTOR',
+    },
+    include: {
+      campaign: true,
+    },
+  });
 
-    return campaignMembers.map((cm) => cm.campaign);
+  return campaignMembers.map((cm) => cm.campaign);
 }
 export async function createCampaignTask(campaignId: string, taskData: CampaignTaskInput, userId: string) {
   try {
@@ -239,9 +240,9 @@ export async function createCampaignTask(campaignId: string, taskData: CampaignT
       throw new Error('Campaign not found');
     }
 
-   /*  if (campaign.members.length === 0) {
-      throw new Error('You are not a member of this campaign or do not have permission to create tasks');
-    } */
+    /*  if (campaign.members.length === 0) {
+       throw new Error('You are not a member of this campaign or do not have permission to create tasks');
+     } */
 
     if (campaign._count.tasks >= campaign.totalTasks) {
       throw new Error('This campaign has reached its maximum number of tasks');
