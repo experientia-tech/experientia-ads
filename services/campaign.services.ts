@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { CampaignRole } from "@/app/generated/prisma/client";
 import type {
   CreateCampaignInput,
   CampaignResponse,
@@ -15,6 +16,9 @@ interface GetCampaignsParams {
   sortOrder?: "asc" | "desc";
   organizationId?: string;
   location?: string;
+  memberId?: string;
+  createdById?: string;
+  memberRole?: CampaignRole;
 }
 
 interface PaginatedResponse<T> {
@@ -41,8 +45,22 @@ export class CampaignService {
       sortOrder = "desc",
       organizationId,
       location,
+      memberId,
+      createdById,
+      memberRole,
     } = params;
     const where: any = { organizationId };
+
+
+
+    if (memberId) {
+      where.members = {
+        some: {
+          userId: memberId,
+          ...(memberRole ? { role: memberRole } : {}),
+        }
+      };
+    }
 
     if (search) {
       where.OR = [
@@ -107,7 +125,7 @@ export class CampaignService {
     };
   }
 
-  async createCampaign(data: CreateCampaignInput): Promise<CampaignResponse> {
+  async createCampaign(data: CreateCampaignInput, createdById?: string): Promise<CampaignResponse> {
     const result = await prisma.$transaction(async (prisma) => {
       const campaign = await prisma.campaign.create({
         data: {
@@ -125,6 +143,17 @@ export class CampaignService {
           logo: data.logo ?? null,
         },
       });
+
+      if (createdById) {
+        await prisma.campaignMember.create({
+          data: {
+            campaignId: campaign.id,
+            userId: createdById,
+            assignedBy: createdById,
+            role: "CAMPAIGN_MANAGER",
+          },
+        });
+      }
 
       return prisma.campaign.findUnique({
         where: { id: campaign.id },

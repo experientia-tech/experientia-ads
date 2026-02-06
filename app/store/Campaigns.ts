@@ -15,7 +15,17 @@ interface CampaignState {
     totalPages: number;
   };
 
-  fetchCampaigns: (page?: number, limit?: number) => Promise<{
+  fetchCampaigns: (page?: number, limit?: number, filters?: { scope?: string; status?: string }) => Promise<{
+    success: boolean;
+    data?: ICampaign[];
+    error?: string;
+  }>;
+  fetchMyCampaigns: (page?: number, limit?: number, filters?: { status?: string }) => Promise<{
+    success: boolean;
+    data?: ICampaign[];
+    error?: string;
+  }>;
+  fetchAssignedCampaigns: (page?: number, limit?: number, filters?: { status?: string }) => Promise<{
     success: boolean;
     data?: ICampaign[];
     error?: string;
@@ -62,10 +72,18 @@ export const useCampaignStore = create<CampaignState>((set) => ({
 
   setCampaigns: (campaigns) => set({ campaigns }),
 
-  fetchCampaigns: async (page = 1, limit = 10) => {
+  fetchCampaigns: async (page = 1, limit = 10, filters?: { scope?: string; status?: string }) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await authenticatedFetch(`/api/campaigns?page=${page}&limit=${limit}`);
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+
+      if (filters?.scope) queryParams.append('scope', filters.scope);
+      if (filters?.status) queryParams.append('status', filters.status);
+
+      const response = await authenticatedFetch(`/api/campaigns?${queryParams.toString()}`);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -103,6 +121,112 @@ export const useCampaignStore = create<CampaignState>((set) => ({
       const errorMessage =
         err instanceof Error ? err.message : "An error occurred";
       console.error("Error fetching campaigns:", err);
+      set({ isLoading: false, error: errorMessage });
+      return { success: false, error: errorMessage, data: [] };
+    }
+  },
+
+  fetchMyCampaigns: async (page = 1, limit = 10, filters?: { status?: string }) => {
+    set({ isLoading: true, error: null });
+    try {
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+
+      if (filters?.status) queryParams.append('status', filters.status);
+
+      const response = await authenticatedFetch(`/api/campaigns/my_campaigns?${queryParams.toString()}`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        const errorMessage = `Failed to fetch my campaigns: ${response.status} ${response.statusText}`;
+        console.error("API Error:", errorText);
+        set({ isLoading: false, error: errorMessage });
+        return { success: false, error: errorMessage };
+      }
+
+      const responseData = await response.json();
+      let campaignsData: ICampaign[] = [];
+      let paginationData = {
+        total: 0,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+      };
+
+      if (responseData.data && Array.isArray(responseData.data)) {
+        campaignsData = responseData.data;
+        if (responseData.pagination) {
+          paginationData = responseData.pagination;
+        }
+      } else if (Array.isArray(responseData)) {
+        campaignsData = responseData;
+      }
+
+      set({
+        campaigns: campaignsData,
+        pagination: paginationData,
+        isLoading: false
+      });
+      return { success: true, data: campaignsData };
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "An error occurred";
+      console.error("Error fetching my campaigns:", err);
+      set({ isLoading: false, error: errorMessage });
+      return { success: false, error: errorMessage, data: [] };
+    }
+  },
+
+  fetchAssignedCampaigns: async (page = 1, limit = 10, filters?: { status?: string }) => {
+    set({ isLoading: true, error: null });
+    try {
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+
+      if (filters?.status) queryParams.append('status', filters.status);
+
+      const response = await authenticatedFetch(`/api/campaigns/assigned_campaigns?${queryParams.toString()}`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        const errorMessage = `Failed to fetch assigned campaigns: ${response.status} ${response.statusText}`;
+        console.error("API Error:", errorText);
+        set({ isLoading: false, error: errorMessage });
+        return { success: false, error: errorMessage };
+      }
+
+      const responseData = await response.json();
+      let campaignsData: ICampaign[] = [];
+      let paginationData = {
+        total: 0,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+      };
+
+      if (responseData.data && Array.isArray(responseData.data)) {
+        campaignsData = responseData.data;
+        if (responseData.pagination) {
+          paginationData = responseData.pagination;
+        }
+      } else if (Array.isArray(responseData)) {
+        campaignsData = responseData;
+      }
+
+      set({
+        campaigns: campaignsData,
+        pagination: paginationData,
+        isLoading: false
+      });
+      return { success: true, data: campaignsData };
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "An error occurred";
+      console.error("Error fetching assigned campaigns:", err);
       set({ isLoading: false, error: errorMessage });
       return { success: false, error: errorMessage, data: [] };
     }
@@ -243,5 +367,9 @@ export const useCampaignStore = create<CampaignState>((set) => ({
 
 export const fetchCampaigns = (page?: number, limit?: number) =>
   useCampaignStore.getState().fetchCampaigns(page, limit);
+export const fetchMyCampaigns = (page?: number, limit?: number, filters?: { status?: string }) =>
+  useCampaignStore.getState().fetchMyCampaigns(page, limit, filters);
+export const fetchAssignedCampaigns = (page?: number, limit?: number, filters?: { status?: string }) =>
+  useCampaignStore.getState().fetchAssignedCampaigns(page, limit, filters);
 export const fetchCampaignById = (id: string) =>
   useCampaignStore.getState().fetchCampaignById(id);

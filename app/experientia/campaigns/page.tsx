@@ -30,7 +30,7 @@ const AssignedCampaignsPage = () => {
   const fetchCampaigns = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await authenticatedFetch("/api/campaigns");
+      const response = await authenticatedFetch("/api/campaigns/assigned_campaigns");
       if (!response.ok) {
         throw new Error("Failed to fetch campaigns");
       }

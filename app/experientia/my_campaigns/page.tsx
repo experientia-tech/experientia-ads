@@ -30,7 +30,7 @@ const DashboardPage = () => {
     }
   }, [router]);
 
-  const { campaigns, fetchCampaigns, pagination, isLoading } = useCampaignStore();
+  const { campaigns, fetchMyCampaigns, pagination, isLoading } = useCampaignStore();
   const [currentPage, setCurrentPage] = useState(1);
   const limit = 10;
   const loaderRef = React.useRef<HTMLDivElement>(null);
@@ -38,19 +38,16 @@ const DashboardPage = () => {
   const [filters, setFilters] = useState({ status: '', serviceType: '' });
 
   useEffect(() => {
-    fetchCampaigns(currentPage, limit, filters);
-  }, [fetchCampaigns, currentPage, filters]);
+    fetchMyCampaigns(currentPage, limit, filters);
+  }, [fetchMyCampaigns, currentPage, filters]);
 
   const handleFilterChange = useCallback((newFilters: { status: string; serviceType: string }) => {
     setFilters((prev) => {
-      // Only update if filters actually changed to avoid unnecessary re-renders
       if (prev.status === newFilters.status && prev.serviceType === newFilters.serviceType) {
         return prev;
       }
       return newFilters;
     });
-    // We only want to reset page if filters really changed, but for simplicity/safety we can do it here
-    // or inside the check above. Let's do it if we update filters.
     if (filters.status !== newFilters.status || filters.serviceType !== newFilters.serviceType) {
       setCurrentPage(1);
     }
@@ -114,8 +111,8 @@ const DashboardPage = () => {
   return (
     <div className={styles.dashboard}>
       <div className={styles.header}>
-        <h1>Dashboard</h1>
-        <p className={styles.subtitle}>Overview of your campaigns and tasks</p>
+        <h1>My Campaigns</h1>
+        <p className={styles.subtitle}>All campaigns in your organization</p>
       </div>
       <div className={styles.summaryGrid}>
         <SummaryCard

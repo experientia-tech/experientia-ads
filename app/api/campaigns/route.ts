@@ -9,7 +9,7 @@ const campaignService = new CampaignService();
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = authorize(request, [ROLES.ADMIN]);
+    const auth = authorize(request, [ROLES.ADMIN, ROLES.EXECUTOR, ROLES.SUPERVISOR, ROLES.CAMPAIGN_MANAGER]);
     if (auth instanceof NextResponse) return auth;
 
     const { searchParams } = new URL(request.url);
@@ -21,6 +21,17 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const sortBy = searchParams.get('sortBy') || 'createdAt';
     const sortOrder = searchParams.get('sortOrder') as 'asc' | 'desc' || 'desc';
+    const scope = searchParams.get('scope');
+
+    let memberId: string | undefined;
+    let memberRole: any | undefined;
+
+    if (scope === 'assigned') {
+      memberId = auth.sub;
+    } else if (scope === 'CAMPAIGN_MANAGER') {
+      memberId = auth.sub;
+      memberRole = 'CAMPAIGN_MANAGER';
+    }
 
     const campaigns = await campaignService.getCampaigns({
       search,
@@ -32,6 +43,8 @@ export async function GET(request: NextRequest) {
       sortBy,
       sortOrder,
       organizationId: auth.orgId,
+      memberId,
+      memberRole,
     });
     const authToken = request.headers.get("authorization") || "";
     return NextResponse.json(
@@ -64,7 +77,7 @@ export async function POST(request: NextRequest) {
       organizationId: auth.orgId,
     };
 
-    const createdCampaign = await campaignService.createCampaign(campaignData);
+    const createdCampaign = await campaignService.createCampaign(campaignData, auth.sub);
     const authToken = request.headers.get("authorization") || "";
     return NextResponse.json(
       response(

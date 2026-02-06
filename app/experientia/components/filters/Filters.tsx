@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { FiChevronDown, FiFilter } from "react-icons/fi";
 import styles from "./Filters.module.scss";
-import { useCampaignStore } from "@/app/store/Campaigns";
+
 
 interface FilterOption {
   value: string;
@@ -10,10 +10,10 @@ interface FilterOption {
 
 interface FiltersProps {
   className?: string;
+  onFilterChange: (filters: { status: string; serviceType: string }) => void;
 }
 
-const Filters = ({ className = "" }: FiltersProps) => {
-  const { filterCampaigns } = useCampaignStore();
+const Filters = ({ className = "", onFilterChange }: FiltersProps) => {
   const [status, setStatus] = useState("all");
   const [serviceType, setServiceType] = useState("All");
 
@@ -32,12 +32,12 @@ const Filters = ({ className = "" }: FiltersProps) => {
   ];
 
   useEffect(() => {
-    const filters: Record<string, string> = {};
-    if (status !== "all") filters.status = status;
-    if (serviceType !== "All") filters.serviceType = serviceType;
-
-    filterCampaigns(filters);
-  }, [status, serviceType, filterCampaigns]);
+    // Notify parent of filter changes instead of fetching directly
+    onFilterChange({
+      status: status === "all" ? "" : status,
+      serviceType: serviceType === "All" ? "" : serviceType,
+    });
+  }, [status, serviceType, onFilterChange]);
 
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setStatus(e.target.value);
