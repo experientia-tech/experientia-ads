@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
             sortOrder,
             organizationId: auth.orgId,
             memberId,
-            // No specific memberRole, just any assignment
+            excludeMemberRole: 'CAMPAIGN_MANAGER',
         });
         const authToken = request.headers.get("authorization") || "";
         return NextResponse.json(

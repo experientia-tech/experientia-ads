@@ -275,7 +275,7 @@ const CreateCampaignForm = ({
   const handleSuccessClose = () => {
     setSuccessConfig((prev) => ({ ...prev, isOpen: false }));
     onClose();
-    useCampaignStore.getState().fetchCampaigns();
+    useCampaignStore.getState().fetchMyCampaigns();
     router.refresh();
   };
 

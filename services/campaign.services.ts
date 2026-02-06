@@ -19,6 +19,7 @@ interface GetCampaignsParams {
   memberId?: string;
   createdById?: string;
   memberRole?: CampaignRole;
+  excludeMemberRole?: CampaignRole;
 }
 
 interface PaginatedResponse<T> {
@@ -48,6 +49,7 @@ export class CampaignService {
       memberId,
       createdById,
       memberRole,
+      excludeMemberRole,
     } = params;
     const where: any = { organizationId };
 
@@ -58,6 +60,7 @@ export class CampaignService {
         some: {
           userId: memberId,
           ...(memberRole ? { role: memberRole } : {}),
+          ...(excludeMemberRole ? { role: { not: excludeMemberRole } } : {}),
         }
       };
     }
