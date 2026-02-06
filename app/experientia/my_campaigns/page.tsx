@@ -23,7 +23,6 @@ const DashboardPage = () => {
   const router = useRouter();
   const [expandedBrandId, setExpandedBrandId] = useState<number | null>(null);
 
-  // Check authentication on component mount
   useEffect(() => {
     if (!isAuthenticated()) {
       router.push("/signin");
@@ -36,8 +35,13 @@ const DashboardPage = () => {
   const loaderRef = React.useRef<HTMLDivElement>(null);
 
   const [filters, setFilters] = useState({ status: '', serviceType: '' });
+  const lastFetchedParams = React.useRef<string>("");
 
   useEffect(() => {
+    const paramsKey = JSON.stringify({ page: currentPage, limit, filters });
+    if (lastFetchedParams.current === paramsKey) return;
+
+    lastFetchedParams.current = paramsKey;
     fetchMyCampaigns(currentPage, limit, filters);
   }, [fetchMyCampaigns, currentPage, filters]);
 

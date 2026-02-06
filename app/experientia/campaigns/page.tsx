@@ -1,52 +1,24 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-import { authenticatedFetch } from "../../constants/api";
+import { useCampaignStore, fetchAssignedCampaigns } from "../../store/Campaigns";
 import CampaignCard from "../components/campaign_card/CampaignCard";
 import "./page.scss";
+import { ICampaign } from "../../constants/interface";
 
-interface Campaign {
-  id: string;
-  name: string;
-  status: string;
-  startDate: string;
-  endDate: string;
-  serviceType?: string;
-  description?: string;
-  organizationId?: string;
-  address?: string;
-  totalTasks?: number;
-  completedTasks?: number;
-  members?: any[];
-  tasks?: Array<{ status: string }>;
-  createdAt?: string;
-  updatedAt?: string;
-}
 
 const AssignedCampaignsPage = () => {
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [campaigns, setCampaigns] = useState<ICampaign[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchCampaigns = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await authenticatedFetch("/api/campaigns/assigned_campaigns");
-      if (!response.ok) {
-        throw new Error("Failed to fetch campaigns");
+      const result = await fetchAssignedCampaigns();
+      if (!result.success) {
+        throw new Error(result.error);
       }
-      const responseData = await response.json();
-      let campaignsData: Campaign[] = [];
-      if (Array.isArray(responseData)) {
-        campaignsData = responseData;
-      } else if (responseData.data && Array.isArray(responseData.data.data)) {
-        campaignsData = responseData.data.data;
-      } else if (responseData.data && Array.isArray(responseData.data)) {
-        campaignsData = responseData.data;
-      } else if (responseData.campaigns) {
-        campaignsData = responseData.campaigns;
-      }
-
-      setCampaigns(campaignsData);
+      setCampaigns(result.data || []);
     } catch (err) {
       console.error("Error fetching campaigns:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -55,19 +27,20 @@ const AssignedCampaignsPage = () => {
     }
   }, []);
 
-  useEffect(() => {
-    fetchCampaigns();
+  const initialized = React.useRef(false);
 
-    // Listen for campaign creation events
+  useEffect(() => {
+    if (!initialized.current) {
+      initialized.current = true;
+      fetchCampaigns();
+    }
+
     const handleCampaignCreated = () => {
       console.log("Campaign created event received, refreshing campaigns...");
       fetchCampaigns();
     };
 
-    // Add event listener for custom campaign creation event
     window.addEventListener("campaignCreated", handleCampaignCreated);
-
-    // Cleanup event listener on component unmount
     return () => {
       window.removeEventListener("campaignCreated", handleCampaignCreated);
     };
