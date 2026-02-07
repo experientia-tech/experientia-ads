@@ -1,7 +1,7 @@
-'use client';
+import { useState, useEffect } from "react";
+import { FiChevronDown, FiFilter } from "react-icons/fi";
+import styles from "./Filters.module.scss";
 
-import { FiChevronDown, FiFilter } from 'react-icons/fi';
-import styles from './Filters.module.scss';
 
 interface FilterOption {
   value: string;
@@ -10,40 +10,42 @@ interface FilterOption {
 
 interface FiltersProps {
   className?: string;
+  onFilterChange: (filters: { status: string; serviceType: string }) => void;
 }
 
-const Filters = ({ className = '' }: FiltersProps) => {
-  // Mock data - replace with your actual data
-  const types: FilterOption[] = [
-    { value: 'all', label: 'All Types' },
-    { value: 'social', label: 'Social Media' },
-    { value: 'email', label: 'Email Marketing' },
-    { value: 'content', label: 'Content Creation' },
-    { value: 'seo', label: 'SEO' },
+const Filters = ({ className = "", onFilterChange }: FiltersProps) => {
+  const [status, setStatus] = useState("all");
+  const [serviceType, setServiceType] = useState("All");
+
+  const statuses: FilterOption[] = [
+    { value: "all", label: "All" },
+    { value: "ACTIVE", label: "Active" },
+    { value: "INACTIVE", label: "Inactive" },
   ];
 
   const services: FilterOption[] = [
-    { value: 'all', label: 'All Services' },
-    { value: 'design', label: 'Design' },
-    { value: 'development', label: 'Development' },
-    { value: 'marketing', label: 'Marketing' },
-    { value: 'analytics', label: 'Analytics' },
+    { value: "All", label: "All Services" },
+    { value: "Auto Hood", label: "Auto Hood" },
+    { value: "No Parking Boards", label: "No Parking Boards" },
+    { value: "Pole Boards", label: "Pole Boards" },
+    { value: "Shop Branding", label: "Shop Branding" },
   ];
 
-  const locations: FilterOption[] = [
-    { value: 'all', label: 'All Locations' },
-    { value: 'new-york', label: 'New York' },
-    { value: 'london', label: 'London' },
-    { value: 'tokyo', label: 'Tokyo' },
-    { value: 'sydney', label: 'Sydney' },
-  ];
+  useEffect(() => {
+    // Notify parent of filter changes instead of fetching directly
+    onFilterChange({
+      status: status === "all" ? "" : status,
+      serviceType: serviceType === "All" ? "" : serviceType,
+    });
+  }, [status, serviceType, onFilterChange]);
 
-  const companies: FilterOption[] = [
-    { value: 'all', label: 'All Companies' },
-    { value: 'company-1', label: 'Company A' },
-    { value: 'company-2', label: 'Company B' },
-    { value: 'company-3', label: 'Company C' },
-  ];
+  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setStatus(e.target.value);
+  };
+
+  const handleServiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setServiceType(e.target.value);
+  };
 
   return (
     <div className={`${styles.filtersContainer} ${className}`}>
@@ -51,17 +53,22 @@ const Filters = ({ className = '' }: FiltersProps) => {
         <FiFilter className={styles.filterIcon} />
         <h3 className={styles.filtersTitle}>Filters</h3>
       </div>
-      
+
       <div className={styles.filterGrid}>
         <div className={styles.filterGroup}>
-          <label htmlFor="type-filter" className={styles.filterLabel}>
-            Type
+          <label htmlFor="status-filter" className={styles.filterLabel}>
+            Status
           </label>
           <div className={styles.selectWrapper}>
-            <select id="type-filter" className={styles.filterSelect}>
-              {types.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
+            <select
+              id="status-filter"
+              className={styles.filterSelect}
+              value={status}
+              onChange={handleStatusChange}
+            >
+              {statuses.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
                 </option>
               ))}
             </select>
@@ -74,42 +81,15 @@ const Filters = ({ className = '' }: FiltersProps) => {
             Service
           </label>
           <div className={styles.selectWrapper}>
-            <select id="service-filter" className={styles.filterSelect}>
+            <select
+              id="service-filter"
+              className={styles.filterSelect}
+              value={serviceType}
+              onChange={handleServiceChange}
+            >
               {services.map((service) => (
                 <option key={service.value} value={service.value}>
                   {service.label}
-                </option>
-              ))}
-            </select>
-            <FiChevronDown className={styles.selectIcon} />
-          </div>
-        </div>
-
-        <div className={styles.filterGroup}>
-          <label htmlFor="location-filter" className={styles.filterLabel}>
-            Location
-          </label>
-          <div className={styles.selectWrapper}>
-            <select id="location-filter" className={styles.filterSelect}>
-              {locations.map((location) => (
-                <option key={location.value} value={location.value}>
-                  {location.label}
-                </option>
-              ))}
-            </select>
-            <FiChevronDown className={styles.selectIcon} />
-          </div>
-        </div>
-
-        <div className={styles.filterGroup}>
-          <label htmlFor="company-filter" className={styles.filterLabel}>
-            Company
-          </label>
-          <div className={styles.selectWrapper}>
-            <select id="company-filter" className={styles.filterSelect}>
-              {companies.map((company) => (
-                <option key={company.value} value={company.value}>
-                  {company.label}
                 </option>
               ))}
             </select>

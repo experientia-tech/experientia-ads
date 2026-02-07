@@ -83,6 +83,28 @@ export class CampaignMemberService {
       throw new Error('User is already a member of this campaign');
     }
 
+    if (role === 'EXECUTOR') {
+      const activeCampaignMembership = await prisma.campaignMember.findFirst({
+        where: {
+          userId,
+          role: 'EXECUTOR',
+          active: true,
+          campaign: {
+            status: {
+              notIn: ['Completed', 'Cancelled']
+            }
+          }
+        },
+        include: {
+          campaign: true
+        }
+      });
+
+      if (activeCampaignMembership) {
+        throw new Error(`This executor is already assigned to another active campaign: ${activeCampaignMembership.campaign.name}`);
+      }
+    }
+
     return prisma.campaignMember.create({
       data: {
         campaignId,
@@ -131,19 +153,19 @@ export class CampaignMemberService {
       data: { role }
     });
   }
-async updateCampaignMemberStatus(memberId: string, active: boolean) {
-  const member = await prisma.campaignMember.findUnique({
-    where: { id: memberId }
-  });
+  async updateCampaignMemberStatus(memberId: string, active: boolean) {
+    const member = await prisma.campaignMember.findUnique({
+      where: { id: memberId }
+    });
 
-  if (!member) {
-    throw new Error('Campaign member not found');
+    if (!member) {
+      throw new Error('Campaign member not found');
+    }
+    return prisma.campaignMember.update({
+      where: { id: memberId },
+      data: { active }
+    });
   }
-  return prisma.campaignMember.update({
-    where: { id: memberId },
-    data: { active }
-  });
-}
 }
 
 export const campaignMemberService = new CampaignMemberService();

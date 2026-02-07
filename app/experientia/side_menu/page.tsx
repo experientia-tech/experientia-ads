@@ -10,19 +10,18 @@ const SideMenu = () => {
     {
       title: 'NAVIGATION',
       items: [
-        { name: 'Overview', path: '/experientia/dashboard', icon: '📊' },
-        //{ name: 'My Campaigns', path: '/experientia/coming-soon', icon: '📢' },
+        { name: 'My Campaigns', path: '/experientia/my_campaigns', icon: '📢' },
         { name: 'Assigned Campaigns', path: '/experientia/campaigns', icon: '📋' },
         { name: 'Team Management', path: '/experientia/team_management', icon: '👥' },
-      ] 
-    },
-   /*  {
-      title: 'REPORT',
-      items: [
-        { name: 'Request Report', path: '/request-report', icon: '📄' },
-        { name: 'My Requests', path: '/my-requests', icon: '📋' },
       ]
-    }, */
+    },
+    /*  {
+       title: 'REPORT',
+       items: [
+         { name: 'Request Report', path: '/request-report', icon: '📄' },
+         { name: 'My Requests', path: '/my-requests', icon: '📋' },
+       ]
+     }, */
     {
       title: 'EXECUTOR',
       items: [
@@ -39,8 +38,8 @@ const SideMenu = () => {
             <h3 className="section-heading">{section.title}</h3>
             <ul className="nav-list">
               {section.items.map((item) => (
-                <li 
-                  key={item.path} 
+                <li
+                  key={item.path}
                   className={`nav-item ${pathname === item.path ? 'active' : ''}`}
                 >
                   <Link href={item.path} className="nav-link">

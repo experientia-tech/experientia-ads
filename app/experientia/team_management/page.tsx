@@ -9,21 +9,22 @@ const TeamManagementPage = () => {
   const [expandedCampaign, setExpandedCampaign] = useState<string | null>(null);
   const [roleFilter, setRoleFilter] = useState('');
   const [showActiveOnly, setShowActiveOnly] = useState(false);
-  const { campaigns, fetchCampaigns } = useCampaignStore();
+  const { campaigns, fetchMyCampaigns } = useCampaignStore();
+  const initialized = React.useRef(false);
 
   useEffect(() => {
-    const loadCampaigns = async () => {
-      await fetchCampaigns();
-    };
-    loadCampaigns();
-  }, [fetchCampaigns]);
+    if (!initialized.current) {
+      initialized.current = true;
+      fetchMyCampaigns();
+    }
+  }, [fetchMyCampaigns]);
 
   const toggleCampaign = (campaignId: string) => {
     setExpandedCampaign(expandedCampaign === campaignId ? null : campaignId);
   };
 
   // Filter campaigns based on search query
-  const filteredCampaigns = campaigns.filter(campaign => 
+  const filteredCampaigns = campaigns.filter(campaign =>
     campaign?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     campaign?.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -45,11 +46,11 @@ const TeamManagementPage = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        
+
         <div className={styles.filters}>
           <div className={styles.filterGroup}>
-            <select 
-              id="roleFilter" 
+            <select
+              id="roleFilter"
               className={styles.filterSelect}
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
@@ -61,7 +62,7 @@ const TeamManagementPage = () => {
               <option value="Manager">Manager</option>
             </select>
           </div>
-          
+
           <label className={styles.checkboxLabel}>
             <input
               type="checkbox"
@@ -78,7 +79,7 @@ const TeamManagementPage = () => {
       <div className={styles.campaignsList}>
         {filteredCampaigns.map((campaign) => (
           <div key={campaign.id} className={styles.campaignCard}>
-            <div 
+            <div
               className={styles.campaignHeader}
               onClick={() => toggleCampaign(campaign.id?.toString() || '')}
             >

@@ -9,7 +9,6 @@ import {
   FiFilter,
   FiCalendar,
   FiMapPin,
-  FiFlag,
   FiToggleLeft,
   FiToggleRight,
 } from "react-icons/fi";
@@ -19,6 +18,7 @@ import styles from "./page.module.scss";
 import ReportCard from "@/app/experientia/components/report_card/Report_card";
 import TaskDetail from "@/app/experientia/components/taskdetail/TaskDetail";
 import ReportsMap from "@/app/experientia/components/reports_map/ReportsMap";
+import logo from "@/public/experientia.png";
 
 const ReportContent = ({
   campaignId,
@@ -56,9 +56,13 @@ const ReportContent = ({
     stateBackground: "",
     geofenced: false,
   });
+
   const [selectedTask, setSelectedTask] = useState<any>(null);
+
   const [campaignData, setCampaignData] = useState<any>(null);
+
   const [tasks, setTasks] = useState<any[]>([]);
+
   const [loading, setLoading] = useState(true);
 
   // Calculate task overview statistics from real data
@@ -218,9 +222,9 @@ const ReportContent = ({
       }
 
       // Get the filename from the response headers or create a default one
-      const contentDisposition = response.headers.get('content-disposition');
-      let filename = 'tasks.xlsx';
-      
+      const contentDisposition = response.headers.get("content-disposition");
+      let filename = "tasks.xlsx";
+
       if (contentDisposition) {
         const filenameMatch = contentDisposition.match(/filename="(.+)"/);
         if (filenameMatch) {
@@ -231,7 +235,7 @@ const ReportContent = ({
       // Convert the response to blob and download it
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = filename;
       document.body.appendChild(a);
@@ -287,7 +291,7 @@ const ReportContent = ({
         <div className={styles.brandInfo}>
           <div className={styles.logoContainer}>
             <img
-              src={campaign.logo}
+              src={campaign.logo || logo.src}
               alt={campaign.name}
               className={styles.logo}
             />
@@ -302,10 +306,10 @@ const ReportContent = ({
             <FiDownload size={16} />
             <span>Export to Excel</span>
           </button>
-          <button className={styles.emailButton}>
+          {/* <button className={styles.emailButton}>
             <FiMail size={16} />
             <span>Email Report</span>
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -315,7 +319,6 @@ const ReportContent = ({
           completedTasks={completedTasks}
           remainingTasks={remainingTasks}
           progress={progress}
-          flaggedTasks={flaggedTasks}
         />
 
         <div className={styles.filtersSection}>
@@ -347,7 +350,7 @@ const ReportContent = ({
             </button> */}
           </div>
 
-          <div className={styles.searchGroup}>
+          {/* <div className={styles.searchGroup}>
             <div className={styles.searchBar}>
               <FiSearch className={styles.searchIcon} />
               <input
@@ -414,7 +417,7 @@ const ReportContent = ({
               ))}
             </select>
 
-            <div className={styles.geofenceToggle}>
+            {/* <div className={styles.geofenceToggle}>
               <span>Geofenced Only</span>
               <button
                 className={styles.toggleButton}
@@ -428,8 +431,8 @@ const ReportContent = ({
                   <FiToggleLeft size={24} color="#ccc" />
                 )}
               </button>
-            </div>
-          </div>
+            </div> */}
+          {/* </div> */}
         </div>
       </div>
       <div

@@ -23,7 +23,6 @@ const DashboardPage = () => {
   const router = useRouter();
   const [expandedBrandId, setExpandedBrandId] = useState<number | null>(null);
 
-  // Check authentication on component mount
   useEffect(() => {
     if (!isAuthenticated()) {
       router.push("/signin");
@@ -36,7 +35,6 @@ const DashboardPage = () => {
   const loaderRef = React.useRef<HTMLDivElement>(null);
 
   const [filters, setFilters] = useState({ status: '', serviceType: '' });
-
   const lastFetchedParams = React.useRef<string>("");
 
   useEffect(() => {
@@ -81,6 +79,7 @@ const DashboardPage = () => {
     };
   }, [isLoading, currentPage, pagination.totalPages]);
 
+  // Calculate summary metrics
   const campaignsList = Array.isArray(campaigns) ? campaigns : [];
   const totalCampaigns = campaignsList.length;
   const activeCampaigns = campaignsList.filter(
@@ -116,8 +115,8 @@ const DashboardPage = () => {
   return (
     <div className={styles.dashboard}>
       <div className={styles.header}>
-        <h1>Dashboard</h1>
-        <p className={styles.subtitle}>Overview of your campaigns and tasks</p>
+        <h1>My Campaigns</h1>
+        <p className={styles.subtitle}>All campaigns in your organization</p>
       </div>
       <div className={styles.summaryGrid}>
         <SummaryCard

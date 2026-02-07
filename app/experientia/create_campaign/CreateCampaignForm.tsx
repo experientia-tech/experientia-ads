@@ -5,37 +5,133 @@ import "./CreateCampaignForm.scss";
 import { useRouter } from "next/navigation";
 import { authenticatedFetch } from "@/app/constants/api";
 import { getTokenPayload } from "@/app/constants/auth";
+import SuccessModal from "../components/success_modal/SuccessModal";
+import { useCampaignStore } from "@/app/store/Campaigns";
 
-const CreateCampaignForm = ({ onClose }: { onClose: () => void }) => {
-  const [brandName, setBrandName] = useState("");
-  const [campaignLocation, setCampaignLocation] = useState("");
-  const [totalTasks, setTotalTasks] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [serviceType, setServiceType] = useState("");
-  const [latitude, setLatitude] = useState("");
-  const [longitude, setLongitude] = useState("");
+const CreateCampaignForm = ({
+  onClose,
+  isEdit = false,
+  initialData = null,
+}: {
+  onClose: () => void;
+  isEdit?: boolean;
+  initialData?: any;
+}) => {
+  const [brandName, setBrandName] = useState(initialData?.name || "");
+  const [campaignLocation, setCampaignLocation] = useState(
+    initialData?.address || "",
+  );
+  const [totalTasks, setTotalTasks] = useState(
+    initialData?.totalTasks?.toString() || "",
+  );
+  const [startDate, setStartDate] = useState(
+    initialData?.startDate
+      ? new Date(initialData.startDate).toISOString().split("T")[0]
+      : "",
+  );
+  const [endDate, setEndDate] = useState(
+    initialData?.endDate
+      ? new Date(initialData.endDate).toISOString().split("T")[0]
+      : "",
+  );
+  const [selectedImage, setSelectedImage] = useState<string | null>(
+    initialData?.logo || null,
+  );
+  const [serviceType, setServiceType] = useState(
+    initialData?.serviceType || "",
+  );
+  const [latitude, setLatitude] = useState(
+    initialData?.latitude?.toString() || "",
+  );
+  const [longitude, setLongitude] = useState(
+    initialData?.longitude?.toString() || "",
+  );
   const router = useRouter();
   const [organizationId, setOrganizationId] = useState("");
+  const editCampaignStore = useCampaignStore((state) => state.editCampaign);
+
+  const [successConfig, setSuccessConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+  });
+
   useEffect(() => {
     const payload = getTokenPayload();
-    console.log("Token payload:", payload);
     if (payload?.orgld) {
       setOrganizationId(payload.orgld);
-    } else {
-      console.log("No organization ID found in token payload");
     }
   }, []);
+  useEffect(() => {
+    if (isEdit && initialData) {
+      setBrandName(initialData.name || "");
+      setCampaignLocation(initialData.address || "");
+      setTotalTasks(initialData.totalTasks?.toString() || "");
+      setStartDate(
+        initialData.startDate
+          ? new Date(initialData.startDate).toISOString().split("T")[0]
+          : "",
+      );
+      setEndDate(
+        initialData.endDate
+          ? new Date(initialData.endDate).toISOString().split("T")[0]
+          : "",
+      );
+      setSelectedImage(initialData.logo || null);
+      setServiceType(initialData.serviceType || "");
+      setLatitude(initialData.latitude?.toString() || "");
+      setLongitude(initialData.longitude?.toString() || "");
+    }
+  }, [isEdit, initialData]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setSelectedImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        // Show loading state
+        setSelectedImage(null);
+
+        // Get presigned URL from API
+        const presignedResponse = await fetch('/api/document/presigned-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileName: `campaign-logo-${Date.now()}.${file.type.split('/')[1]}`,
+            contentType: file.type
+          })
+        });
+
+        if (!presignedResponse.ok) {
+          throw new Error('Failed to get upload URL');
+        }
+
+        const { uploadUrl, imageUrl } = await presignedResponse.json();
+
+        // Upload file to S3
+        const uploadResponse = await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': file.type },
+          body: file
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload image');
+        }
+        setSelectedImage(imageUrl);
+
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        alert('Failed to upload image. Please try again.');
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setSelectedImage(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
@@ -44,7 +140,10 @@ const CreateCampaignForm = ({ onClose }: { onClose: () => void }) => {
       alert("Please enter a valid latitude between -90 and 90");
       return false;
     }
-    if (longitude && !/^-?([0-9]{1,2}|1[0-7][0-9]|180)\.?[0-9]*$/.test(longitude)) {
+    if (
+      longitude &&
+      !/^-?([0-9]{1,2}|1[0-7][0-9]|180)\.?[0-9]*$/.test(longitude)
+    ) {
       alert("Please enter a valid longitude between -180 and 180");
       return false;
     }
@@ -59,59 +158,132 @@ const CreateCampaignForm = ({ onClose }: { onClose: () => void }) => {
     }
 
     try {
-      const response = await authenticatedFetch("/api/campaigns", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: brandName,
-          address: campaignLocation,
-          totalTasks: parseInt(totalTasks, 10) || 0,
-          startDate: startDate || null,
-          endDate: endDate || null,
-          serviceType: serviceType || "DEFAULT_SERVICE",
-          status: "ACTIVE",
-          latitude: latitude ? parseFloat(latitude) : null,
-          longitude: longitude ? parseFloat(longitude) : null,
-          description: "",
-        }),
-      });
+      if (isEdit && initialData) {
+        // Calculate diff for partial update
+        const updatedFields: any = {};
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("API Error:", errorData);
-        throw new Error(errorData.error || "Failed to create campaign");
+        if (brandName !== initialData.name) updatedFields.name = brandName;
+        if (campaignLocation !== initialData.address)
+          updatedFields.address = campaignLocation;
+
+        const tasksNum = parseInt(totalTasks, 10) || 0;
+        if (tasksNum !== initialData.totalTasks)
+          updatedFields.totalTasks = tasksNum;
+
+        if (
+          startDate !==
+          (initialData.startDate
+            ? new Date(initialData.startDate).toISOString().split("T")[0]
+            : "")
+        ) {
+          updatedFields.startDate = startDate || null;
+        }
+
+        if (
+          endDate !==
+          (initialData.endDate
+            ? new Date(initialData.endDate).toISOString().split("T")[0]
+            : "")
+        ) {
+          updatedFields.endDate = endDate || null;
+        }
+
+        if (serviceType !== initialData.serviceType)
+          updatedFields.serviceType = serviceType;
+
+        const latNum = latitude ? parseFloat(latitude) : null;
+        if (latNum !== initialData.latitude) updatedFields.latitude = latNum;
+
+        const lngNum = longitude ? parseFloat(longitude) : null;
+        if (lngNum !== initialData.longitude) updatedFields.longitude = lngNum;
+
+        if (selectedImage !== initialData.logo) updatedFields.logo = selectedImage;
+
+        // Check if anything actually changed
+        if (Object.keys(updatedFields).length === 0) {
+          alert("No changes detected.");
+          onClose();
+          return;
+        }
+
+        const result = await editCampaignStore(initialData.id, updatedFields);
+
+        if (!result.success) {
+          throw new Error(result.error || "Failed to update campaign");
+        }
+
+        setSuccessConfig({
+          isOpen: true,
+          title: "Campaign Updated!",
+          message: `The campaign "${brandName}" has been successfully updated.`,
+        });
+
+        window.dispatchEvent(
+          new CustomEvent("campaignUpdated", {
+            detail: { campaign: result.data },
+          }),
+        );
+      } else {
+        // Create new campaign
+        const response = await authenticatedFetch("/api/campaigns", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: brandName,
+            address: campaignLocation,
+            totalTasks: parseInt(totalTasks, 10) || 0,
+            startDate: startDate || null,
+            endDate: endDate || null,
+            serviceType: serviceType || "DEFAULT_SERVICE",
+            status: "ACTIVE",
+            latitude: latitude ? parseFloat(latitude) : null,
+            longitude: longitude ? parseFloat(longitude) : null,
+            description: "",
+            logo: selectedImage,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to create campaign");
+        }
+
+        const data = await response.json();
+
+        setSuccessConfig({
+          isOpen: true,
+          title: "Campaign Created!",
+          message: `The campaign "${brandName}" has been successfully created.`,
+        });
+
+        window.dispatchEvent(
+          new CustomEvent("campaignCreated", {
+            detail: { campaign: data.data || data },
+          }),
+        );
       }
-
-      const data = await response.json();
-      console.log("Campaign created successfully:", data);
-      alert("Campaign created successfully!");
-      onClose();
-      
-      // Dispatch custom event to notify other components
-      window.dispatchEvent(new CustomEvent('campaignCreated', { 
-        detail: { campaign: data.data || data }
-      }));
-      
-      // Refresh the current page to show the new campaign
-      router.refresh();
-      
-      // Optional: If we want to navigate to a specific page after creation
-      // router.push('/experientia/campaigns');
     } catch (error) {
-      console.error("Error creating campaign:", error);
+      console.error(`Error processing campaign:`, error);
       alert(
-        `Error: ${error instanceof Error ? error.message : "Failed to create campaign"}`,
+        `Error: ${error instanceof Error ? error.message : "Failed to process campaign"}`,
       );
     }
+  };
+
+  const handleSuccessClose = () => {
+    setSuccessConfig((prev) => ({ ...prev, isOpen: false }));
+    onClose();
+    useCampaignStore.getState().fetchMyCampaigns();
+    router.refresh();
   };
 
   return (
     <div className="campaign-form-overlay">
       <div className="campaign-form-container">
         <div className="campaign-form-header">
-          <h2>Create New Campaign</h2>
+          <h2>{isEdit ? "Edit Campaign" : "Create New Campaign"}</h2>
           <button className="close-btn" onClick={onClose}>
             <FiX size={24} />
           </button>
@@ -242,10 +414,10 @@ const CreateCampaignForm = ({ onClose }: { onClose: () => void }) => {
               required
             >
               <option value="">Select service type</option>
-              <option value="social_media">Social Media Marketing</option>
-              <option value="influencer">Influencer Marketing</option>
-              <option value="content">Content Creation</option>
-              <option value="event">Event Marketing</option>
+              <option value="Auto Hood">Auto Hood</option>
+              <option value="No Parking Boards">No Parking Boards</option>
+              <option value="Pole Boards">Pole Boards</option>
+              <option value="Shop Branding">Shop Branding</option>
             </select>
           </div>
 
@@ -254,11 +426,18 @@ const CreateCampaignForm = ({ onClose }: { onClose: () => void }) => {
               Cancel
             </button>
             <button type="submit" className="create-btn">
-              Create Campaign
+              {isEdit ? "Update Campaign" : "Create Campaign"}
             </button>
           </div>
         </form>
       </div>
+
+      <SuccessModal
+        isOpen={successConfig.isOpen}
+        onClose={handleSuccessClose}
+        title={successConfig.title}
+        message={successConfig.message}
+      />
     </div>
   );
 };

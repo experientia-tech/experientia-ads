@@ -1,77 +1,52 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-import { authenticatedFetch } from "../../constants/api";
+import { useCampaignStore, fetchAssignedCampaigns } from "../../store/Campaigns";
 import CampaignCard from "../components/campaign_card/CampaignCard";
 import "./page.scss";
+import { ICampaign } from "../../constants/interface";
 
-interface Campaign {
-  id: string;
-  name: string;
-  status: string;
-  startDate: string;
-  endDate: string;
-  serviceType?: string;
-  description?: string;
-  organizationId?: string;
-  address?: string;
-  totalTasks?: number;
-  completedTasks?: number;
-  members?: any[];
-  tasks?: Array<{ status: string }>;
-  createdAt?: string;
-  updatedAt?: string;
-}
 
 const AssignedCampaignsPage = () => {
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [campaigns, setCampaigns] = useState<ICampaign[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [serviceType, setServiceType] = useState<string>('');
+  const lastFetchedParams = React.useRef<string>("");
 
   const fetchCampaigns = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await authenticatedFetch("/api/campaigns");
-      if (!response.ok) {
-        throw new Error("Failed to fetch campaigns");
+      const result = await fetchAssignedCampaigns(1, 10, { serviceType });
+      if (!result.success) {
+        throw new Error(result.error);
       }
-      const responseData = await response.json();
-      let campaignsData: Campaign[] = [];
-      if (Array.isArray(responseData)) {
-        campaignsData = responseData;
-      } else if (responseData.data && Array.isArray(responseData.data.data)) {
-        campaignsData = responseData.data.data;
-      } else if (responseData.data && Array.isArray(responseData.data)) {
-        campaignsData = responseData.data;
-      } else if (responseData.campaigns) {
-        campaignsData = responseData.campaigns;
-      }
-      
-      setCampaigns(campaignsData);
+      setCampaigns(result.data || []);
     } catch (err) {
       console.error("Error fetching campaigns:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [serviceType]);
 
   useEffect(() => {
+    const paramsKey = JSON.stringify({ serviceType });
+    if (lastFetchedParams.current === paramsKey) return;
+
+    lastFetchedParams.current = paramsKey;
     fetchCampaigns();
-    
-    // Listen for campaign creation events
+
     const handleCampaignCreated = () => {
       console.log("Campaign created event received, refreshing campaigns...");
+      lastFetchedParams.current = ""; // Force refresh
       fetchCampaigns();
     };
-    
-    // Add event listener for custom campaign creation event
-    window.addEventListener('campaignCreated', handleCampaignCreated);
-    
-    // Cleanup event listener on component unmount
+
+    window.addEventListener("campaignCreated", handleCampaignCreated);
     return () => {
-      window.removeEventListener('campaignCreated', handleCampaignCreated);
+      window.removeEventListener("campaignCreated", handleCampaignCreated);
     };
-  }, [fetchCampaigns]);
+  }, [fetchCampaigns, serviceType]);
 
   if (loading) {
     return (
@@ -104,28 +79,33 @@ const AssignedCampaignsPage = () => {
 
       <div className="filters">
         <div className="filter-group">
-          <select className="filter-select">
-            <option>All services</option>
-            <option>Social Media</option>
-            <option>Influencer Marketing</option>
-            <option>Email Campaigns</option>
+          <select
+            className="filter-select"
+            value={serviceType}
+            onChange={(e) => setServiceType(e.target.value)}
+          >
+            <option value="">All services</option>
+            <option value="Auto Hood">Auto Hood</option>
+            <option value="Pole Branding">Pole Branding</option>
+            <option value="No Parking Boards">No Parking Boards</option>
+            <option value="Shop Branding">Shop Branding</option>
           </select>
         </div>
 
-        <div className="filter-group">
+        {/*   <div className="filter-group">
           <select className="filter-select">
             <option>All locations</option>
             <option>United States</option>
             <option>Europe</option>
             <option>Asia</option>
           </select>
-        </div>
+        </div> */}
 
-        <div className="filter-group">
+        {/*  <div className="filter-group">
           <select className="filter-select">
             <option>All companies</option>
           </select>
-        </div>
+        </div> */}
       </div>
 
       <div className="campaigns-list">
