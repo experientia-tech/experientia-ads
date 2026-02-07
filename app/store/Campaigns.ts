@@ -20,7 +20,7 @@ interface CampaignState {
     data?: ICampaign[];
     error?: string;
   }>;
-  fetchMyCampaigns: (page?: number, limit?: number, filters?: { status?: string }) => Promise<{
+  fetchMyCampaigns: (page?: number, limit?: number, filters?: { status?: string; serviceType?: string }) => Promise<{
     success: boolean;
     data?: ICampaign[];
     error?: string;
