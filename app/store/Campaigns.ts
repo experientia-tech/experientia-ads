@@ -126,7 +126,7 @@ export const useCampaignStore = create<CampaignState>((set) => ({
     }
   },
 
-  fetchMyCampaigns: async (page = 1, limit = 10, filters?: { status?: string }) => {
+  fetchMyCampaigns: async (page = 1, limit = 10, filters?: { status?: string; serviceType?: string }) => {
     set({ isLoading: true, error: null });
     try {
       const queryParams = new URLSearchParams({
@@ -135,6 +135,7 @@ export const useCampaignStore = create<CampaignState>((set) => ({
       });
 
       if (filters?.status) queryParams.append('status', filters.status);
+      if (filters?.serviceType && filters.serviceType !== 'All services' && filters.serviceType !== 'All') queryParams.append('serviceType', filters.serviceType);
 
       const response = await authenticatedFetch(`/api/campaigns/my_campaigns?${queryParams.toString()}`);
 
@@ -368,7 +369,7 @@ export const useCampaignStore = create<CampaignState>((set) => ({
 
 export const fetchCampaigns = (page?: number, limit?: number) =>
   useCampaignStore.getState().fetchCampaigns(page, limit);
-export const fetchMyCampaigns = (page?: number, limit?: number, filters?: { status?: string }) =>
+export const fetchMyCampaigns = (page?: number, limit?: number, filters?: { status?: string; serviceType?: string }) =>
   useCampaignStore.getState().fetchMyCampaigns(page, limit, filters);
 export const fetchAssignedCampaigns = (page?: number, limit?: number, filters?: { status?: string; serviceType?: string }) =>
   useCampaignStore.getState().fetchAssignedCampaigns(page, limit, filters);
