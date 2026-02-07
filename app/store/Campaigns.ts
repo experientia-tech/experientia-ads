@@ -25,7 +25,7 @@ interface CampaignState {
     data?: ICampaign[];
     error?: string;
   }>;
-  fetchAssignedCampaigns: (page?: number, limit?: number, filters?: { status?: string }) => Promise<{
+  fetchAssignedCampaigns: (page?: number, limit?: number, filters?: { status?: string; serviceType?: string }) => Promise<{
     success: boolean;
     data?: ICampaign[];
     error?: string;
@@ -179,7 +179,7 @@ export const useCampaignStore = create<CampaignState>((set) => ({
     }
   },
 
-  fetchAssignedCampaigns: async (page = 1, limit = 10, filters?: { status?: string }) => {
+  fetchAssignedCampaigns: async (page = 1, limit = 10, filters?: { status?: string; serviceType?: string }) => {
     set({ isLoading: true, error: null });
     try {
       const queryParams = new URLSearchParams({
@@ -188,6 +188,7 @@ export const useCampaignStore = create<CampaignState>((set) => ({
       });
 
       if (filters?.status) queryParams.append('status', filters.status);
+      if (filters?.serviceType && filters.serviceType !== 'All services') queryParams.append('serviceType', filters.serviceType);
 
       const response = await authenticatedFetch(`/api/campaigns/assigned_campaigns?${queryParams.toString()}`);
 
@@ -369,7 +370,7 @@ export const fetchCampaigns = (page?: number, limit?: number) =>
   useCampaignStore.getState().fetchCampaigns(page, limit);
 export const fetchMyCampaigns = (page?: number, limit?: number, filters?: { status?: string }) =>
   useCampaignStore.getState().fetchMyCampaigns(page, limit, filters);
-export const fetchAssignedCampaigns = (page?: number, limit?: number, filters?: { status?: string }) =>
+export const fetchAssignedCampaigns = (page?: number, limit?: number, filters?: { status?: string; serviceType?: string }) =>
   useCampaignStore.getState().fetchAssignedCampaigns(page, limit, filters);
 export const fetchCampaignById = (id: string) =>
   useCampaignStore.getState().fetchCampaignById(id);
