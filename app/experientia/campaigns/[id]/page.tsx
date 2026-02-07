@@ -114,8 +114,6 @@ const CampaignDetailsPage = ({
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to remove member");
       }
-
-      // Refresh the list after successful deletion
       handleRefresh();
 
     } catch (error) {
@@ -125,7 +123,7 @@ const CampaignDetailsPage = ({
         title: "Failed to remove member",
         message: error instanceof Error ? error.message : "Failed to remove member"
       });
-      throw error; // Re-throw to let the table component know
+      throw error;
     }
   };
 
@@ -197,10 +195,10 @@ const CampaignDetailsPage = ({
       <div className={styles.campaignInfoSection}>
         <h2>Campaign Information</h2>
         <div className={styles.infoGrid}>
-          <div className={styles.infoItem}>
+          {/*  <div className={styles.infoItem}>
             <span className={styles.infoLabel}>Role</span>
             <span className={styles.infoValue}>Campaign Manager</span>
-          </div>
+          </div> */}
           <div className={styles.infoItem}>
             <span className={styles.infoLabel}>Created</span>
             <span className={styles.infoValue}>
