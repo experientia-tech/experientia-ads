@@ -30,27 +30,30 @@ const DashboardPage = () => {
     }
   }, [router]);
 
-  const { campaigns, fetchCampaigns, pagination, isLoading } = useCampaignStore();
+  const { campaigns, fetchMyCampaigns, pagination, isLoading } = useCampaignStore();
   const [currentPage, setCurrentPage] = useState(1);
   const limit = 10;
   const loaderRef = React.useRef<HTMLDivElement>(null);
 
   const [filters, setFilters] = useState({ status: '', serviceType: '' });
 
+  const lastFetchedParams = React.useRef<string>("");
+
   useEffect(() => {
-    fetchCampaigns(currentPage, limit, filters);
-  }, [fetchCampaigns, currentPage, filters]);
+    const paramsKey = JSON.stringify({ page: currentPage, limit, filters });
+    if (lastFetchedParams.current === paramsKey) return;
+
+    lastFetchedParams.current = paramsKey;
+    fetchMyCampaigns(currentPage, limit, filters);
+  }, [fetchMyCampaigns, currentPage, filters]);
 
   const handleFilterChange = useCallback((newFilters: { status: string; serviceType: string }) => {
     setFilters((prev) => {
-      // Only update if filters actually changed to avoid unnecessary re-renders
       if (prev.status === newFilters.status && prev.serviceType === newFilters.serviceType) {
         return prev;
       }
       return newFilters;
     });
-    // We only want to reset page if filters really changed, but for simplicity/safety we can do it here
-    // or inside the check above. Let's do it if we update filters.
     if (filters.status !== newFilters.status || filters.serviceType !== newFilters.serviceType) {
       setCurrentPage(1);
     }
@@ -78,7 +81,6 @@ const DashboardPage = () => {
     };
   }, [isLoading, currentPage, pagination.totalPages]);
 
-  // Calculate summary metrics
   const campaignsList = Array.isArray(campaigns) ? campaigns : [];
   const totalCampaigns = campaignsList.length;
   const activeCampaigns = campaignsList.filter(
