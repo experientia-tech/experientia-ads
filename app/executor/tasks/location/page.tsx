@@ -22,7 +22,7 @@ interface LocationData {
 
 interface CapturedPhoto {
   dataUrl: string;
-  s3Url?: string; // Optional S3 URL
+  s3Url?: string;
   timestamp: Date;
 }
 
@@ -124,371 +124,87 @@ const TaskLocation = () => {
   };
 
   const getAddressFromCoordinates = async (coords: LocationData) => {
-    console.log("=== Starting FULL address lookup ===");
+    console.log("=== Starting FULL address lookup via Mapbox ===");
     console.log("Input coordinates:", coords);
 
     const cacheKey = `geocode_${coords.lat.toFixed(6)}_${coords.lng.toFixed(6)}`;
-    console.log("Cache key:", cacheKey);
 
     // Check cache first
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
       try {
         const cachedData = JSON.parse(cached);
-        console.log("Found cached data:", cachedData);
         if (Date.now() - cachedData.timestamp < 3600000) {
-          // 1 hour cache
           console.log("Using cached address:", cachedData.address);
           setFullAddress(cachedData.address);
           return;
         }
       } catch (e) {
-        console.log("Cache parse failed, fetching fresh data:", e);
+        console.log("Cache parse failed:", e);
       }
     }
 
     try {
-      console.log("Getting FULL address for coordinates:", coords);
-
-      // Create parallel requests for all providers
-      const providerRequests: Promise<string | null>[] = [];
-
-      // BigDataCloud provider
-      providerRequests.push(
-        (async () => {
-          try {
-            console.log("Trying BigDataCloud for full address...");
-            const response = await fetch(
-              `/api/geocode?lat=${coords.lat}&lon=${coords.lng}&provider=bigdatacloud`,
-              {
-                signal: AbortSignal.timeout(8000),
-                headers: {
-                  Accept: "application/json",
-                },
-              },
-            );
-
-            if (response.ok) {
-              const result = await response.json();
-              console.log("BigDataCloud full response:", result);
-              const parts: string[] = [];
-              if (result.localityInfo?.informative) {
-                const streetItems = result.localityInfo.informative.filter(
-                  (item: any) =>
-                    item.description?.includes("human settlement") ||
-                    item.description?.includes("street") ||
-                    item.description?.includes("road") ||
-                    item.description?.includes("building") ||
-                    item.description?.includes("house") ||
-                    (item.name &&
-                      !item.description?.includes("postal code") &&
-                      !isUnwantedGeographicItem(item.name, item.description)),
-                );
-
-                streetItems.forEach((item: any) => {
-                  if (item.name && !parts.includes(item.name)) {
-                    parts.push(item.name);
-                  }
-                });
-              }
-              if (result.localityInfo?.informative) {
-                const building = result.localityInfo.informative.find(
-                  (item: any) =>
-                    item.description === "building" ||
-                    item.description === "house",
-                );
-                if (
-                  building &&
-                  building.name &&
-                  !parts.includes(building.name)
-                ) {
-                  parts.unshift(building.name);
-                }
-
-                const road = result.localityInfo.informative.find(
-                  (item: any) =>
-                    item.description === "road" ||
-                    item.description === "street",
-                );
-                if (road && road.name && !parts.includes(road.name)) {
-                  parts.push(road.name);
-                }
-              }
-
-              if (result.localityInfo?.administrative) {
-                const neighborhood = result.localityInfo.administrative.find(
-                  (item: any) =>
-                    (item.order === 8 ||
-                      item.order === 9 ||
-                      item.description?.includes("City Corporation")) &&
-                    !isUnwantedGeographicItem(item.name, item.description),
-                );
-                if (
-                  neighborhood &&
-                  neighborhood.name &&
-                  !parts.includes(neighborhood.name)
-                ) {
-                  parts.push(neighborhood.name);
-                }
-              }
-
-              if (result.locality && !parts.includes(result.locality)) {
-                parts.push(result.locality);
-              }
-
-              if (
-                result.city &&
-                result.city !== result.locality &&
-                !parts.includes(result.city)
-              ) {
-                parts.push(result.city);
-              }
-
-              if (result.localityInfo?.administrative) {
-                const district = result.localityInfo.administrative.find(
-                  (item: any) =>
-                    (item.order === 6 ||
-                      item.order === 7 ||
-                      item.description?.includes("district")) &&
-                    !isUnwantedGeographicItem(item.name, item.description),
-                );
-                if (
-                  district &&
-                  district.name &&
-                  !parts.includes(district.name)
-                ) {
-                  parts.push(district.name);
-                }
-              }
-
-              if (
-                result.principalSubdivision &&
-                !parts.includes(result.principalSubdivision)
-              ) {
-                parts.push(result.principalSubdivision);
-              }
-
-              if (result.postcode && !parts.includes(result.postcode)) {
-                parts.push(result.postcode);
-              }
-
-              if (result.countryName && !parts.includes(result.countryName)) {
-                parts.push(result.countryName);
-              }
-
-              const address = parts.filter(Boolean).join(", ");
-
-              if (address && address.length > 20) {
-                console.log("Full address found via BigDataCloud:", address);
-                return address;
-              }
-            }
-          } catch (bigdataError) {
-            console.log("BigDataCloud service failed:", bigdataError);
-          }
-          return null;
-        })(),
-      );
-
-      // OpenCage provider
-      const opencageKey = process.env.NEXT_PUBLIC_OPENCAGE_API_KEY;
-      if (opencageKey) {
-        providerRequests.push(
-          (async () => {
-            try {
-              console.log("Trying OpenCage for full address...");
-              const response = await fetch(
-                `/api/geocode?lat=${coords.lat}&lon=${coords.lng}&provider=opencage`,
-                {
-                  signal: AbortSignal.timeout(8000),
-                  headers: {
-                    Accept: "application/json",
-                  },
-                },
-              );
-
-              if (response.ok) {
-                const result = await response.json();
-                console.log("OpenCage full response:", result);
-
-                if (result.results && result.results.length > 0) {
-                  const addressData = result.results[0];
-
-                  // Try formatted address first
-                  if (addressData.formatted) {
-                    const address = addressData.formatted;
-                    console.log("Full address found via OpenCage:", address);
-                    return address;
-                  }
-
-                  // Build from components as fallback
-                  const components = addressData.components;
-                  if (components) {
-                    const parts = [];
-
-                    if (components.house_number)
-                      parts.push(components.house_number);
-                    if (components.road) parts.push(components.road);
-                    if (components.neighbourhood)
-                      parts.push(components.neighbourhood);
-                    if (components.suburb) parts.push(components.suburb);
-                    if (
-                      components.city ||
-                      components.town ||
-                      components.village
-                    ) {
-                      parts.push(
-                        components.city ||
-                          components.town ||
-                          components.village,
-                      );
-                    }
-                    if (components.state_district)
-                      parts.push(components.state_district);
-                    if (components.state) parts.push(components.state);
-                    if (components.postcode) parts.push(components.postcode);
-                    if (components.country) parts.push(components.country);
-
-                    const address = parts.join(", ");
-                    if (address) {
-                      console.log(
-                        "Full address built from OpenCage components:",
-                        address,
-                      );
-                      return address;
-                    }
-                  }
-                }
-              }
-            } catch (opencageError) {
-              console.log("OpenCage service failed:", opencageError);
-            }
-            return null;
-          })(),
-        );
+      const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+      if (!mapboxToken) {
+        throw new Error("Mapbox token not found");
       }
 
-      // LocationIQ provider
-      const locationiqKey = process.env.NEXT_PUBLIC_LOCATIONIQ_API_KEY;
-      if (locationiqKey) {
-        providerRequests.push(
-          (async () => {
-            try {
-              console.log("Trying LocationIQ for full address...");
-              const response = await fetch(
-                `/api/geocode?lat=${coords.lat}&lon=${coords.lng}&provider=locationiq`,
-                {
-                  signal: AbortSignal.timeout(8000),
-                  headers: {
-                    Accept: "application/json",
-                  },
-                },
-              );
-
-              if (response.ok) {
-                const result = await response.json();
-                console.log("LocationIQ full response:", result);
-
-                if (result && result.display_name) {
-                  const address = result.display_name;
-                  console.log("Full address found via LocationIQ:", address);
-                  return address;
-                }
-              }
-            } catch (locationiqError) {
-              console.log("LocationIQ service failed:", locationiqError);
-            }
-            return null;
-          })(),
-        );
-      }
-
-      // Photon provider
-      providerRequests.push(
-        (async () => {
-          try {
-            console.log("Trying Photon for full address...");
-            const response = await fetch(
-              `/api/geocode?lat=${coords.lat}&lon=${coords.lng}&provider=photon`,
-              {
-                signal: AbortSignal.timeout(8000),
-                headers: {
-                  Accept: "application/json",
-                },
-              },
-            );
-
-            if (response.ok) {
-              const result = await response.json();
-              console.log("Photon full response:", result);
-
-              if (result.features && result.features.length > 0) {
-                const properties = result.features[0].properties;
-                const parts = [];
-
-                if (properties.housenumber) parts.push(properties.housenumber);
-                if (properties.street) parts.push(properties.street);
-                if (properties.district) parts.push(properties.district);
-                if (properties.city) parts.push(properties.city);
-                if (properties.state) parts.push(properties.state);
-                if (properties.postcode) parts.push(properties.postcode);
-                if (properties.country) parts.push(properties.country);
-
-                const address = parts.filter(Boolean).join(", ");
-
-                if (address && address.length > 20) {
-                  console.log("Full address found via Photon:", address);
-                  return address;
-                }
-              }
-            }
-          } catch (photonError) {
-            console.log("Photon service failed:", photonError);
-          }
-          return null;
-        })(),
-      );
-
-      // Race all providers - use the first successful response
-      const results = await Promise.allSettled(providerRequests);
-
-      // Find first successful result
-      for (const result of results) {
-        if (result.status === "fulfilled" && result.value) {
-          const address = result.value;
-          console.log("Using address from fastest provider:", address);
-          setFullAddress(address);
-          localStorage.setItem(
-            cacheKey,
-            JSON.stringify({
-              address: address,
-              timestamp: Date.now(),
-            }),
-          );
-          return;
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${coords.lng},${coords.lat}.json?access_token=${mapboxToken}`,
+        {
+          headers: {
+            Accept: "application/json",
+          },
         }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Mapbox API error: ${response.status}`);
       }
 
-      // If all services fail, create a descriptive fallback
-      throw new Error("All geocoding services failed to retrieve full address");
-    } catch (error) {
-      console.error("Full address geocoding failed:", error);
+      const data = await response.json();
+      console.log("Mapbox response:", data);
 
-      // Create a user-friendly fallback address with coordinates
+      if (data.features && data.features.length > 0) {
+        const bestMatch = data.features.find((f: any) =>
+          f.place_type.includes('address') ||
+          f.place_type.includes('poi') ||
+          f.place_type.includes('neighborhood') ||
+          f.place_type.includes('locality') ||
+          f.place_type.includes('place')
+        ) || data.features[0];
+
+        const address = bestMatch.place_name;
+        console.log("Address found:", address);
+        setFullAddress(address);
+
+        localStorage.setItem(
+          cacheKey,
+          JSON.stringify({
+            address: address,
+            timestamp: Date.now(),
+          })
+        );
+      } else {
+        throw new Error("No address found for these coordinates");
+      }
+    } catch (error) {
+      console.error("Geocoding failed:", error);
+
       const lat = coords.lat.toFixed(6);
       const lng = coords.lng.toFixed(6);
-      const fallbackAddress = `Location: ${lat}°N, ${lng}°E (Full address lookup unavailable)`;
+      const fallbackAddress = `Location: ${lat}°N, ${lng}°E (Address lookup failed)`;
 
-      console.log("Using fallback address:", fallbackAddress);
       setFullAddress(fallbackAddress);
 
-      // Cache fallback to avoid repeated failed requests
+      // Cache fallback briefly to avoid spamming failed requests
       localStorage.setItem(
         cacheKey,
         JSON.stringify({
           address: fallbackAddress,
           timestamp: Date.now(),
-        }),
+        })
       );
     }
   };
@@ -520,7 +236,7 @@ const TaskLocation = () => {
       const token = localStorage.getItem("executor_token");
       const storedAutoHoodData = sessionStorage.getItem("autoHoodData");
       let autoHoodData = {};
-      
+
       if (storedAutoHoodData) {
         try {
           autoHoodData = JSON.parse(storedAutoHoodData);
