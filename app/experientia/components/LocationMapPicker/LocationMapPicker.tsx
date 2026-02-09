@@ -169,11 +169,13 @@ export default function LocationMapPicker({
             longitude: lng,
         });
     };
-
     // Handle search
-    const handleSearch = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSearch = async (e?: React.FormEvent | React.MouseEvent) => {
+        e?.preventDefault();
+        e?.stopPropagation();
         if (!searchQuery.trim()) return;
+
+        setIsLoadingAddress(true);
 
         try {
             const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -181,15 +183,24 @@ export default function LocationMapPicker({
                 throw new Error("Mapbox token not found");
             }
 
+            // Add proximity bias based on current map center for better results
+            const currentCenter = mapRef.current?.getCenter();
+            const proximityParam = currentCenter
+                ? `&proximity=${currentCenter.lng},${currentCenter.lat}`
+                : '';
+
             const response = await fetch(
-                `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?access_token=${mapboxToken}`
+                `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?access_token=${mapboxToken}${proximityParam}&limit=1`
             );
 
             if (!response.ok) {
-                throw new Error(`Mapbox API error: ${response.status}`);
+                const errorText = await response.text();
+                console.error("Mapbox API error response:", errorText);
+                throw new Error(`Mapbox API error: ${response.status} ${response.statusText}`);
             }
 
             const data = await response.json();
+            console.log("Search results:", data);
 
             if (data.features && data.features.length > 0) {
                 const [lng, lat] = data.features[0].center;
@@ -216,7 +227,9 @@ export default function LocationMapPicker({
             }
         } catch (error) {
             console.error("Error searching location:", error);
-            alert("Failed to search location. Please try again.");
+            alert(`Failed to search location: ${error instanceof Error ? error.message : "Unknown error"}`);
+        } finally {
+            setIsLoadingAddress(false);
         }
     };
 
@@ -231,19 +244,36 @@ export default function LocationMapPicker({
     return (
         <div className="location-map-picker">
             <div className="map-search-container">
-                <form onSubmit={handleSearch} className="search-form">
+                <div className="search-form">
                     <FiSearch className="search-icon" />
                     <input
                         type="text"
                         placeholder="Search for a location..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleSearch(e as any);
+                            }
+                        }}
                         className="search-input"
+                        disabled={isLoadingAddress}
                     />
-                    <button type="submit" className="search-button">
-                        Search
+                    <button
+                        type="button"
+                        className="search-button"
+                        disabled={isLoadingAddress || !searchQuery.trim()}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleSearch(e as any);
+                        }}
+                    >
+                        {isLoadingAddress ? "Searching..." : "Search"}
                     </button>
-                </form>
+                </div>
             </div>
 
             <div ref={mapContainerRef} className="map-container" />
