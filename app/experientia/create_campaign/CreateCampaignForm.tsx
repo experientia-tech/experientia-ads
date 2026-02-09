@@ -1,12 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
-import { FiUpload, FiX } from "react-icons/fi";
+import { FiUpload, FiX, FiMap } from "react-icons/fi";
 import "./CreateCampaignForm.scss";
 import { useRouter } from "next/navigation";
 import { authenticatedFetch } from "@/app/constants/api";
 import { getTokenPayload } from "@/app/constants/auth";
 import SuccessModal from "../components/success_modal/SuccessModal";
 import { useCampaignStore } from "@/app/store/Campaigns";
+import LocationMapPicker from "../components/LocationMapPicker/LocationMapPicker";
 
 const CreateCampaignForm = ({
   onClose,
@@ -46,6 +47,7 @@ const CreateCampaignForm = ({
   const [longitude, setLongitude] = useState(
     initialData?.longitude?.toString() || "",
   );
+  const [useMapPicker, setUseMapPicker] = useState(false);
   const router = useRouter();
   const [organizationId, setOrganizationId] = useState("");
   const editCampaignStore = useCampaignStore((state) => state.editCampaign);
@@ -148,6 +150,16 @@ const CreateCampaignForm = ({
       return false;
     }
     return true;
+  };
+
+  const handleMapLocationSelect = (data: {
+    address: string;
+    latitude: number;
+    longitude: number;
+  }) => {
+    setCampaignLocation(data.address);
+    setLatitude(data.latitude.toString());
+    setLongitude(data.longitude.toString());
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -302,61 +314,86 @@ const CreateCampaignForm = ({
             />
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="campaignLocation">Search Campaign Location</label>
-              <input
-                type="text"
-                id="campaignLocation"
-                value={campaignLocation}
-                onChange={(e) => setCampaignLocation(e.target.value)}
-                placeholder="Enter location"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="totalTasks">Total Tasks</label>
-              <input
-                type="number"
-                id="totalTasks"
-                value={totalTasks}
-                onChange={(e) => setTotalTasks(e.target.value)}
-                placeholder="Enter number of tasks"
-                min="1"
-                required
-              />
-            </div>
+          <div className="form-group">
+            <label htmlFor="totalTasks">Total Tasks</label>
+            <input
+              type="number"
+              id="totalTasks"
+              value={totalTasks}
+              onChange={(e) => setTotalTasks(e.target.value)}
+              placeholder="Enter number of tasks"
+              min="1"
+              required
+            />
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="latitude">Latitude</label>
-              <input
-                type="number"
-                id="latitude"
-                value={latitude}
-                onChange={(e) => setLatitude(e.target.value)}
-                placeholder="Enter latitude (e.g., 40.7128)"
-                step="any"
-                min="-90"
-                max="90"
-              />
+          <div className="form-group">
+            <div className="location-section-header">
+              <label>Campaign Location</label>
+              <button
+                type="button"
+                className="toggle-map-btn"
+                onClick={() => setUseMapPicker(!useMapPicker)}
+              >
+                <FiMap />
+                {useMapPicker ? "Use Manual Input" : "Use Map Picker"}
+              </button>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="longitude">Longitude</label>
-              <input
-                type="number"
-                id="longitude"
-                value={longitude}
-                onChange={(e) => setLongitude(e.target.value)}
-                placeholder="Enter longitude (e.g., -74.0060)"
-                step="any"
-                min="-180"
-                max="180"
+            {useMapPicker ? (
+              <LocationMapPicker
+                initialLat={latitude ? parseFloat(latitude) : undefined}
+                initialLng={longitude ? parseFloat(longitude) : undefined}
+                initialAddress={campaignLocation}
+                onLocationSelect={handleMapLocationSelect}
               />
-            </div>
+            ) : (
+              <>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="campaignLocation">Address</label>
+                    <input
+                      type="text"
+                      id="campaignLocation"
+                      value={campaignLocation}
+                      onChange={(e) => setCampaignLocation(e.target.value)}
+                      placeholder="Enter location"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="latitude">Latitude</label>
+                    <input
+                      type="number"
+                      id="latitude"
+                      value={latitude}
+                      onChange={(e) => setLatitude(e.target.value)}
+                      placeholder="Enter latitude (e.g., 40.7128)"
+                      step="any"
+                      min="-90"
+                      max="90"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="longitude">Longitude</label>
+                    <input
+                      type="number"
+                      id="longitude"
+                      value={longitude}
+                      onChange={(e) => setLongitude(e.target.value)}
+                      placeholder="Enter longitude (e.g., -74.0060)"
+                      step="any"
+                      min="-180"
+                      max="180"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="form-row">
