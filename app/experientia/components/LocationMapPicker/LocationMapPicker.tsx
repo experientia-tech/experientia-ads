@@ -51,27 +51,28 @@ export default function LocationMapPicker({
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     const { latitude, longitude } = position.coords;
-                    setSelectedCoords({ lat: latitude, lng: longitude });
+                    // handleLocationSelect already updates state and calls onLocationSelect
+                    handleLocationSelect(latitude, longitude);
 
                     // Update map center if map is already initialized
                     if (mapRef.current) {
                         mapRef.current.setCenter([longitude, latitude]);
                         markerRef.current?.setLngLat([longitude, latitude]);
                     }
-
-                    // Get address for current location
-                    reverseGeocode(latitude, longitude);
                     setIsLoadingLocation(false);
                 },
                 (error) => {
                     console.error("Error getting current location:", error);
                     setIsLoadingLocation(false);
-                    // Use default location (New Delhi) if geolocation fails
+                    // Emit default location if geolocation fails
+                    handleLocationSelect(selectedCoords.lat, selectedCoords.lng);
                 }
             );
         } else {
             console.log("Geolocation is not supported by this browser.");
             setIsLoadingLocation(false);
+            // Emit default location if geolocation is not supported
+            handleLocationSelect(selectedCoords.lat, selectedCoords.lng);
         }
     }, [initialLat, initialLng]);
 
@@ -141,7 +142,34 @@ export default function LocationMapPicker({
             const data = await response.json();
 
             if (data.features && data.features.length > 0) {
-                const address = data.features[0].place_name;
+                const bestFeature = data.features.find((f: any) =>
+                    f.place_type.includes('address') ||
+                    f.place_type.includes('poi')
+                ) || data.features[0];
+
+                // Construct a truly full address from feature + context
+                let addressParts = [];
+
+                // Add street number and street name if it's an address
+                if (bestFeature.address) {
+                    addressParts.push(bestFeature.address);
+                }
+                if (bestFeature.text) {
+                    addressParts.push(bestFeature.text);
+                }
+
+                // Add context parts (Neighborhood, Locality, Place, District, etc.)
+                if (bestFeature.context) {
+                    bestFeature.context.forEach((ctx: any) => {
+                        addressParts.push(ctx.text);
+                    });
+                }
+
+                // If we couldn't build it manually, fall back to place_name
+                const address = addressParts.length > 0
+                    ? Array.from(new Set(addressParts)).join(", ")
+                    : bestFeature.place_name;
+
                 setSelectedAddress(address);
                 return address;
             } else {
