@@ -89,44 +89,9 @@ const TaskLocation = () => {
     console.log(`Cleared ${keysToRemove.length} cached geocoding entries`);
   };
 
-  // Helper function to add delay
-  const delay = (ms: number) =>
-    new Promise((resolve) => setTimeout(resolve, ms));
-
-  // Helper function to filter out unwanted geographic regions
-  const isUnwantedGeographicItem = (
-    name: string,
-    description?: string,
-  ): boolean => {
-    const unwantedNames = [
-      "Asia",
-      "Asia/Kolkata",
-      "Indian subcontinent",
-      "Mainland India",
-      "Southern Zonal Council",
-      "South Western Railway",
-      "Kaveri River Basin",
-    ];
-
-    const unwantedDescriptions = [
-      "continent",
-      "time zone",
-      "subcontinent",
-      "Zonal Council",
-      "Railway",
-      "River Basin",
-    ];
-
-    return (
-      unwantedNames.some((unwanted) => name.includes(unwanted)) ||
-      unwantedDescriptions.some((unwanted) => description?.includes(unwanted))
-    );
-  };
 
   const getAddressFromCoordinates = async (coords: LocationData) => {
-    console.log("=== Starting FULL address lookup via Mapbox ===");
-    console.log("Input coordinates:", coords);
-
+    console.log("=== Starting address lookup via Mapbox (Aligned) ===");
     const cacheKey = `geocode_${coords.lat.toFixed(6)}_${coords.lng.toFixed(6)}`;
 
     // Check cache first
@@ -151,12 +116,7 @@ const TaskLocation = () => {
       }
 
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${coords.lng},${coords.lat}.json?access_token=${mapboxToken}`,
-        {
-          headers: {
-            Accept: "application/json",
-          },
-        }
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${coords.lng},${coords.lat}.json?access_token=${mapboxToken}`
       );
 
       if (!response.ok) {
@@ -164,19 +124,37 @@ const TaskLocation = () => {
       }
 
       const data = await response.json();
-      console.log("Mapbox response:", data);
 
       if (data.features && data.features.length > 0) {
-        const bestMatch = data.features.find((f: any) =>
+        const bestFeature = data.features.find((f: any) =>
           f.place_type.includes('address') ||
-          f.place_type.includes('poi') ||
-          f.place_type.includes('neighborhood') ||
-          f.place_type.includes('locality') ||
-          f.place_type.includes('place')
+          f.place_type.includes('poi')
         ) || data.features[0];
 
-        const address = bestMatch.place_name;
-        console.log("Address found:", address);
+        // Construct a truly full address from feature + context
+        let addressParts = [];
+
+        // Add street number and street name
+        if (bestFeature.address) {
+          addressParts.push(bestFeature.address);
+        }
+        if (bestFeature.text) {
+          addressParts.push(bestFeature.text);
+        }
+
+        // Add context parts (Neighborhood, Locality, Place, District, etc.)
+        if (bestFeature.context) {
+          bestFeature.context.forEach((ctx: any) => {
+            addressParts.push(ctx.text);
+          });
+        }
+
+        // If we couldn't build it manually, fall back to place_name
+        const address = addressParts.length > 0
+          ? Array.from(new Set(addressParts)).join(", ")
+          : bestFeature.place_name;
+
+        console.log("Full Address constructed:", address);
         setFullAddress(address);
 
         localStorage.setItem(
@@ -187,25 +165,13 @@ const TaskLocation = () => {
           })
         );
       } else {
-        throw new Error("No address found for these coordinates");
+        const fallbackAddress = `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`;
+        setFullAddress(fallbackAddress);
       }
     } catch (error) {
       console.error("Geocoding failed:", error);
-
-      const lat = coords.lat.toFixed(6);
-      const lng = coords.lng.toFixed(6);
-      const fallbackAddress = `Location: ${lat}°N, ${lng}°E (Address lookup failed)`;
-
+      const fallbackAddress = `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`;
       setFullAddress(fallbackAddress);
-
-      // Cache fallback briefly to avoid spamming failed requests
-      localStorage.setItem(
-        cacheKey,
-        JSON.stringify({
-          address: fallbackAddress,
-          timestamp: Date.now(),
-        })
-      );
     }
   };
 
