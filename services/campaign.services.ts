@@ -114,7 +114,10 @@ export class CampaignService {
             },
           },
         },
-        tasks: true,
+        tasks: false,
+        _count: {
+          select: { tasks: true }
+        }
       },
     });
     return {
@@ -180,7 +183,10 @@ export class CampaignService {
               },
             },
           },
-          tasks: true,
+          tasks: false,
+          _count: {
+            select: { tasks: true }
+          }
         },
       });
     });
@@ -226,7 +232,7 @@ export class CampaignService {
           phone: member.user.phone,
         } : undefined,
       })),
-      tasks: campaign.tasks.map((task: any) => {
+      tasks: campaign.tasks ? campaign.tasks.map((task: any) => {
         const metadata =
           (task.metadata as {
             title?: string;
@@ -262,7 +268,8 @@ export class CampaignService {
             }
             : null,
         };
-      }),
+      }) : [],
+      taskCount: campaign._count?.tasks || 0,
       createdAt: campaign.createdAt,
       updatedAt: campaign.updatedAt,
     };
@@ -297,7 +304,10 @@ export class CampaignService {
             },
           },
         },
-        tasks: true,
+        tasks: false,
+        _count: {
+          select: { tasks: true }
+        }
       },
     });
 
@@ -337,18 +347,10 @@ export class CampaignService {
               },
             },
           },
-          tasks: {
-            include: {
-              executor: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                  phone: true,
-                },
-              },
-            },
-          },
+          tasks: false,
+          _count: {
+            select: { tasks: true }
+          }
         },
       });
 
@@ -386,7 +388,13 @@ export class CampaignService {
     try {
       const existingCampaign = await prisma.campaign.findUnique({
         where: { id },
-        include: { members: true, tasks: true },
+        include: {
+          members: true,
+          tasks: false,
+          _count: {
+            select: { tasks: true }
+          }
+        },
       });
 
       if (!existingCampaign) {
@@ -430,7 +438,10 @@ export class CampaignService {
               },
             },
           },
-          tasks: true,
+          tasks: false,
+          _count: {
+            select: { tasks: true }
+          }
         },
       });
 
