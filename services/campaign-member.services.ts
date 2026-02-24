@@ -101,7 +101,20 @@ export class CampaignMemberService {
       });
 
       if (activeCampaignMembership) {
-        throw new Error(`This executor is already assigned to another active campaign: ${activeCampaignMembership.campaign.name}`);
+        // Check if all tasks are completed for the current campaign
+        const incompleteTasks = await prisma.task.count({
+          where: {
+            campaignId: activeCampaignMembership.campaignId,
+            executorUserId: userId,
+            status: {
+              not: 'COMPLETED'
+            }
+          }
+        });
+
+        if (incompleteTasks > 0) {
+          throw new Error(`This executor is already assigned to another active campaign with incomplete tasks: ${activeCampaignMembership.campaign.name}`);
+        }
       }
     }
 
