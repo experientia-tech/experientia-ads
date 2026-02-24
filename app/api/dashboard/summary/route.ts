@@ -22,7 +22,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const summary = await dashboardService.getSummary();
+    // Get organization ID from token
+    const decodedToken = JSON.parse(atob(token.split('.')[1]));
+    const organizationId = decodedToken.orgId;
+
+    const summary = await dashboardService.getSummary(organizationId);
     
     return NextResponse.json(
       response(true, 200, token, 'Dashboard summary retrieved successfully', summary),
