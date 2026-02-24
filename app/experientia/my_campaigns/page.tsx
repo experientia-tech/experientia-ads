@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { isAuthenticated } from "../../constants/auth";
+import { authenticatedFetch } from "../../constants/api";
 import CampaignCard from "../components/campaign_card/CampaignCard";
 import Filters from "../components/filters/Filters";
 import styles from "./page.module.scss";
@@ -22,12 +23,36 @@ import { useCampaignStore } from "../../store/Campaigns";
 const DashboardPage = () => {
   const router = useRouter();
   const [expandedBrandId, setExpandedBrandId] = useState<number | null>(null);
+  const [summaryData, setSummaryData] = useState<any>(null);
+  const [summaryLoading, setSummaryLoading] = useState<boolean>(false);
 
   useEffect(() => {
     if (!isAuthenticated()) {
       router.push("/signin");
     }
   }, [router]);
+
+  // Fetch dashboard summary
+  useEffect(() => {
+    const fetchSummary = async () => {
+      try {
+        setSummaryLoading(true);
+        const response = await authenticatedFetch('/api/dashboard/summary');
+        const data = await response.json();
+        if (data.success) {
+          setSummaryData(data.data);
+        } else {
+          console.error('Failed to fetch summary:', data.message);
+        }
+      } catch (error) {
+        console.error('Error fetching summary:', error);
+      } finally {
+        setSummaryLoading(false);
+      }
+    };
+
+    fetchSummary();
+  }, []);
 
   const { campaigns, fetchMyCampaigns, pagination, isLoading } = useCampaignStore();
   const [currentPage, setCurrentPage] = useState(1);
@@ -79,38 +104,12 @@ const DashboardPage = () => {
     };
   }, [isLoading, currentPage, pagination.totalPages]);
 
-  // Calculate summary metrics
-  const campaignsList = Array.isArray(campaigns) ? campaigns : [];
-  const totalCampaigns = campaignsList.length;
-  const activeCampaigns = campaignsList.filter(
-    (campaign: ICampaign) =>
-      campaign.status === "ACTIVE" || campaign.status === "active",
-  ).length;
-
-  const totalTasks = campaignsList.reduce(
-    (sum: number, campaign: ICampaign) =>
-      sum + (Number(campaign.totalTasks) || 0),
-    0,
-  );
-
-  const completedTasks = campaignsList.reduce(
-    (sum: number, campaign: ICampaign) =>
-      sum + (Number(campaign.completedTasks) || 0),
-    0,
-  );
-
-  const actualTaskCount = campaignsList.reduce(
-    (sum: number, campaign: ICampaign) =>
-      sum + (Array.isArray(campaign.tasks) ? campaign.tasks.length : 0),
-    0,
-  );
-
-  const pendingTasks = Math.max(0, totalTasks - actualTaskCount);
-  const flaggedTasks = campaignsList.reduce(
-    (sum: number, campaign: ICampaign) =>
-      sum + (Number(campaign.flaggedTasks) || 0),
-    0,
-  );
+  // Use summary data instead of calculating from campaigns
+  const totalCampaigns = summaryData?.totalCampaigns || 0;
+  const totalTasks = summaryData?.totalTasks || 0;
+  const completedTasks = summaryData?.completedTasks || 0;
+  const pendingTasks = summaryData?.pendingTasks || 0;
+  const flaggedTasks = summaryData?.flaggedTasks || 0;
 
   return (
     <div className={styles.dashboard}>
@@ -126,14 +125,14 @@ const DashboardPage = () => {
           color="#4f46e5"
         />
         <SummaryCard
-          title="Active Campaigns"
-          value={activeCampaigns}
-          icon={<FiGrid size={20} />}
-          color="#8b5cf6"
-        />
-        <SummaryCard
           title="Total Tasks"
           value={totalTasks}
+          icon={<FiCheckCircle size={20} />}
+          color="#10b981"
+        />
+        <SummaryCard
+          title="Completed Tasks"
+          value={completedTasks}
           icon={<FiCheckCircle size={20} />}
           color="#10b981"
         />

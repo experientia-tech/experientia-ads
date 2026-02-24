@@ -1,24 +1,32 @@
 import { prisma } from '@/lib/prisma';
+import { CampaignService } from '@/services/campaign.services';
+import type { CreateCampaignInput, CampaignResponse } from '@/types/campaign';
 
 export const dashboardService = {
-  async getSummary() {
+  async getSummary(organizationId?: string) {
     try {
-      const totalCampaigns = await prisma.campaign.count();
-      const totalTasks = await prisma.task.count();
-      const completedTasks = await prisma.task.count({
-        where: { status: 'COMPLETED' }
+      // Use the existing campaign service to get campaigns with tasks
+      const campaignService = new CampaignService();
+      const campaignsResult = await campaignService.getCampaigns({
+        page: 1,
+        limit: 1000, // Get all campaigns
+        memberId: '', // Will be filtered by auth middleware
+        organizationId, // Filter by organization
       });
-      const pendingTasks = totalTasks - completedTasks;
-      const flaggedTasks = await prisma.task.count({
-        where: { flagged: true }
-      });
+
+      const campaigns = campaignsResult.data || [];
+      
+      // Calculate totals from campaigns data (which now includes tasks)
+      const totalCampaigns = campaigns.length;
+      const totalTasks = campaigns.reduce((sum: number, campaign: CampaignResponse) => sum + (campaign.totalTasks || 0), 0);
+      const completedTasks = campaigns.reduce((sum: number, campaign: CampaignResponse) => sum + (campaign.taskCount || 0), 0);
+      const pendingTasks = campaigns.reduce((sum: number, campaign: CampaignResponse) => sum + Math.max(0, (campaign.totalTasks || 0) - (campaign.taskCount || 0)), 0);
 
       return {
         totalCampaigns,
         totalTasks,
         completedTasks,
         pendingTasks,
-        flaggedTasks
       };
     } catch (error) {
       console.error('Error in dashboard summary:', error);

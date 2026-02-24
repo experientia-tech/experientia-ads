@@ -58,7 +58,7 @@ export interface CampaignMemberResponse {
   id: string;
   campaignId: string;
   userId: string;
-  assignedBy:string;
+  assignedBy: string;
   assignedByName: string;
   role: 'CAMPAIGN_MANAGER' | 'SUPERVISOR' | 'EXECUTOR' | 'BRAND_VIEWER';
   assignedAt: Date;
@@ -89,6 +89,7 @@ export interface CampaignResponse {
   totalTasks: number;
   createdAt: Date;
   updatedAt: Date;
+  taskCount?: number;
 }
 
 export interface ErrorResponse {

@@ -47,6 +47,7 @@ const TaskLocation = () => {
     const storedCampaignId = sessionStorage.getItem("currentCampaignId");
     const storedAccuracy = sessionStorage.getItem("locationAccuracy");
     const storedAutoHoodData = sessionStorage.getItem("autoHoodData");
+    const storedGymData = sessionStorage.getItem("gymData");
 
     if (storedLocation && !isAddressFetching) {
       const locationData = JSON.parse(storedLocation);
@@ -179,6 +180,8 @@ const TaskLocation = () => {
     sessionStorage.removeItem("capturedPhotos");
     sessionStorage.removeItem("taskLocation");
     sessionStorage.removeItem("locationAccuracy");
+    sessionStorage.removeItem("autoHoodData");
+    sessionStorage.removeItem("gymData");
     router.push("/executor/tasks/capture");
   };
 
@@ -201,13 +204,22 @@ const TaskLocation = () => {
     try {
       const token = localStorage.getItem("executor_token");
       const storedAutoHoodData = sessionStorage.getItem("autoHoodData");
-      let autoHoodData = {};
+      const storedGymData = sessionStorage.getItem("gymData");
+      let serviceData = {};
 
       if (storedAutoHoodData) {
         try {
-          autoHoodData = JSON.parse(storedAutoHoodData);
+          serviceData = JSON.parse(storedAutoHoodData);
         } catch (error) {
           console.error("Error parsing Auto Hood data:", error);
+        }
+      }
+
+      if (storedGymData) {
+        try {
+          serviceData = JSON.parse(storedGymData);
+        } catch (error) {
+          console.error("Error parsing Gym data:", error);
         }
       }
 
@@ -220,7 +232,7 @@ const TaskLocation = () => {
         address: fullAddress,
         accuracy: locationAccuracy?.toString() || "0",
         metadata: {
-          ...autoHoodData,
+          ...serviceData,
         },
       };
 
@@ -243,6 +255,7 @@ const TaskLocation = () => {
         sessionStorage.removeItem("taskLocation");
         sessionStorage.removeItem("locationAccuracy");
         sessionStorage.removeItem("autoHoodData");
+        sessionStorage.removeItem("gymData");
 
         setShowSuccess(true);
       } else {

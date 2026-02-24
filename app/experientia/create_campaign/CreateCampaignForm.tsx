@@ -452,6 +452,7 @@ const CreateCampaignForm = ({
             >
               <option value="">Select service type</option>
               <option value="Auto Hood">Auto Hood</option>
+              <option value="Gym">Gym</option>
               <option value="No Parking Boards">No Parking Boards</option>
               <option value="Pole Boards">Pole Boards</option>
               <option value="Shop Branding">Shop Branding</option>

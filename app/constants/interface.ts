@@ -29,6 +29,7 @@ export interface ICampaign {
   tasks: Array<{ status: string }>;
   createdAt: string;
   updatedAt: string;
+  taskCount?: number;
 }
 
 export interface IDashboardSummary {

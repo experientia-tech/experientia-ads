@@ -180,13 +180,17 @@ const CampaignDetailsPage = ({
       </div>
       <TaskOverview
         totalTasks={campaign?.totalTasks ?? 0}
-        completedTasks={campaign?.tasks?.length ?? 0}
+        completedTasks={
+          campaign?.taskCount !== undefined
+            ? campaign.taskCount
+            : (campaign?.tasks?.length ?? 0)
+        }
         remainingTasks={
-          (campaign?.totalTasks ?? 0) - (campaign?.tasks?.length ?? 0)
+          (campaign?.totalTasks ?? 0) - (campaign?.taskCount !== undefined ? campaign.taskCount : (campaign?.tasks?.length ?? 0))
         }
         progress={
           campaign?.totalTasks
-            ? ((campaign?.tasks?.length ?? 0) / campaign.totalTasks) * 100
+            ? ((campaign?.taskCount !== undefined ? campaign.taskCount : (campaign?.tasks?.length ?? 0)) / campaign.totalTasks) * 100
             : 0
         }
       // flaggedTasks={campaign?.flaggedTasks || 0}

@@ -38,26 +38,46 @@ export const GET: RequestHandler = async (request, { params }) => {
     const formattedTasks = campaign.data!.tasks.map((task: any, index: number) => {
       const metadata = (task.metadata as any) || {};
       const location = metadata.location || {};
+      
+      // Also check if location data exists at the top level (fallback)
+      const topLocation = {
+        latitude: (task as any).latitude,
+        longitude: (task as any).longitude,
+        address: (task as any).address,
+        accuracy: (task as any).accuracy
+      };
+      
+      // Use metadata.location if available, otherwise use top-level location
+      const finalLocation = location.latitude ? location : topLocation;
 
       let distance = "Unknown";
       if (index > 0) {
         const previousTask = campaign.data!.tasks[index - 1];
         const previousMetadata = (previousTask.metadata as any) || {};
         const previousLocation = previousMetadata.location || {};
+        
+        // Also check previous task's top-level location
+        const previousTopLocation = {
+          latitude: (previousTask as any).latitude,
+          longitude: (previousTask as any).longitude,
+          address: (previousTask as any).address,
+          accuracy: (previousTask as any).accuracy
+        };
+        const finalPreviousLocation = previousLocation.latitude ? previousLocation : previousTopLocation;
 
         if (
-          location.latitude &&
-          location.longitude &&
-          previousLocation.latitude &&
-          previousLocation.longitude
+          finalLocation.latitude &&
+          finalLocation.longitude &&
+          finalPreviousLocation.latitude &&
+          finalPreviousLocation.longitude
         ) {
           const R = 6371000;
-          const dLat = ((location.latitude - previousLocation.latitude) * Math.PI) / 180;
-          const dLon = ((location.longitude - previousLocation.longitude) * Math.PI) / 180;
+          const dLat = ((finalLocation.latitude - finalPreviousLocation.latitude) * Math.PI) / 180;
+          const dLon = ((finalLocation.longitude - finalPreviousLocation.longitude) * Math.PI) / 180;
           const a =
             Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos((previousLocation.latitude * Math.PI) / 180) *
-              Math.cos((location.latitude * Math.PI) / 180) *
+            Math.cos((finalPreviousLocation.latitude * Math.PI) / 180) *
+              Math.cos((finalLocation.latitude * Math.PI) / 180) *
               Math.sin(dLon / 2) *
               Math.sin(dLon / 2);
           const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
@@ -69,8 +89,8 @@ export const GET: RequestHandler = async (request, { params }) => {
               : `${Math.round(distanceInMeters)}m`;
         }
       } else {
-        if (location.accuracy) {
-          distance = `${Math.round(parseFloat(location.accuracy))}m`;
+        if (finalLocation.accuracy) {
+          distance = `${Math.round(parseFloat(finalLocation.accuracy))}m`;
         }
       }
 
@@ -107,14 +127,14 @@ export const GET: RequestHandler = async (request, { params }) => {
             })
           : "Unknown",
         'Location': (() => {
-          const addr = location.address || campaign.data!.address || "Unknown Location";
+          const addr = finalLocation.address || campaign.data!.address || "Unknown Location";
           return addr.length > 200 ? addr.substring(0, 200) + '...' : addr;
         })(),
-        'Latitude': location.latitude || "N/A",
-        'Longitude': location.longitude || "N/A",
-        'GPS Accuracy': location.accuracy ? `${location.accuracy}m` : "N/A",
-        'In Geofence': location.accuracy
-          ? parseFloat(location.accuracy) <= 100
+        'Latitude': finalLocation.latitude || "N/A",
+        'Longitude': finalLocation.longitude || "N/A",
+        'GPS Accuracy': finalLocation.accuracy ? `${finalLocation.accuracy}m` : "N/A",
+        'In Geofence': finalLocation.accuracy
+          ? parseFloat(finalLocation.accuracy) <= 100
             ? "Yes"
             : "No"
           : "Unknown",
@@ -135,6 +155,16 @@ export const GET: RequestHandler = async (request, { params }) => {
           'Driver Name': metadata.driverName || "N/A",
           'Phone Number': metadata.phoneNumber || "N/A",
           'Vehicle Number': metadata.vehicleNumber || "N/A",
+        };
+      }
+      
+      if (campaign.data!.serviceType?.toLowerCase() === 'gym') {
+        return {
+          ...taskData,
+          'Gym Name': metadata.gymName || "N/A",
+          'Gym Location': metadata.gymLocation || "N/A",
+          'Monthly Fees': metadata.monthlyFees || "N/A",
+          'Foot Fall': metadata.footFall || "N/A",
         };
       }
       

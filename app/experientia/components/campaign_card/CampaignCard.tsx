@@ -22,12 +22,16 @@ export interface CampaignCardProps {
     tasks: Array<{ status: string }>;
     createdAt: string;
     updatedAt: string;
+    taskCount?: number;
   };
 }
 
 const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
   const totalTasksFromApi = campaign.totalTasks || 0;
-  const actualTasksCount = Array.isArray(campaign.tasks) ? campaign.tasks.length : 0;
+  // Use taskCount from backend if available, otherwise fall back to tasks array length
+  const actualTasksCount = campaign.taskCount !== undefined
+    ? campaign.taskCount
+    : (Array.isArray(campaign.tasks) ? campaign.tasks.length : 0);
   const completedTasks = actualTasksCount;
 
   const pendingTasks = totalTasksFromApi - actualTasksCount;

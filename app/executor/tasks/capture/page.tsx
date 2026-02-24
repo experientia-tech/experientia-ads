@@ -56,6 +56,13 @@ const TaskCapture = () => {
     phoneNumber: '',
     vehicleNumber: ''
   });
+  const [showGymForm, setShowGymForm] = useState(false);
+  const [gymData, setGymData] = useState({
+    gymName: '',
+    gymLocation: '',
+    monthlyFees: '',
+    footFall: ''
+  });
 
   // Get campaign data and target location from sessionStorage
   useEffect(() => {
@@ -109,6 +116,8 @@ const TaskCapture = () => {
     const serviceType = campaignData.serviceType.toLowerCase();
     if (serviceType === 'auto hood') {
       return 3;
+    } else if (serviceType === 'gym') {
+      return 2;
     } else if (serviceType === 'no parking boards' ||
       serviceType === 'pole boards' ||
       serviceType === 'shop branding') {
@@ -119,6 +128,10 @@ const TaskCapture = () => {
 
   const needsAutoHoodForm = () => {
     return campaignData?.serviceType?.toLowerCase() === 'auto hood';
+  };
+
+  const needsGymForm = () => {
+    return campaignData?.serviceType?.toLowerCase() === 'gym';
   };
 
   const getCurrentLocation = useCallback(() => {
@@ -447,8 +460,14 @@ const TaskCapture = () => {
           };
 
           setCapturedPhotos(prev => [...prev, newPhoto]);
-          if (needsAutoHoodForm() && capturedPhotos.length + 1 === getRequiredPhotoCount()) {
-            setTimeout(() => setShowAutoHoodForm(true), 500);
+          if ((needsAutoHoodForm() || needsGymForm()) && capturedPhotos.length + 1 === getRequiredPhotoCount()) {
+            setTimeout(() => {
+              if (needsAutoHoodForm()) {
+                setShowAutoHoodForm(true);
+              } else if (needsGymForm()) {
+                setShowGymForm(true);
+              }
+            }, 500);
           }
         } catch (error) {
           console.error("Error uploading photo:", error);
@@ -485,6 +504,8 @@ const TaskCapture = () => {
     // For Auto Hood, show the form instead of proceeding directly
     if (needsAutoHoodForm()) {
       setShowAutoHoodForm(true);
+    } else if (needsGymForm()) {
+      setShowGymForm(true);
     } else {
       // For other service types, proceed directly
       proceedToLocation();
@@ -500,9 +521,14 @@ const TaskCapture = () => {
       JSON.stringify(locationAccuracy),
     );
 
-    // Store auto hood data if needed
+    // Store auto hood data
     if (needsAutoHoodForm()) {
       sessionStorage.setItem("autoHoodData", JSON.stringify(autoHoodData));
+    }
+
+    // Store gym data
+    if (needsGymForm()) {
+      sessionStorage.setItem("gymData", JSON.stringify(gymData));
     }
 
     router.push("/executor/tasks/location");
@@ -518,6 +544,20 @@ const TaskCapture = () => {
     }
 
     setShowAutoHoodForm(false);
+    proceedToLocation();
+  };
+
+  const handleGymFormSubmit = () => {
+    // Validate form
+    if (!gymData.gymName.trim() ||
+      !gymData.gymLocation.trim() ||
+      !gymData.monthlyFees.trim() ||
+      !gymData.footFall.trim()) {
+      alert('Please fill in all required fields (Gym Name, Location, Monthly Fees, Foot Fall)');
+      return;
+    }
+
+    setShowGymForm(false);
     proceedToLocation();
   };
 
@@ -818,6 +858,88 @@ const TaskCapture = () => {
               <button
                 className="submit-btn"
                 onClick={handleAutoHoodFormSubmit}
+              >
+                Submit & Proceed
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Gym Form Popup */}
+      {showGymForm && (
+        <div className="gym-form-overlay">
+          <div className="gym-form-modal">
+            <div className="gym-form-header">
+              <h3>Gym Details</h3>
+              <button
+                className="close-form-btn"
+                onClick={() => setShowGymForm(false)}
+              >
+                <FiX size={20} />
+              </button>
+            </div>
+
+            <div className="gym-form-content">
+              <div className="form-field">
+                <label htmlFor="gymName">Gym Name *</label>
+                <input
+                  type="text"
+                  id="gymName"
+                  value={gymData.gymName}
+                  onChange={(e) => setGymData(prev => ({ ...prev, gymName: e.target.value }))}
+                  placeholder="Enter gym name"
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="gymLocation">Location *</label>
+                <input
+                  type="text"
+                  id="gymLocation"
+                  value={gymData.gymLocation}
+                  onChange={(e) => setGymData(prev => ({ ...prev, gymLocation: e.target.value }))}
+                  placeholder="Enter location"
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="monthlyFees">Monthly Fees *</label>
+                <input
+                  type="text"
+                  id="monthlyFees"
+                  value={gymData.monthlyFees}
+                  onChange={(e) => setGymData(prev => ({ ...prev, monthlyFees: e.target.value }))}
+                  placeholder="Enter monthly fees"
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="footFall">Foot Fall *</label>
+                <input
+                  type="text"
+                  id="footFall"
+                  value={gymData.footFall}
+                  onChange={(e) => setGymData(prev => ({ ...prev, footFall: e.target.value }))}
+                  placeholder="Enter foot fall count"
+                  className="form-input"
+                />
+              </div>
+            </div>
+
+            <div className="gym-form-actions">
+              <button
+                className="cancel-btn"
+                onClick={() => setShowGymForm(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="submit-btn"
+                onClick={handleGymFormSubmit}
               >
                 Submit & Proceed
               </button>
