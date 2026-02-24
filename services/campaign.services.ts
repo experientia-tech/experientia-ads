@@ -183,7 +183,21 @@ export class CampaignService {
               },
             },
           },
-          tasks: false,
+          tasks: {
+            include: {
+              executor: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  phone: true,
+                },
+              },
+            },
+            orderBy: {
+              createdAt: 'desc',
+            },
+          },
           _count: {
             select: { tasks: true }
           }
@@ -347,7 +361,21 @@ export class CampaignService {
               },
             },
           },
-          tasks: false,
+          tasks: {
+            include: {
+              executor: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  phone: true,
+                },
+              },
+            },
+            orderBy: {
+              createdAt: 'desc',
+            },
+          },
           _count: {
             select: { tasks: true }
           }
@@ -438,7 +466,21 @@ export class CampaignService {
               },
             },
           },
-          tasks: false,
+          tasks: {
+            include: {
+              executor: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  phone: true,
+                },
+              },
+            },
+            orderBy: {
+              createdAt: 'desc',
+            },
+          },
           _count: {
             select: { tasks: true }
           }

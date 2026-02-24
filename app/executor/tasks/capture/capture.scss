@@ -1434,6 +1434,166 @@
   }
 }
 
+// Gym Form Popup Styles
+.gym-form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+
+  .gym-form-modal {
+    background: white;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+  }
+
+  .gym-form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #e5e7eb;
+
+    h3 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    .close-form-btn {
+      background: none;
+      border: none;
+      color: #6b7280;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s;
+
+      &:hover {
+        background-color: #f3f4f6;
+        color: #4b5563;
+      }
+    }
+  }
+
+  .gym-form-content {
+    padding: 20px;
+
+    .form-field {
+      margin-bottom: 20px;
+
+      label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+        color: #374151;
+        font-size: 14px;
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+
+        &:focus {
+          outline: none;
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+        }
+
+        &::placeholder {
+          color: #9ca3af;
+        }
+      }
+    }
+  }
+
+  .gym-form-actions {
+    display: flex;
+    gap: 12px;
+    padding: 20px;
+    border-top: 1px solid #e5e7eb;
+    background: #f9fafb;
+
+    button {
+      flex: 1;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-weight: 500;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+
+      &.cancel-btn {
+        background: white;
+        color: #6b7280;
+        border: 1px solid #d1d5db;
+
+        &:hover {
+          background: #f3f4f6;
+          color: #4b5563;
+        }
+      }
+
+      &.submit-btn {
+        background: #3b82f6;
+        color: white;
+
+        &:hover {
+          background: #2563eb;
+        }
+
+        &:disabled {
+          background: #9ca3af;
+          cursor: not-allowed;
+        }
+      }
+    }
+  }
+}
+
+// Responsive design for mobile gym form
+@media (max-width: 768px) {
+  .gym-form-overlay {
+    padding: 16px;
+
+    .gym-form-modal {
+      padding: 20px;
+      max-width: 100%;
+
+      h3 {
+        font-size: 18px;
+      }
+
+      .gym-form-actions {
+        flex-direction: column;
+
+        button {
+          width: 100%;
+        }
+      }
+    }
+  }
+}
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
