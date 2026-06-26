@@ -24,7 +24,7 @@ export const generateUploadUrl = async (
     expiresIn: 3600,
   });
 
-  const imageUrl = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION || "ap-south-1"}.amazonaws.com/${key}`;
+  const imageUrl = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.REGION_AWS || "ap-south-1"}.amazonaws.com/${key}`;
 
   return NextResponse.json({ uploadUrl, imageUrl });
 };

@@ -8,9 +8,11 @@ export async function POST(request: NextRequest) {
   try {
     // Fail fast with a clear message if S3 is not configured, instead of a generic 500.
     const bucket = process.env.S3_BUCKET_NAME;
-    const region = process.env.AWS_REGION;
-    if (!bucket || !region || !process.env.AWS_ACCESS_KEY_ID) {
-      console.error("S3 is not configured (missing bucket/region/credentials).");
+    const region = process.env.REGION_AWS;
+    if (!bucket || !region || !process.env.ACCESS_KEY_AWS_ID) {
+      console.error(
+        "S3 is not configured (missing bucket/region/credentials).",
+      );
       return NextResponse.json(
         { error: "File uploads are temporarily unavailable" },
         { status: 503 },

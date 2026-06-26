@@ -36,7 +36,7 @@ export default $config({
         DATABASE_URL: databaseUrl.value,
         JWT_SECRET: jwtSecret.value,
         AUTH_OTP: authOtp.value,
-        AWS_REGION: "ap-south-1",
+        REGION_AWS: "ap-south-1",
         S3_BUCKET_NAME: s3BucketName.value,
         NEXT_PUBLIC_MAPBOX_TOKEN: mapboxToken.value,
       },
