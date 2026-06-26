@@ -1,196 +1,150 @@
 import { prisma } from '@/lib/prisma';
 import { CampaignTaskInput } from '@/types/campaign';
 
+// Prisma unique-constraint violation code; surfaced when concurrent requests
+// race to create the same user/campaign member.
+const isUniqueViolation = (error: unknown): boolean =>
+  typeof error === 'object' && error !== null && (error as { code?: string }).code === 'P2002';
+
 export async function addSupervisor(firstName: string, lastName: string, phone: string, location: string, organizationId: string, campaignId: string, assignedBy: string) {
-  const existingUser = await prisma.user.findUnique({
-    where: { phone },
-    include: {
-      campaignMembers: {
-        where: {
-          role: 'SUPERVISOR',
-          active: true
+  try {
+    // Run user upsert + membership creation atomically so a failure can't leave an orphan user.
+    const campaignMember = await prisma.$transaction(async (tx) => {
+      const existingUser = await tx.user.findUnique({
+        where: { phone },
+        include: {
+          campaignMembers: {
+            where: {
+              role: 'SUPERVISOR',
+              active: true,
+            },
+          },
+        },
+      });
+
+      let user;
+
+      if (existingUser) {
+        if (existingUser.campaignMembers.length > 0) {
+          throw new Error('User with this phone number is already a supervisor');
         }
+
+        user = await tx.user.update({
+          where: { id: existingUser.id },
+          data: { firstName, lastName, organizationId },
+          select: { id: true },
+        });
+      } else {
+        user = await tx.user.create({
+          data: { firstName, lastName, phone, organizationId },
+          select: { id: true },
+        });
       }
-    }
-  });
 
-  let user;
+      return tx.campaignMember.create({
+        data: {
+          campaignId,
+          userId: user.id,
+          assignedBy,
+          role: 'SUPERVISOR',
+          location,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              organizationId: true,
+            },
+          },
+        },
+      });
+    });
 
-  if (existingUser) {
-    if (existingUser.campaignMembers.length > 0) {
+    return {
+      id: campaignMember.user.id,
+      firstName: campaignMember.user.firstName,
+      lastName: campaignMember.user.lastName,
+      phone: campaignMember.user.phone,
+      organizationId: campaignMember.user.organizationId,
+      location: campaignMember.location,
+      role: 'SUPERVISOR',
+    };
+  } catch (error) {
+    if (isUniqueViolation(error)) {
       throw new Error('User with this phone number is already a supervisor');
     }
-
-    user = await prisma.user.update({
-      where: { id: existingUser.id },
-      data: {
-        firstName,
-        lastName,
-        organizationId,
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        phone: true,
-        organizationId: true,
-      }
-    });
-  } else {
-    user = await prisma.user.create({
-      data: {
-        firstName,
-        lastName,
-        phone,
-        organizationId,
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        phone: true,
-        organizationId: true,
-      }
-    });
+    throw error;
   }
-
-  const campaignMember = await prisma.campaignMember.create({
-    data: {
-      campaignId,
-      userId: user.id,
-      assignedBy,
-      role: 'SUPERVISOR',
-      location,
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          phone: true,
-          organizationId: true,
-        }
-      }
-    }
-  });
-
-  return {
-    id: campaignMember.user.id,
-    firstName: campaignMember.user.firstName,
-    lastName: campaignMember.user.lastName,
-    phone: campaignMember.user.phone,
-    organizationId: campaignMember.user.organizationId,
-    location: campaignMember.location,
-    role: 'SUPERVISOR',
-  };
 }
 
 export async function addExecutor(firstName: string, lastName: string, phone: string, location: string, organizationId: string, campaignId: string, assignedBy: string) {
-  const existingUser = await prisma.user.findUnique({
-    where: { phone },
-    include: {
-      campaignMembers: {
-        where: {
+  try {
+    // Run user upsert + membership creation atomically so a failure can't leave an orphan user.
+    const campaignMember = await prisma.$transaction(async (tx) => {
+      const existingUser = await tx.user.findUnique({
+        where: { phone },
+        select: { id: true },
+      });
+
+      let user;
+
+      if (existingUser) {
+        // Executors may be assigned to multiple campaigns.
+        user = await tx.user.update({
+          where: { id: existingUser.id },
+          data: { firstName, lastName, organizationId },
+          select: { id: true },
+        });
+      } else {
+        user = await tx.user.create({
+          data: { firstName, lastName, phone, organizationId },
+          select: { id: true },
+        });
+      }
+
+      return tx.campaignMember.create({
+        data: {
+          campaignId,
+          userId: user.id,
+          assignedBy,
           role: 'EXECUTOR',
-          active: true
-        }
-      }
-    }
-  });
-
-  let user;
-
-  if (existingUser) {
-    if (existingUser.campaignMembers.length > 0) {
-      throw new Error('User with this phone number is already an executor');
-    }
-
-    const activeCampaignMembership = await prisma.campaignMember.findFirst({
-      where: {
-        userId: existingUser.id,
-        role: 'EXECUTOR',
-        active: true,
-        campaign: {
-          status: {
-            notIn: ['Completed', 'Cancelled']
-          }
-        }
-      },
-      include: {
-        campaign: true
-      }
+          location,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+            },
+          },
+        },
+      });
     });
 
-    if (activeCampaignMembership) {
-      throw new Error(`This executor is already assigned to another active campaign: ${activeCampaignMembership.campaign.name}`);
-    }
-
-    user = await prisma.user.update({
-      where: { id: existingUser.id },
-      data: {
-        firstName,
-        lastName,
-        organizationId,
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        phone: true,
-        organizationId: true,
-      }
-    });
-  } else {
-    user = await prisma.user.create({
-      data: {
-        firstName,
-        lastName,
-        phone,
-        organizationId,
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        phone: true,
-        organizationId: true,
-      }
-    });
-  }
-
-  const campaignMember = await prisma.campaignMember.create({
-    data: {
-      campaignId,
-      userId: user.id,
-      assignedBy,
+    return {
+      id: campaignMember.user.id,
+      firstName: campaignMember.user.firstName,
+      lastName: campaignMember.user.lastName,
+      phone: campaignMember.user.phone,
+      organizationId: organizationId,
+      location: campaignMember.location,
       role: 'EXECUTOR',
-      location,
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          phone: true,
-        }
-      }
+    };
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      // Same executor already assigned to this campaign (campaignId+userId+role unique).
+      throw new Error('This executor is already assigned to this campaign');
     }
-  });
-
-  return {
-    id: campaignMember.user.id,
-    firstName: campaignMember.user.firstName,
-    lastName: campaignMember.user.lastName,
-    phone: campaignMember.user.phone,
-    organizationId: organizationId,
-    location: campaignMember.location,
-    role: 'EXECUTOR',
-  };
+    throw error;
+  }
 }
 
-export async function getAllExecutors(organizationId?: string, executorId?: string, search?: string) {
+export async function getAllExecutors(organizationId?: string, executorId?: string, search?: string, page?: number, limit?: number) {
   const executorAssignments = await prisma.campaignMember.findMany({
     where: {
       role: 'EXECUTOR',
@@ -225,6 +179,8 @@ export async function getAllExecutors(organizationId?: string, executorId?: stri
         },
       },
     },
+    take: limit,
+    skip: page && limit ? (page - 1) * limit : undefined,
   });
 
   return executorAssignments.map((assignment) => ({
@@ -288,6 +244,9 @@ export async function createCampaignTask(campaignId: string, taskData: CampaignT
         executor: {
           connect: { id: userId }
         },
+        notes: taskData.notes || null,
+        status: 'ACCEPTED',
+        completedAt: new Date(),
         metadata: {
           images: taskData.images || [],
           ...(taskData.latitude && taskData.longitude ? {

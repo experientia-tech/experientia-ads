@@ -1,68 +1,261 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ============================================================
+   EXPERIENTIA ADMIN LAYOUT SYSTEM
+   ============================================================ */
 
-/* @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-} */
-
-/* Reset and base styles */
-* {
+/* Reset & Base */
+*,
+*::before,
+*::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family:
-    "Inter",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    "Roboto",
-    "Oxygen",
-    "Ubuntu",
-    "Cantarell",
-    "Fira Sans",
-    "Droid Sans",
-    "Helvetica Neue",
-    sans-serif;
+  background: var(--color-gray-50);
+  color: var(--color-gray-800);
+  font-family: var(--font-family);
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
   height: 100vh;
   overflow: hidden;
 }
 
-/* Layout styles */
+/* ============================================================
+   APP SHELL
+   ============================================================ */
 .app-layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
   width: 100%;
+  overflow: hidden;
+  background: var(--color-gray-50);
 }
 
+/* ============================================================
+   MAIN CONTENT AREA
+   ============================================================ */
 .main-content {
   flex: 1;
   height: 100vh;
   overflow-y: auto;
-  padding: 20px;
-  padding-top: 70px; /* Account for fixed navbar */
-  background-color: #f9fafb;
-  margin-left: 0;
+  overflow-x: hidden;
+  padding: var(--space-5);
+  padding-top: calc(var(--navbar-height-mobile) + var(--space-5));
+  background: var(--color-gray-50);
+  min-width: 0;
+
+  /* Smooth scrolling */
+  scroll-behavior: smooth;
+
+  /* Custom scrollbar */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-gray-300);
+    border-radius: var(--radius-full);
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--color-gray-400);
+  }
 
   @media (min-width: 769px) {
-    padding-top: 100px; /* Account for larger navbar on desktop */
-    margin-left: 250px;
+    padding: var(--space-6);
+    padding-top: calc(var(--navbar-height-desktop) + var(--space-6));
+    margin-left: var(--sidebar-width);
+  }
+}
+
+/* ============================================================
+   PAGE HEADER PATTERN (reusable across pages)
+   ============================================================ */
+.page-header {
+  margin-bottom: var(--space-6);
+
+  .page-title {
+    font-size: var(--font-size-3xl);
+    font-weight: 700;
+    color: var(--color-gray-900);
+    letter-spacing: -0.025em;
+    margin: 0 0 var(--space-1) 0;
   }
 
-  @media (min-width: 1024px) {
-    margin-left: 250px;
+  .page-subtitle {
+    font-size: var(--font-size-base);
+    color: var(--color-gray-500);
+    margin: 0;
   }
+}
+
+/* ============================================================
+   SURFACE / CARD BASE PATTERN
+   ============================================================ */
+.surface {
+  background: var(--color-white);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-gray-200);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ============================================================
+   STATUS BADGE SYSTEM
+   ============================================================ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+
+  &--pending {
+    background: var(--color-warning-50);
+    color: var(--color-warning-600);
+  }
+  &--active, &--accepted, &--completed {
+    background: var(--color-success-50);
+    color: var(--color-success-600);
+  }
+  &--rejected, &--inactive, &--error {
+    background: var(--color-danger-50);
+    color: var(--color-danger-600);
+  }
+  &--in-progress, &--info {
+    background: var(--color-primary-50);
+    color: var(--color-primary-600);
+  }
+  &--neutral {
+    background: var(--color-gray-100);
+    color: var(--color-gray-600);
+  }
+}
+
+/* ============================================================
+   BUTTON SYSTEM
+   ============================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 10px var(--space-5);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  font-family: var(--font-family);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all var(--transition-base);
+  white-space: nowrap;
+  line-height: 1;
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  &--primary {
+    background: var(--color-primary-600);
+    color: var(--color-white);
+    border-color: var(--color-primary-600);
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.15);
+
+    &:hover:not(:disabled) {
+      background: var(--color-primary-700);
+      border-color: var(--color-primary-700);
+    }
+  }
+
+  &--secondary {
+    background: var(--color-white);
+    color: var(--color-gray-700);
+    border-color: var(--color-gray-300);
+
+    &:hover:not(:disabled) {
+      background: var(--color-gray-50);
+      border-color: var(--color-gray-400);
+    }
+  }
+
+  &--ghost {
+    background: transparent;
+    color: var(--color-gray-600);
+    border-color: transparent;
+
+    &:hover:not(:disabled) {
+      background: var(--color-gray-100);
+      color: var(--color-gray-800);
+    }
+  }
+
+  &--danger {
+    background: var(--color-danger-500);
+    color: var(--color-white);
+    border-color: var(--color-danger-500);
+
+    &:hover:not(:disabled) {
+      background: var(--color-danger-600);
+    }
+  }
+
+  &--sm {
+    padding: 6px 12px;
+    font-size: var(--font-size-sm);
+    border-radius: var(--radius-md);
+  }
+
+  &--lg {
+    padding: 12px var(--space-6);
+    font-size: var(--font-size-lg);
+    border-radius: var(--radius-lg);
+  }
+}
+
+/* ============================================================
+   FORM INPUT SYSTEM
+   ============================================================ */
+.form-input {
+  width: 100%;
+  padding: 10px var(--space-3);
+  background: var(--color-white);
+  border: 1.5px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
+  color: var(--color-gray-800);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  outline: none;
+
+  &::placeholder {
+    color: var(--color-gray-400);
+  }
+
+  &:focus {
+    border-color: var(--color-primary-500);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+}
+
+/* ============================================================
+   SECTION TITLE PATTERN
+   ============================================================ */
+.section-title {
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  color: var(--color-gray-900);
+  margin: 0;
+}
+
+.section-subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-500);
+  margin: var(--space-1) 0 0 0;
 }

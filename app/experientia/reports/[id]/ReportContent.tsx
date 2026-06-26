@@ -11,6 +11,8 @@ import {
   FiMapPin,
   FiToggleLeft,
   FiToggleRight,
+  FiFileText,
+  FiLoader,
 } from "react-icons/fi";
 import Link from "next/link";
 import TaskOverview from "@/app/experientia/components/task_overview/task_overview";
@@ -18,7 +20,9 @@ import styles from "./page.module.scss";
 import ReportCard from "@/app/experientia/components/report_card/Report_card";
 import TaskDetail from "@/app/experientia/components/taskdetail/TaskDetail";
 import ReportsMap from "@/app/experientia/components/reports_map/ReportsMap";
+import ErrorModal from "@/app/experientia/components/error_modal/ErrorModal";
 import logo from "@/public/experientia.png";
+import Image from "next/image";
 
 const ReportContent = ({
   campaignId,
@@ -49,7 +53,7 @@ const ReportContent = ({
   const [filters, setFilters] = useState({
     card: true,
     location: false,
-    // flagged: false,
+    flagged: false,
     searchQuery: "",
     dateRange: { start: "", end: "" },
     executor: "",
@@ -58,209 +62,273 @@ const ReportContent = ({
   });
 
   const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [isExporting, setIsExporting] = useState<false | "excel" | "pdf">(
+    false,
+  );
+  const [showAllMaps, setShowAllMaps] = useState(false);
 
   const [campaignData, setCampaignData] = useState<any>(null);
 
   const [tasks, setTasks] = useState<any[]>([]);
 
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Calculate task overview statistics from real data
   const totalTasks = campaignData?.totalTasks ?? 0;
-  const completedTasks = tasks.length;
+  const completedTasks = tasks.filter((t) => t.status === "ACCEPTED").length;
   const remainingTasks = totalTasks - completedTasks;
   const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
   const flaggedTasks = tasks.filter((task) => task.flagged).length;
 
   // Fetch tasks from API
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(`/api/campaigns/${campaignId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
+  const fetchTasks = async () => {
+    try {
+      setLoading(true);
+      setErrorMessage(null);
+      const token = localStorage.getItem("token");
+      const response = await fetch(`/api/campaigns/${campaignId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch campaign");
-        }
-
-        const data = await response.json();
-        console.log("API Response:", data);
-        if (data.success && data.data && data.data.tasks) {
-          // Set campaign data for task overview
-          setCampaignData(data.data);
-
-          // Sort tasks by creation date to calculate time differences correctly
-          const sortedTasks = data.data.tasks.sort(
-            (a: any, b: any) =>
-              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-          );
-
-          // Format the tasks for ReportCard component
-          const formattedTasks = sortedTasks.map((task: any, index: number) => {
-            const metadata = (task.metadata as any) || {};
-            const location = metadata.location || {};
-
-            let distance = "Unknown";
-            if (index > 0) {
-              const previousTask = sortedTasks[index - 1];
-              const previousMetadata = (previousTask.metadata as any) || {};
-              const previousLocation = previousMetadata.location || {};
-
-              if (
-                location.latitude &&
-                location.longitude &&
-                previousLocation.latitude &&
-                previousLocation.longitude
-              ) {
-                const distanceInMeters = calculateDistance(
-                  location.latitude,
-                  location.longitude,
-                  previousLocation.latitude,
-                  previousLocation.longitude,
-                );
-                distance =
-                  distanceInMeters >= 1000
-                    ? `${(distanceInMeters / 1000).toFixed(1)}km`
-                    : `${Math.round(distanceInMeters)}m`;
-              }
-            } else {
-              // For first task, show GPS accuracy
-              if (location.accuracy) {
-                distance = `${Math.round(parseFloat(location.accuracy))}m`;
-              } else {
-                distance = "Unknown";
-              }
-            }
-            let timeLater = "0s";
-            if (index > 0) {
-              const previousTask = sortedTasks[index - 1];
-              const currentTime = new Date(task.createdAt).getTime();
-              const previousTime = new Date(previousTask.createdAt).getTime();
-              const timeDiffMs = currentTime - previousTime;
-
-              if (timeDiffMs < 60000) {
-                timeLater = `${Math.round(timeDiffMs / 1000)}s`;
-              } else if (timeDiffMs < 3600000) {
-                timeLater = `${Math.round(timeDiffMs / 60000)}m`;
-              } else {
-                timeLater = `${Math.round(timeDiffMs / 3600000)}h`;
-              }
-            }
-
-            return {
-              id: task.id,
-              taskId: task.id,
-              productImage:
-                metadata.images?.[0]?.url || "/path/to/product-image.jpg",
-              date: task.createdAt
-                ? new Date(task.createdAt).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })
-                : "Unknown",
-              time: task.createdAt
-                ? new Date(task.createdAt).toLocaleTimeString("en-US", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : "Unknown",
-              location:
-                location.address || campaign.address || "Unknown Location",
-              latitude: location.latitude,
-              longitude: location.longitude,
-              inGeofence: location.accuracy
-                ? parseFloat(location.accuracy) <= 100
-                : true,
-              distance: distance,
-              timeLater: timeLater,
-              executorName: task.executor
-                ? `${task.executor.firstName} ${task.executor.lastName}`
-                : "Unknown Executor",
-              executorId: task.executor?.id || "unknown",
-              status: task.status,
-              flagged: task.flagged,
-              startedAt: task.startedAt,
-              completedAt: task.completedAt,
-              metadata: task.metadata,
-            };
-          });
-          setTasks(formattedTasks);
-        } else {
-          console.error("API Error:", data.message);
-          setTasks([]);
-        }
-      } catch (error) {
-        console.error("Error fetching tasks:", error);
-        setTasks([]);
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error("Failed to fetch campaign");
       }
-    };
 
+      const data = await response.json();
+      console.log("API Response:", data);
+      if (data.success && data.data && data.data.tasks) {
+        // Set campaign data for task overview
+        setCampaignData(data.data);
+
+        // Sort tasks by creation date to calculate time differences correctly
+        const sortedTasks = data.data.tasks.sort(
+          (a: any, b: any) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        );
+
+        // Format the tasks for ReportCard component
+        const formattedTasks = sortedTasks.map((task: any, index: number) => {
+          const metadata = (task.metadata as any) || {};
+          const location = metadata.location || {};
+
+          let distance = "Unknown";
+          if (index > 0) {
+            const previousTask = sortedTasks[index - 1];
+            const previousMetadata = (previousTask.metadata as any) || {};
+            const previousLocation = previousMetadata.location || {};
+
+            if (
+              location.latitude &&
+              location.longitude &&
+              previousLocation.latitude &&
+              previousLocation.longitude
+            ) {
+              const distanceInMeters = calculateDistance(
+                location.latitude,
+                location.longitude,
+                previousLocation.latitude,
+                previousLocation.longitude,
+              );
+              distance =
+                distanceInMeters >= 1000
+                  ? `${(distanceInMeters / 1000).toFixed(1)}km`
+                  : `${Math.round(distanceInMeters)}m`;
+            }
+          } else {
+            // For first task, show GPS accuracy
+            if (location.accuracy) {
+              distance = `${Math.round(parseFloat(location.accuracy))}m`;
+            } else {
+              distance = "Unknown";
+            }
+          }
+          let timeLater = "0s";
+          if (index > 0) {
+            const previousTask = sortedTasks[index - 1];
+            const currentTime = new Date(task.createdAt).getTime();
+            const previousTime = new Date(previousTask.createdAt).getTime();
+            const timeDiffMs = currentTime - previousTime;
+
+            if (timeDiffMs < 60000) {
+              timeLater = `${Math.round(timeDiffMs / 1000)}s`;
+            } else if (timeDiffMs < 3600000) {
+              timeLater = `${Math.round(timeDiffMs / 60000)}m`;
+            } else {
+              timeLater = `${Math.round(timeDiffMs / 3600000)}h`;
+            }
+          }
+
+          return {
+            id: task.id,
+            taskId: task.id,
+            productImage:
+              metadata.images?.[0]?.url || "/path/to/product-image.jpg",
+            date: task.createdAt
+              ? new Date(task.createdAt).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })
+              : "Unknown",
+            time: task.createdAt
+              ? new Date(task.createdAt).toLocaleTimeString("en-US", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "Unknown",
+            location:
+              location.address || campaign.address || "Unknown Location",
+            latitude: location.latitude,
+            longitude: location.longitude,
+            inGeofence: location.accuracy
+              ? parseFloat(location.accuracy) <= 100
+              : true,
+            distance: distance,
+            timeLater: timeLater,
+            executorName: task.executor
+              ? `${task.executor.firstName} ${task.executor.lastName}`
+              : "Unknown Executor",
+            executorId: task.executor?.id || "unknown",
+            status: task.status,
+            flagged: task.flagged,
+            startedAt: task.startedAt,
+            completedAt: task.completedAt,
+            metadata: task.metadata,
+            notes: task.notes,
+          };
+        });
+        setTasks(formattedTasks);
+      } else {
+        // Campaign loaded but has no tasks yet — not an error.
+        setCampaignData(data.data || null);
+        setTasks([]);
+      }
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      setTasks([]);
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "We couldn't load this report's tasks. Please try again.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     if (campaignId) {
       fetchTasks();
     }
   }, [campaignId]);
 
+  // ── Shared download helper ──────────────────────────────────────────────
+  const triggerDownload = async (url: string, fallbackFilename: string) => {
+    const token = localStorage.getItem("token");
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok)
+      throw new Error(`Download failed: ${response.statusText}`);
+
+    const contentDisposition = response.headers.get("content-disposition");
+    let filename = fallbackFilename;
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="(.+)"/);
+      if (match) filename = match[1];
+    }
+
+    const blob = await response.blob();
+    const objectUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(objectUrl);
+    document.body.removeChild(a);
+  };
+
   const handleExportToExcel = async () => {
+    if (isExporting) return;
+    setIsExporting("excel");
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/campaigns/${campaignId}/export`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to export tasks");
-      }
-
-      // Get the filename from the response headers or create a default one
-      const contentDisposition = response.headers.get("content-disposition");
-      let filename = "tasks.xlsx";
-
-      if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
-        if (filenameMatch) {
-          filename = filenameMatch[1];
-        }
-      }
-
-      // Convert the response to blob and download it
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      await triggerDownload(
+        `/api/campaigns/${campaignId}/export`,
+        "tasks.xlsx",
+      );
     } catch (error) {
       console.error("Error exporting to Excel:", error);
-      // You could show a toast or alert here
+      setErrorMessage("Failed to export to Excel. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportToPdf = async () => {
+    if (isExporting) return;
+    setIsExporting("pdf");
+    try {
+      await triggerDownload(
+        `/api/campaigns/${campaignId}/export-pdf`,
+        "report.pdf",
+      );
+    } catch (error) {
+      console.error("Error exporting to PDF:", error);
+      setErrorMessage("Failed to generate the PDF report. Please try again.");
+    } finally {
+      setIsExporting(false);
     }
   };
 
   const executors = [
     { id: "all", name: "All Executors" },
-    { id: "exec1", name: "John Doe" },
-    { id: "exec2", name: "Jane Smith" },
-    { id: "exec3", name: "Mike Johnson" },
+    ...Array.from(
+      new Map(tasks.map((t) => [t.executorId, t.executorName])).entries(),
+    ).map(([id, name]) => ({ id, name })),
   ];
 
   const states = [
-    { id: "all", name: "All States" },
-    { id: "completed", name: "Completed" },
-    { id: "in_progress", name: "In Progress" },
-    { id: "not_started", name: "Not Started" },
+    { id: "all", name: "All Statuses" },
+    { id: "PENDING", name: "Pending" },
+    { id: "ACCEPTED", name: "Created" },
   ];
+
+  const filteredTasks = tasks.filter((task) => {
+    // 1. Search Query (Task ID)
+    if (
+      filters.searchQuery &&
+      !task.taskId.toLowerCase().includes(filters.searchQuery.toLowerCase())
+    ) {
+      return false;
+    }
+    // 2. Executor Filter
+    if (
+      filters.executor &&
+      filters.executor !== "all" &&
+      task.executorId !== filters.executor
+    ) {
+      return false;
+    }
+    // 3. Status Filter (stateBackground)
+    if (
+      filters.stateBackground &&
+      filters.stateBackground !== "all" &&
+      task.status !== filters.stateBackground
+    ) {
+      return false;
+    }
+    // 4. Flagged Filter
+    if (filters.flagged && !task.flagged) {
+      return false;
+    }
+    return true;
+  });
 
   const handleFilterChange = (
     filterName: string,
@@ -274,6 +342,12 @@ const ReportContent = ({
       ...(otherFilter ? { [otherFilter]: otherValue } : {}),
     }));
   };
+
+  const currentSelectedTask = selectedTask
+    ? tasks.find(
+        (t) => t.id === selectedTask.taskId || t.id === selectedTask.id,
+      ) || selectedTask
+    : null;
 
   return (
     <div className={styles.reportPage}>
@@ -302,14 +376,43 @@ const ReportContent = ({
           </div>
         </div>
         <div className={styles.actions}>
-          <button className={styles.exportButton} onClick={handleExportToExcel}>
-            <FiDownload size={16} />
-            <span>Export to Excel</span>
-          </button>
-          {/* <button className={styles.emailButton}>
-            <FiMail size={16} />
-            <span>Email Report</span>
+          {/* <button
+            className={styles.exportButton}
+            onClick={handleExportToExcel}
+            disabled={!!isExporting}
+            title="Download as Excel spreadsheet"
+          >
+            {isExporting === "excel" ? (
+              <>
+                <FiLoader size={16} className={styles.spinnerIcon} />
+                <span>Exporting…</span>
+              </>
+            ) : (
+              <>
+                <FiDownload size={16} />
+                <span>Export to Excel</span>
+              </>
+            )}
           </button> */}
+
+          <button
+            className={styles.pdfButton}
+            onClick={handleExportToPdf}
+            disabled={!!isExporting}
+            title="Download as PDF report"
+          >
+            {isExporting === "pdf" ? (
+              <>
+                <FiLoader size={16} className={styles.spinnerIcon} />
+                <span>Generating…</span>
+              </>
+            ) : (
+              <>
+                <FiFileText size={16} />
+                <span>Export to PDF</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
@@ -342,15 +445,22 @@ const ReportContent = ({
             >
               <FiMapPin size={16} /> Location
             </button>
-            {/* <button
-              className={`${styles.filterButton} ${filters.flagged ? styles.active : ""}`}
-              onClick={() => handleFilterChange("flagged", !filters.flagged)}
-            >
-              <FiFlag size={16} /> Flagged
-            </button> */}
+
+            {filters.card && (
+              <div className={styles.globalToggle}>
+                <span className={styles.globalToggleLabel}>Show All Maps</span>
+                <button
+                  className={`${styles.globalToggleButton} ${showAllMaps ? styles.active : ""}`}
+                  onClick={() => setShowAllMaps(!showAllMaps)}
+                  type="button"
+                >
+                  <div className={styles.globalToggleSlider} />
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* <div className={styles.searchGroup}>
+          <div className={styles.searchGroup}>
             <div className={styles.searchBar}>
               <FiSearch className={styles.searchIcon} />
               <input
@@ -361,33 +471,6 @@ const ReportContent = ({
                   handleFilterChange("searchQuery", e.target.value)
                 }
                 className={styles.searchInput}
-              />
-            </div>
-
-            <div className={styles.dateRange}>
-              <FiCalendar className={styles.inputIcon} />
-              <input
-                type="date"
-                className={styles.dateInput}
-                value={filters.dateRange.start}
-                onChange={(e) =>
-                  handleFilterChange("dateRange", {
-                    ...filters.dateRange,
-                    start: e.target.value,
-                  })
-                }
-              />
-              <span>to</span>
-              <input
-                type="date"
-                className={styles.dateInput}
-                value={filters.dateRange.end}
-                onChange={(e) =>
-                  handleFilterChange("dateRange", {
-                    ...filters.dateRange,
-                    end: e.target.value,
-                  })
-                }
               />
             </div>
 
@@ -416,23 +499,7 @@ const ReportContent = ({
                 </option>
               ))}
             </select>
-
-            {/* <div className={styles.geofenceToggle}>
-              <span>Geofenced Only</span>
-              <button
-                className={styles.toggleButton}
-                onClick={() =>
-                  handleFilterChange("geofenced", !filters.geofenced)
-                }
-              >
-                {filters.geofenced ? (
-                  <FiToggleRight size={24} color="#4CAF50" />
-                ) : (
-                  <FiToggleLeft size={24} color="#ccc" />
-                )}
-              </button>
-            </div> */}
-          {/* </div> */}
+          </div>
         </div>
       </div>
       <div
@@ -442,11 +509,11 @@ const ReportContent = ({
       >
         {loading ? (
           <div>Loading tasks...</div>
-        ) : tasks.length === 0 ? (
+        ) : filteredTasks.length === 0 ? (
           <div>No tasks found for this campaign.</div>
         ) : filters.location ? (
           <ReportsMap
-            tasks={tasks
+            tasks={filteredTasks
               .filter((t) => t.latitude !== null && t.longitude !== null)
               .map((t) => ({
                 id: t.id,
@@ -454,10 +521,16 @@ const ReportContent = ({
                 longitude: t.longitude,
                 status: t.status,
               }))}
-            totalTasks={tasks.length}
+            totalTasks={filteredTasks.length}
+            campaignLocation={{
+              latitude: campaign.latitude,
+              longitude: campaign.longitude,
+              name: campaign.name,
+              address: campaign.address,
+            }}
           />
         ) : (
-          tasks.map((task) => (
+          filteredTasks.map((task) => (
             <ReportCard
               key={task.id}
               productName={task.productName}
@@ -470,6 +543,10 @@ const ReportContent = ({
               distance={task.distance}
               timeLater={task.timeLater}
               executorName={task.executorName}
+              status={task.status}
+              latitude={task.latitude}
+              longitude={task.longitude}
+              forceShowMap={showAllMaps}
               onClick={() =>
                 setSelectedTask({
                   taskId: task.taskId,
@@ -484,31 +561,44 @@ const ReportContent = ({
                   latitude: task.latitude,
                   longitude: task.longitude,
                   metadata: task.metadata,
+                  status: task.status,
+                  notes: task.notes,
                 })
               }
             />
           ))
         )}
       </div>
-      {selectedTask && (
+      {currentSelectedTask && (
         <TaskDetail
           task={{
-            id: selectedTask.taskId,
-            executorName: selectedTask.executorName,
-            executorId: selectedTask.executorId,
-            completedOn: `${selectedTask.date} at ${selectedTask.time}`,
+            id: currentSelectedTask.taskId || currentSelectedTask.id,
+            executorName: currentSelectedTask.executorName,
+            executorId: currentSelectedTask.executorId,
+            completedOn: `${currentSelectedTask.date} at ${currentSelectedTask.time}`,
             isFlagged: false,
-            distance: selectedTask.distance,
-            timeFromPrevious: selectedTask.timeLater,
-            inGeofence: selectedTask.inGeofence,
-            location: selectedTask.location,
-            latitude: selectedTask.latitude,
-            longitude: selectedTask.longitude,
-            metadata: selectedTask.metadata,
+            distance: currentSelectedTask.distance,
+            timeFromPrevious: currentSelectedTask.timeLater,
+            inGeofence: currentSelectedTask.inGeofence,
+            location: currentSelectedTask.location,
+            latitude: currentSelectedTask.latitude,
+            longitude: currentSelectedTask.longitude,
+            metadata: currentSelectedTask.metadata,
+            status: currentSelectedTask.status,
+            notes: currentSelectedTask.notes,
           }}
           onClose={() => setSelectedTask(null)}
+          onStatusUpdate={fetchTasks}
         />
       )}
+
+      <ErrorModal
+        isOpen={!!errorMessage}
+        onClose={() => setErrorMessage(null)}
+        title="Something went wrong"
+        message={errorMessage || ""}
+        buttonText="Dismiss"
+      />
     </div>
   );
 };

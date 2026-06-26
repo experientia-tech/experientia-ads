@@ -11,7 +11,11 @@ export async function sendOtp(phone: string) {
   // Generate OTP
   const otp = generateOTP();
 
-  // Send OTP via SMS provider 
+  // Send OTP via SMS provider
   // await sendSms(phone, `Your login OTP is ${otp}`);
-  console.log(`Sending OTP ${otp} to phone number ${phone}`);
+  // No SMS provider is wired up yet; login currently uses a static AUTH_OTP.
+  // Only log the generated OTP outside of production to avoid leaking it in prod logs.
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`Sending OTP ${otp} to phone number ${phone}`);
+  }
 }

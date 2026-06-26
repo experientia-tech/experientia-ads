@@ -1,308 +1,419 @@
+/* ============================================================
+   CAMPAIGN DETAIL PAGE — less boxy, airy layout
+   ============================================================ */
+
 .campaignDetailsPage {
-  padding: 24px;
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
+  animation: fadeInUp 0.3s ease-out;
+}
 
-  .header {
-    margin-bottom: 24px;
+/* ---- Back Link ---- */
+.header {
+  margin-bottom: var(--space-5);
 
-    .backButton {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      color: #4a90e2;
-      text-decoration: none;
-      font-weight: 500;
-      margin-bottom: 16px;
-      
-      &:hover {
-        text-decoration: underline;
-      }
-    }
+  .backButton {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-gray-500);
+    background: none;
+    border: none;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    font-family: var(--font-family);
+    cursor: pointer;
+    padding: var(--space-2) 0;
+    transition: color var(--transition-fast);
+
+    svg { flex-shrink: 0; }
+    &:hover { color: var(--color-primary-600); }
   }
+}
 
-  .campaignHeader {
+/* ---- Campaign Header Card ---- */
+.campaignHeader {
+  background: var(--color-white);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-6) var(--space-7);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-gray-200);
+  margin-bottom: var(--space-5);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-6);
+  overflow: visible;
+
+  .campaignInfo {
     display: flex;
-    justify-content: space-between;
+    gap: var(--space-5);
     align-items: flex-start;
-    background: white;
-    border-radius: 12px;
-    padding: 24px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    margin-bottom: 24px;
+    flex: 1;
+    min-width: 0;
 
-    .campaignInfo {
-      display: flex;
-      gap: 24px;
-      align-items: flex-start;
+    .logoContainer {
+      width: 64px;
+      height: 64px;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      flex-shrink: 0;
+      border: 1px solid var(--color-gray-200);
+      background: var(--color-gray-50);
 
-      .logoContainer {
-        width: 80px;
-        height: 80px;
-        border-radius: 12px;
-        overflow: hidden;
-        flex-shrink: 0;
-        border: 1px solid #eee;
-        
-        .logo {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
+      .logo { width: 100%; height: 100%; object-fit: cover; }
+    }
+
+    .campaignText {
+      flex: 1;
+      min-width: 0;
+
+      h1 {
+        font-size: var(--font-size-2xl);
+        font-weight: 700;
+        margin: 0 0 var(--space-2) 0;
+        color: var(--color-gray-900);
+        letter-spacing: -0.02em;
       }
 
-      .campaignText {
-        h1 {
-          font-size: 24px;
-          font-weight: 600;
-          margin: 0 0 8px 0;
-          color: #1a1a1a;
-        }
+      .serviceBadge {
+        display: inline-flex;
+        align-items: center;
+        background: var(--color-primary-50);
+        color: var(--color-primary-700);
+        padding: 4px var(--space-3);
+        border-radius: var(--radius-full);
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        margin-bottom: var(--space-3);
+        border: 1px solid var(--color-primary-100);
+      }
 
-        .serviceBadge {
-          display: inline-block;
-          background: #f0f7ff;
-          color: #1a73e8;
-          padding: 4px 12px;
-          border-radius: 16px;
-          font-size: 14px;
-          font-weight: 500;
-          margin-bottom: 12px;
-        }
+      .description {
+        color: var(--color-gray-500);
+        margin: 0 0 var(--space-3) 0;
+        max-width: 560px;
+        line-height: 1.6;
+        font-size: var(--font-size-sm);
+      }
 
-        .description {
-          color: #666;
-          margin: 0 0 16px 0;
-          max-width: 600px;
-          line-height: 1.5;
-        }
+      .metaInfo {
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+        color: var(--color-gray-400);
+        font-size: var(--font-size-sm);
+        flex-wrap: wrap;
 
-        .metaInfo {
+        span {
           display: flex;
           align-items: center;
-          gap: 12px;
-          color: #666;
-          font-size: 14px;
-          
-          span {
-            display: flex;
-            align-items: center;
-          }
-        }
-      }
-    }
-
-    .actionButtons {
-      display: flex;
-      gap: 12px;
-      
-      button {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 16px;
-        border-radius: 6px;
-        font-weight: 500;
-        font-size: 14px;
-        cursor: pointer;
-        transition: all 0.2s;
-        
-        &:hover {
-          transform: translateY(-1px);
-        }
-      }
-
-      .editButton {
-        background: white;
-        border: 1px solid #e0e0e0;
-        color: #333;
-        
-        &:hover {
-          background: #f5f5f5;
-        }
-      }
-
-      .reportButton {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 20px;
-        background: #4a90e2;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        
-        &:hover {
-          background: #3a7bc8;
+          gap: var(--space-1);
         }
       }
     }
   }
 
-  .campaignInfoSection {
-    background: white;
-    border-radius: 12px;
-    padding: 24px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  .actionButtons {
+    display: flex;
+    gap: var(--space-3);
+    flex-shrink: 0;
+    align-items: center;
+    flex-wrap: wrap;
 
-    h2 {
-      font-size: 18px;
+    .editButton,
+    .reportButton {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 10px var(--space-5);
+      border-radius: var(--radius-lg);
       font-weight: 600;
-      margin: 0 0 20px 0;
-      color: #1a1a1a;
+      font-size: var(--font-size-sm);
+      font-family: var(--font-family);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      white-space: nowrap;
+      text-decoration: none;
+      line-height: 1;
+
+      &:hover { transform: translateY(-1px); }
+      &:active { transform: translateY(0); }
     }
 
-    .infoGrid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 20px;
+    .editButton {
+      background: var(--color-white);
+      border: 1.5px solid var(--color-gray-300);
+      color: var(--color-gray-700);
 
-      .infoItem {
-        .infoLabel {
-          display: block;
-          font-size: 14px;
-          color: #666;
-          margin-bottom: 4px;
-        }
+      &:hover {
+        background: var(--color-gray-50);
+        border-color: var(--color-gray-400);
+        color: var(--color-gray-900);
+      }
+    }
 
-        .infoValue {
-          font-size: 16px;
-          font-weight: 500;
-          color: #1a1a1a;
-        }
+    .reportButton {
+      background: var(--color-primary-600);
+      color: var(--color-white);
+      border: none;
+      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+
+      &:hover {
+        background: var(--color-primary-700);
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.45);
+        color: var(--color-white);
       }
     }
   }
 }
-.teamOverview {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  margin-top: 24px;
-  margin-bottom: 24px;
+
+/* ---- Campaign Info Section — no card, inline grid ---- */
+.campaignInfoSection {
+  background: var(--color-white);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-6) var(--space-7);
+  border: 1px solid var(--color-gray-200);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--space-5);
 
   h2 {
-    font-size: 18px;
-    font-weight: 600;
-    margin: 0 0 20px 0;
-    color: #1a1a1a;
+    font-size: var(--font-size-base);
+    font-weight: 700;
+    color: var(--color-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin: 0 0 var(--space-5) 0;
+  }
+
+  .infoGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0;
+    border-top: 1px solid var(--color-gray-100);
+
+    .infoItem {
+      padding: var(--space-4) 0;
+      border-right: 1px solid var(--color-gray-100);
+      padding-right: var(--space-6);
+      padding-left: var(--space-6);
+
+      &:first-child { padding-left: 0; border-left: none; }
+      &:last-child  { border-right: none; }
+
+      .infoLabel {
+        display: block;
+        font-size: var(--font-size-xs);
+        font-weight: 700;
+        color: var(--color-gray-400);
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        margin-bottom: var(--space-2);
+      }
+
+      .infoValue {
+        font-size: var(--font-size-base);
+        font-weight: 700;
+        color: var(--color-gray-900);
+      }
+    }
+
+    @media (max-width: 640px) {
+      grid-template-columns: 1fr 1fr;
+      .infoItem {
+        border-right: none;
+        border-bottom: 1px solid var(--color-gray-100);
+        padding-left: 0;
+        padding-right: 0;
+
+        &:last-child { border-bottom: none; }
+      }
+    }
+  }
+}
+
+/* ---- Team Overview — flat, airy ---- */
+.teamOverview {
+  background: var(--color-white);
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--color-gray-200);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  margin-bottom: var(--space-5);
+
+  h2 {
+    font-size: var(--font-size-base);
+    font-weight: 700;
+    color: var(--color-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin: 0;
+    padding: var(--space-5) var(--space-7);
+    border-bottom: 1px solid var(--color-gray-100);
   }
 
   .teamGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(4, 1fr);
+    border-bottom: 1px solid var(--color-gray-100);
+
+    @media (max-width: 768px) { grid-template-columns: repeat(2, 1fr); }
+    @media (max-width: 480px) { grid-template-columns: 1fr; }
   }
 
   .teamCard {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 20px;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    transition: all 0.2s ease;
-    border: 1px solid #eee;
+    justify-content: space-between;
+    padding: var(--space-5) var(--space-6);
+    border-right: 1px solid var(--color-gray-100);
+    transition: background var(--transition-fast);
 
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    &:last-child { border-right: none; }
+    &:hover { background: var(--color-gray-50); }
+
+    @media (max-width: 768px) {
+      &:nth-child(2) { border-right: none; }
+      &:nth-child(3), &:nth-child(4) { border-top: 1px solid var(--color-gray-100); }
+      &:nth-child(4) { border-right: none; }
     }
 
     .teamContent {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: var(--space-3);
     }
 
     .teamIcon {
-      width: 48px;
-      height: 48px;
-      border-radius: 8px;
-      background: #e3f2fd;
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-lg);
+      background: var(--color-primary-50);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #1976d2;
+      color: var(--color-primary-600);
+      flex-shrink: 0;
     }
 
-    .teamInfo {
-      display: flex;
-      flex-direction: column;
-    }
+    .teamInfo { display: flex; flex-direction: column; }
 
     .teamCount {
-      font-size: 20px;
-      font-weight: 600;
-      color: #1a1a1a;
+      font-size: var(--font-size-xl);
+      font-weight: 800;
+      color: var(--color-gray-900);
+      line-height: 1.1;
     }
 
     .teamLabel {
-      font-size: 14px;
-      color: #666;
+      font-size: var(--font-size-xs);
+      font-weight: 600;
+      color: var(--color-gray-400);
+      margin-top: 1px;
     }
 
     .addButton {
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-      border: 1px dashed #ddd;
-      background: white;
-      color: #666;
+      width: 30px;
+      height: 30px;
+      border-radius: var(--radius-lg);
+      border: 1.5px dashed var(--color-gray-300);
+      background: transparent;
+      color: var(--color-gray-400);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all var(--transition-fast);
+      flex-shrink: 0;
 
       &:hover {
-        background: #f0f0f0;
-        color: #1976d2;
-        border-color: #1976d2;
+        background: var(--color-primary-50);
+        color: var(--color-primary-600);
+        border-color: var(--color-primary-400);
+        border-style: solid;
       }
     }
   }
+
+  /* ---- Team Members table — no extra card wrapper ---- */
   .teamMemberSection {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  margin-top: 24px;
-  overflow: hidden;
-}
+    /* just content, no card border needed — parent is the card */
+  }
 }
 
+/* ---- Loading / Error states inside teamOverview ---- */
+.loadingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-10);
+  text-align: center;
+  gap: var(--space-3);
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--color-gray-200);
+    border-top-color: var(--color-primary-600);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  p { color: var(--color-gray-400); font-size: var(--font-size-sm); margin: 0; }
+}
+
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-10);
+  text-align: center;
+  gap: var(--space-3);
+  color: var(--color-danger-500);
+
+  p { margin: 0; font-size: var(--font-size-sm); }
+
+  .retryButton {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+    padding: 8px var(--space-4);
+    background: var(--color-primary-600);
+    color: white;
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    font-family: var(--font-family);
+    cursor: pointer;
+  }
+}
+
+/* ---- Mobile ---- */
 @media (max-width: 768px) {
   .campaignHeader {
     flex-direction: column;
-    gap: 20px;
-  }
-  
-  .actionButtons {
-    width: 100%;
-    
-    button {
-      flex: 1;
-      justify-content: center;
+    padding: var(--space-5);
+
+    .actionButtons {
+      width: 100%;
+      .editButton, .reportButton { flex: 1; justify-content: center; }
     }
   }
 
-  .taskStats {
-    grid-template-columns: repeat(2, 1fr) !important;
-  }
-
-  .infoGrid {
-    grid-template-columns: 1fr !important;
-  }
-}
-@media (max-width: 768px) {
-  .teamGrid {
-    grid-template-columns: repeat(2, 1fr) !important;
-  }
+  .campaignInfoSection { padding: var(--space-5); }
 }
 
-@media (max-width: 480px) {
-  .teamGrid {
-    grid-template-columns: 1fr !important;
-  }
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }

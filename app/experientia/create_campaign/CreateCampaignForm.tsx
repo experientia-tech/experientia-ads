@@ -7,7 +7,12 @@ import { authenticatedFetch } from "@/app/constants/api";
 import { getTokenPayload } from "@/app/constants/auth";
 import SuccessModal from "../components/success_modal/SuccessModal";
 import { useCampaignStore } from "@/app/store/Campaigns";
-import LocationMapPicker from "../components/LocationMapPicker/LocationMapPicker";
+import dynamic from "next/dynamic";
+
+const LocationMapPicker = dynamic(
+  () => import("../components/LocationMapPicker/LocationMapPicker"),
+  { ssr: false }
+);
 
 const CreateCampaignForm = ({
   onClose,

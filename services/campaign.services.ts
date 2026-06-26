@@ -95,6 +95,7 @@ export class CampaignService {
         [sortBy]: sortOrder,
       },
       include: {
+        brand: true,
         members: {
           include: {
             user: {
@@ -114,9 +115,14 @@ export class CampaignService {
             },
           },
         },
-        tasks: false,
         _count: {
-          select: { tasks: true }
+          select: {
+            tasks: {
+              where: {
+                status: "ACCEPTED",
+              },
+            },
+          },
         }
       },
     });
@@ -199,7 +205,13 @@ export class CampaignService {
             },
           },
           _count: {
-            select: { tasks: true }
+            select: {
+              tasks: {
+                where: {
+                  status: "ACCEPTED",
+                },
+              },
+            },
           }
         },
       });
@@ -227,6 +239,8 @@ export class CampaignService {
       endDate: campaign.endDate,
       logo: campaign.logo || undefined,
       totalTasks: campaign.totalTasks,
+      brandId: campaign.brandId || undefined,
+      brand: campaign.brand || undefined,
       members: campaign.members.map((member: any) => ({
         id: member.id,
         campaignId: member.campaignId,
@@ -258,12 +272,12 @@ export class CampaignService {
         return {
           id: task.id,
           campaignId: task.campaignId,
-          //status: task.status as 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'REJECTED',
+          status: task.status as 'PENDING' | 'ACCEPTED' | 'REJECTED',
           executorUserId: task.executorUserId,
           assignedAt: task.assignedAt,
           startedAt: task.startedAt,
           completedAt: task.completedAt,
-          //rejectionReason: task.rejectionReason || null,
+          rejectionReason: task.rejectionReason || null,
           flagged: task.flagged,
           notes: task.notes || null,
           metadata: task.metadata || {},
@@ -318,9 +332,14 @@ export class CampaignService {
             },
           },
         },
-        tasks: false,
         _count: {
-          select: { tasks: true }
+          select: {
+            tasks: {
+              where: {
+                status: "ACCEPTED",
+              },
+            },
+          },
         }
       },
     });
@@ -342,6 +361,7 @@ export class CampaignService {
       const campaign = await prisma.campaign.findUnique({
         where: { id },
         include: {
+          brand: true,
           members: {
             include: {
               user: {
@@ -377,7 +397,13 @@ export class CampaignService {
             },
           },
           _count: {
-            select: { tasks: true }
+            select: {
+              tasks: {
+                where: {
+                  status: "ACCEPTED",
+                },
+              },
+            },
           }
         },
       });
@@ -418,9 +444,14 @@ export class CampaignService {
         where: { id },
         include: {
           members: true,
-          tasks: false,
           _count: {
-            select: { tasks: true }
+            select: {
+              tasks: {
+                where: {
+                  status: "ACCEPTED",
+                },
+              },
+            },
           }
         },
       });
@@ -441,12 +472,14 @@ export class CampaignService {
         endDate: data.endDate ? new Date(data.endDate) : null,
         totalTasks: data.totalTasks,
         logo: data.logo,
+        brandId: data.brandId,
       };
 
       const updatedCampaign = await prisma.campaign.update({
         where: { id },
         data: updateData,
         include: {
+          brand: true,
           members: {
             include: {
               user: {
@@ -482,7 +515,13 @@ export class CampaignService {
             },
           },
           _count: {
-            select: { tasks: true }
+            select: {
+              tasks: {
+                where: {
+                  status: "ACCEPTED",
+                },
+              },
+            },
           }
         },
       });

@@ -1,94 +1,116 @@
+/* ============================================================
+   CREATE CAMPAIGN FORM MODAL
+   ============================================================ */
+
 .campaign-form-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 2000;
-  padding: 20px;
+  padding: var(--space-5);
+  backdrop-filter: blur(3px);
+  animation: fadeIn 0.2s ease-out;
 }
 
 .campaign-form-container {
-  background-color: white;
-  border-radius: 12px;
+  background: var(--color-white);
+  border-radius: var(--radius-2xl);
   width: 100%;
   max-width: 800px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-modal);
   position: relative;
+  animation: fadeInUp 0.25s ease-out;
+
+  @media (max-width: 640px) {
+    border-radius: var(--radius-xl);
+    max-height: 95vh;
+  }
 }
 
 .campaign-form-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e5e7eb;
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--color-gray-100);
+  position: sticky;
+  top: 0;
+  background: var(--color-white);
+  z-index: 10;
+  border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
 
   h2 {
     margin: 0;
-    font-size: 20px;
-    font-weight: 600;
-    color: #111827;
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--color-gray-900);
+    letter-spacing: -0.01em;
   }
 
   .close-btn {
-    background: none;
+    background: var(--color-gray-100);
     border: none;
     cursor: pointer;
-    color: #6b7280;
-    padding: 4px;
-    border-radius: 4px;
-    transition: background-color 0.2s;
+    color: var(--color-gray-500);
+    padding: var(--space-2);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
 
     &:hover {
-      background-color: #f3f4f6;
+      background: var(--color-gray-200);
+      color: var(--color-gray-700);
     }
   }
 }
 
 form {
-  padding: 24px;
+  padding: var(--space-6);
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: var(--space-5);
 
   label {
     display: block;
-    margin-bottom: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    color: #374151;
+    margin-bottom: var(--space-2);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-gray-700);
   }
 
   input[type="text"],
   input[type="number"],
   input[type="date"],
-  select {
+  select,
+  textarea {
     width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    font-size: 14px;
-    transition:
-      border-color 0.2s,
-      box-shadow 0.2s;
+    padding: 10px var(--space-4);
+    border: 1.5px solid var(--color-gray-200);
+    border-radius: var(--radius-lg);
+    font-size: var(--font-size-sm);
+    font-family: var(--font-family);
+    color: var(--color-gray-800);
+    background: var(--color-white);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 
-    &::placeholder {
-      color: #9ca3af;
-      opacity: 1;
-    }
+    &::placeholder { color: var(--color-gray-400); opacity: 1; }
+
+    &:hover { border-color: var(--color-gray-300); }
 
     &:focus {
       outline: none;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+      border-color: var(--color-primary-500);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
     }
   }
 
@@ -98,45 +120,47 @@ form {
     background-repeat: no-repeat;
     background-position: right 12px center;
     padding-right: 36px;
+    cursor: pointer;
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 90px;
   }
 
   .location-section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    margin-bottom: var(--space-3);
 
-    label {
-      margin-bottom: 0;
-    }
+    label { margin-bottom: 0; }
 
     .toggle-map-btn {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 8px 14px;
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-      color: white;
+      gap: var(--space-2);
+      padding: 8px var(--space-4);
+      background: var(--color-primary-600);
+      color: var(--color-white);
       border: none;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 500;
+      border-radius: var(--radius-lg);
+      font-size: var(--font-size-xs);
+      font-weight: 600;
+      font-family: var(--font-family);
       cursor: pointer;
-      transition: all 0.2s ease;
-      box-shadow: 0 2px 4px rgba(124, 58, 237, 0.2);
+      transition: all var(--transition-fast);
+      box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);
 
       &:hover {
+        background: var(--color-primary-700);
         transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(124, 58, 237, 0.3);
+        box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
       }
 
-      &:active {
-        transform: translateY(0);
-      }
+      &:active { transform: translateY(0); }
 
-      svg {
-        font-size: 16px;
-      }
+      svg { font-size: var(--font-size-base); }
     }
   }
 }
@@ -144,103 +168,105 @@ form {
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: var(--space-4);
 
-  @media (max-width: 640px) {
-    grid-template-columns: 1fr;
-  }
+  @media (max-width: 640px) { grid-template-columns: 1fr; }
 }
 
+/* ---- Image Upload ---- */
 .image-upload {
   .upload-btn {
     display: inline-flex;
     align-items: center;
-    padding: 10px 16px;
-    background-color: #f3f4f6;
-    border: 1px dashed #d1d5db;
-    border-radius: 8px;
+    gap: var(--space-2);
+    padding: 10px var(--space-4);
+    background: var(--color-gray-50);
+    border: 1.5px dashed var(--color-gray-300);
+    border-radius: var(--radius-lg);
     cursor: pointer;
-    font-size: 14px;
-    color: #374151;
-    transition:
-      background-color 0.2s,
-      border-color 0.2s;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-gray-600);
+    transition: all var(--transition-fast);
 
     &:hover {
-      background-color: #e5e7eb;
-      border-color: #9ca3af;
+      background: var(--color-primary-50);
+      border-color: var(--color-primary-400);
+      color: var(--color-primary-600);
     }
 
-    .upload-icon {
-      margin-right: 8px;
-    }
+    .upload-icon { color: var(--color-gray-400); }
   }
 
   .image-preview {
-    margin-top: 12px;
+    margin-top: var(--space-3);
     max-width: 200px;
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
     overflow: hidden;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--color-gray-200);
+    box-shadow: var(--shadow-xs);
 
-    img {
-      width: 100%;
-      height: auto;
-      display: block;
-    }
+    img { width: 100%; height: auto; display: block; }
   }
 }
 
+/* ---- Form Actions ---- */
 .form-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  margin-top: 32px;
-  padding-top: 20px;
-  border-top: 1px solid #e5e7eb;
+  gap: var(--space-3);
+  margin-top: var(--space-7);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--color-gray-100);
 
   button {
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
+    padding: 10px var(--space-5);
+    border-radius: var(--radius-lg);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    font-family: var(--font-family);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all var(--transition-fast);
 
     &.cancel-btn {
-      background-color: #f3f4f6;
-      color: #374151;
-      border: 1px solid #d1d5db;
+      background: var(--color-white);
+      color: var(--color-gray-700);
+      border: 1.5px solid var(--color-gray-200);
 
-      &:hover {
-        background-color: #e5e7eb;
-      }
+      &:hover { background: var(--color-gray-50); border-color: var(--color-gray-300); }
     }
 
     &.create-btn {
-      background-color: #3b82f6;
-      color: white;
+      background: var(--color-primary-600);
+      color: var(--color-white);
       border: none;
+      box-shadow: 0 1px 3px rgba(37, 99, 235, 0.3);
 
       &:hover {
-        background-color: #2563eb;
+        background: var(--color-primary-700);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+      }
+
+      &:active { transform: translateY(0); }
+
+      &:disabled {
+        background: var(--color-primary-300);
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
       }
     }
   }
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    button { width: 100%; justify-content: center; }
+  }
 }
 
-// Responsive adjustments
 @media (max-width: 768px) {
-  .campaign-form-container {
-    max-width: 100%;
-    margin: 0 16px;
-  }
-
-  .form-actions {
-    flex-direction: column;
-
-    button {
-      width: 100%;
-    }
-  }
+  .campaign-form-container { margin: 0; }
+  form { padding: var(--space-4); }
+  .campaign-form-header { padding: var(--space-4); }
 }

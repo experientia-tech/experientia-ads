@@ -21,6 +21,7 @@ import styles from "./page.module.scss";
 import TeamMemberTable from "../../components/team_member_table/TeamMemberTable";
 import CreateCampaignForm from "../../create_campaign/CreateCampaignForm";
 import ComingSoonModal from "../../components/coming_soon_modal/ComingSoonModal";
+import SelectBrandModal from "@/app/experientia/components/brand_modal/SelectBrandModal";
 
 import { fetchCampaignById } from "@/app/store/Campaigns";
 import { ICampaign } from "@/app/constants/interface";
@@ -54,6 +55,7 @@ const CampaignDetailsPage = ({
   const [isAddingExecutor, setIsAddingExecutor] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isComingSoonModalOpen, setIsComingSoonModalOpen] = useState(false);
+  const [isSelectBrandModalOpen, setIsSelectBrandModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -98,7 +100,10 @@ const CampaignDetailsPage = ({
 
   const handleMemberAdded = () => {
     handleRefresh();
-    // router.refresh();
+  };
+
+  const handleBrandSelected = () => {
+    handleRefresh();
   };
 
   const handleDeleteMember = async (memberId: string) => {
@@ -130,6 +135,10 @@ const CampaignDetailsPage = ({
   const handleErrorClose = () => {
     setErrorModalConfig(prev => ({ ...prev, isOpen: false }));
   };
+
+  const completedTasksCount = campaign?.tasks
+    ? campaign.tasks.filter((t: any) => t.status === "ACCEPTED").length
+    : (campaign?.taskCount ?? 0);
 
   return (
     <div className={styles.campaignDetailsPage}>
@@ -180,17 +189,13 @@ const CampaignDetailsPage = ({
       </div>
       <TaskOverview
         totalTasks={campaign?.totalTasks ?? 0}
-        completedTasks={
-          campaign?.taskCount !== undefined
-            ? campaign.taskCount
-            : (campaign?.tasks?.length ?? 0)
-        }
+        completedTasks={completedTasksCount}
         remainingTasks={
-          (campaign?.totalTasks ?? 0) - (campaign?.taskCount !== undefined ? campaign.taskCount : (campaign?.tasks?.length ?? 0))
+          Math.max(0, (campaign?.totalTasks ?? 0) - completedTasksCount)
         }
         progress={
           campaign?.totalTasks
-            ? ((campaign?.taskCount !== undefined ? campaign.taskCount : (campaign?.tasks?.length ?? 0)) / campaign.totalTasks) * 100
+            ? (completedTasksCount / campaign.totalTasks) * 100
             : 0
         }
       // flaggedTasks={campaign?.flaggedTasks || 0}
@@ -232,15 +237,17 @@ const CampaignDetailsPage = ({
                 <FiBriefcase size={24} />
               </div>
               <div className={styles.teamInfo}>
-                {/*  <span className={styles.teamCount}>
-                  {campaign?.brands?.length || 0}
-                </span> */}
-                <span className={styles.teamLabel}>Brands</span>
+                <span className={styles.teamCount}>
+                  {campaign?.brand ? 1 : 0}
+                </span>
+                <span className={styles.teamLabel}>
+                  {campaign?.brand ? (campaign.brand as any).name : "Brands"}
+                </span>
               </div>
             </div>
             <button
               className={styles.addButton}
-              onClick={() => setIsComingSoonModalOpen(true)}
+              onClick={() => setIsSelectBrandModalOpen(true)}
             >
               <FiPlus size={20} />
             </button>
@@ -457,6 +464,14 @@ const CampaignDetailsPage = ({
       <ComingSoonModal
         isOpen={isComingSoonModalOpen}
         onClose={() => setIsComingSoonModalOpen(false)}
+      />
+
+      <SelectBrandModal
+        isOpen={isSelectBrandModalOpen}
+        onClose={() => setIsSelectBrandModalOpen(false)}
+        campaignId={id}
+        currentBrandId={campaign?.brandId}
+        onSelectSuccess={handleBrandSelected}
       />
 
       <ErrorModal

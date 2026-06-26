@@ -1,38 +1,43 @@
+/* ============================================================
+   EXECUTOR MOBILE HEADER
+   ============================================================ */
+
 .mobile-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px 20px;
-  background: transparent;
+  padding: var(--space-5) var(--space-5) var(--space-4);
+  background: var(--ex-surface);
+  border-bottom: 1px solid transparent;
+
+  &.with-border {
+    border-bottom-color: var(--ex-border);
+    box-shadow: var(--shadow-xs);
+  }
 
   .header-text {
     .title {
-      font-size: 28px;
+      font-size: 26px;
       font-weight: 800;
-      color: #1a1a1a;
+      color: var(--ex-text-main);
       margin: 0;
-      letter-spacing: -0.5px;
+      letter-spacing: -0.03em;
     }
 
     .subtitle {
-      font-size: 14px;
-      color: #64748b;
-      margin: 4px 0 0 0;
+      font-size: 13px;
+      color: var(--ex-text-muted);
+      margin: 3px 0 0;
       display: flex;
       align-items: center;
-      gap: 6px;
-
-      &::before {
-        content: "📅"; /* In the screenshot there's a calendar icon */
-        font-size: 14px;
-      }
+      gap: var(--space-1);
     }
   }
 
   .header-actions {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: var(--space-3);
 
     .profile-section {
       position: relative;
@@ -40,135 +45,131 @@
       .avatar-container {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: var(--space-2);
         cursor: pointer;
-        padding: 4px 8px;
-        border-radius: 30px;
-        transition: all 0.2s ease;
+        padding: 4px 4px 4px var(--space-2);
+        border-radius: var(--ex-radius-full);
+        border: 1px solid var(--ex-border);
+        background: var(--ex-surface);
+        transition: all 0.15s ease;
 
         &:hover,
         &.active {
-          background: rgba(0, 0, 0, 0.05);
+          background: var(--color-gray-50);
+          border-color: var(--color-gray-300);
         }
 
         .avatar-initials {
           position: relative;
-          width: 44px;
-          height: 44px;
+          width: 40px;
+          height: 40px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+          background: linear-gradient(135deg, var(--ex-primary) 0%, var(--ex-primary-dark) 100%);
           color: white;
           display: flex;
           align-items: center;
           justify-content: center;
           font-weight: 700;
-          font-size: 18px;
-          box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+          font-size: 16px;
+          box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+          flex-shrink: 0;
 
           .online-indicator {
             position: absolute;
-            bottom: 2px;
-            right: 2px;
+            bottom: 1px;
+            right: 1px;
             width: 10px;
             height: 10px;
-            background: #4ade80;
-            border: 2px solid #ffffff;
+            background: var(--color-success-500);
+            border: 2px solid var(--ex-surface);
             border-radius: 50%;
           }
         }
 
         .chevron {
-          color: #64748b;
-          transition: transform 0.3s ease;
+          color: var(--ex-text-muted);
+          transition: transform 0.2s ease;
+          flex-shrink: 0;
+          margin-right: 2px;
 
-          &.rotate {
-            transform: rotate(180deg);
-          }
+          &.rotate { transform: rotate(180deg); }
         }
       }
 
+      /* Profile Dropdown */
       .user-dropdown {
         position: absolute;
-        top: calc(100% + 12px);
+        top: calc(100% + 10px);
         right: 0;
-        width: 280px;
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
-        padding: 8px;
-        z-index: 100;
-        border: 1px solid rgba(0, 0, 0, 0.05);
-        animation: dropdownIn 0.25s ease-out;
-
-        @keyframes dropdownIn {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
+        width: 260px;
+        background: var(--ex-surface);
+        border-radius: var(--ex-radius-xl);
+        box-shadow: var(--shadow-xl);
+        padding: var(--space-2);
+        z-index: 200;
+        border: 1px solid var(--ex-border);
+        animation: fadeInUp 0.2s ease-out;
 
         .dropdown-header {
-          padding: 16px 12px;
+          padding: var(--space-4) var(--space-3) var(--space-3);
 
           .user-name {
             font-size: 16px;
             font-weight: 700;
-            color: #1a1a1a;
+            color: var(--ex-text-main);
             margin: 0;
           }
 
           .user-phone {
             font-size: 13px;
-            color: #64748b;
-            margin: 4px 0 0 0;
+            color: var(--ex-text-muted);
+            margin: 3px 0 0;
           }
         }
 
         .dropdown-divider {
           height: 1px;
-          background: #f1f5f9;
-          margin: 8px 4px;
+          background: var(--ex-border);
+          margin: var(--space-1) var(--space-1);
         }
 
         .dropdown-item {
           width: 100%;
           display: flex;
           align-items: center;
-          gap: 12px;
-          padding: 12px;
-          border-radius: 10px;
-          color: #475569;
+          gap: var(--space-3);
+          padding: 11px var(--space-3);
+          border-radius: var(--ex-radius-md);
+          color: var(--ex-text-body);
           font-size: 14px;
+          font-weight: 500;
+          font-family: var(--font-family);
           background: none;
           border: none;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: background 0.15s ease;
           text-align: left;
 
           &:hover {
-            background: #f8fafc;
-            color: #1e293b;
+            background: var(--color-gray-50);
+            color: var(--ex-text-main);
           }
 
           span {
             flex: 1;
 
             strong {
-              color: #1a1a1a;
+              color: var(--ex-text-main);
               margin-left: 4px;
             }
           }
 
           &.logout-btn {
-            color: #ef4444;
+            color: var(--color-danger-500);
 
             &:hover {
-              background: #fff1f2;
-              color: #dc2626;
+              background: var(--color-danger-50);
+              color: var(--color-danger-600);
             }
           }
         }

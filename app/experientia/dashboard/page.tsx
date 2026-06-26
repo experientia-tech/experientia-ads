@@ -19,6 +19,7 @@ import {
 } from "react-icons/fi";
 import SummaryCard from "../components/summary_card/SummaryCard";
 import { useCampaignStore } from "../../store/Campaigns";
+import ErrorModal from "../components/error_modal/ErrorModal";
 
 const DashboardPage = () => {
   const router = useRouter();
@@ -84,27 +85,34 @@ const DashboardPage = () => {
 
   const [summaryData, setSummaryData] = useState<any>(null);
   const [summaryLoading, setSummaryLoading] = useState<boolean>(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+
+  const fetchSummary = useCallback(async () => {
+    try {
+      setSummaryLoading(true);
+      setSummaryError(null);
+      const response = await authenticatedFetch('/api/dashboard/summary');
+      const data = await response.json();
+      if (data.success) {
+        setSummaryData(data.data);
+      } else {
+        throw new Error(data.message || 'Failed to load dashboard data');
+      }
+    } catch (error) {
+      console.error('Error fetching summary:', error);
+      setSummaryError(
+        error instanceof Error
+          ? error.message
+          : 'Failed to load dashboard data',
+      );
+    } finally {
+      setSummaryLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchSummary = async () => {
-      try {
-        setSummaryLoading(true);
-        const response = await authenticatedFetch('/api/dashboard/summary');
-        const data = await response.json();
-        if (data.success) {
-          setSummaryData(data.data);
-        } else {
-          console.error('Failed to fetch summary:', data.message);
-        }
-      } catch (error) {
-        console.error('Error fetching summary:', error);
-      } finally {
-        setSummaryLoading(false);
-      }
-    };
-
     fetchSummary();
-  }, []);
+  }, [fetchSummary]);
 
   if (summaryLoading) {
     return (
@@ -122,8 +130,33 @@ const DashboardPage = () => {
       <div className={styles.dashboard}>
         <div className={styles.header}>
           <h1>Dashboard</h1>
-          <p className={styles.subtitle}>Error loading dashboard data</p>
+          <p className={styles.subtitle}>
+            {summaryError || "No dashboard data available"}
+          </p>
+          <button
+            onClick={fetchSummary}
+            style={{
+              marginTop: 12,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "8px 16px",
+              borderRadius: 8,
+              border: "1px solid #e2e8f0",
+              background: "#fff",
+              cursor: "pointer",
+            }}
+          >
+            <FiRefreshCw size={16} /> Retry
+          </button>
         </div>
+        <ErrorModal
+          isOpen={!!summaryError}
+          onClose={() => setSummaryError(null)}
+          title="Couldn't load dashboard"
+          message={summaryError || ""}
+          buttonText="Dismiss"
+        />
       </div>
     );
   }

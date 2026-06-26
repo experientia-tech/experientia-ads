@@ -1,49 +1,51 @@
+/* ============================================================
+   SUCCESS MODAL
+   ============================================================ */
+
 .success-modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(8px);
+  inset: 0;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(3px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
-  animation: fadeIn 0.3s ease-out;
+  z-index: 1400;
+  padding: var(--space-4);
+  animation: fadeIn 0.15s ease-out;
 }
 
 .success-modal-container {
-  background: #ffffff;
-  padding: 40px;
-  border-radius: 24px;
+  background: var(--color-white);
+  padding: var(--space-8) var(--space-7);
+  border-radius: var(--radius-3xl);
   width: 100%;
-  max-width: 400px;
+  max-width: 380px;
   text-align: center;
-  box-shadow:
-    0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-modal);
+  border: 1px solid var(--color-gray-200);
+  animation: fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .success-icon-wrapper {
   position: relative;
   display: flex;
   justify-content: center;
-  margin-bottom: 24px;
+  margin-bottom: var(--space-6);
 }
 
 .success-icon-circle {
-  width: 80px;
-  height: 80px;
-  background: #10b981;
+  width: 68px;
+  height: 68px;
+  background: var(--color-success-500);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
+  position: relative;
   z-index: 2;
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 4px 16px rgba(34, 197, 94, 0.35);
 }
 
 .icon-pulse {
@@ -51,92 +53,62 @@
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 80px;
-  height: 80px;
+  width: 68px;
+  height: 68px;
   border-radius: 50%;
-  background: #10b981;
+  background: var(--color-success-500);
   opacity: 0.3;
-  animation: pulse 2s infinite;
+  animation: pulse-success 2s ease-out infinite;
   z-index: 1;
 }
 
 .success-title {
-  font-size: 24px;
+  font-size: var(--font-size-2xl);
   font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 12px;
+  color: var(--color-gray-900);
+  margin: 0 0 var(--space-3) 0;
+  letter-spacing: -0.02em;
 }
 
 .success-message {
-  font-size: 16px;
-  color: #64748b;
-  line-height: 1.5;
-  margin-bottom: 32px;
+  font-size: var(--font-size-base);
+  color: var(--color-gray-500);
+  line-height: 1.6;
+  margin: 0 0 var(--space-7) 0;
 }
 
 .success-button {
   width: 100%;
-  padding: 14px;
-  background: #1e293b;
-  color: white;
+  padding: 13px var(--space-5);
+  background: var(--color-gray-900);
+  color: var(--color-white);
   border: none;
-  border-radius: 12px;
-  font-size: 16px;
+  border-radius: var(--radius-xl);
+  font-size: var(--font-size-base);
   font-weight: 600;
+  font-family: var(--font-family);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-base);
 
   &:hover {
-    background: #0f172a;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background: var(--color-primary-600);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
   }
 
-  &:active {
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes pulse {
-  0% {
-    transform: translateX(-50%) scale(1);
-    opacity: 0.4;
-  }
-  100% {
-    transform: translateX(-50%) scale(1.6);
-    opacity: 0;
-  }
+  &:active { transform: translateY(0); }
 }
 
 .check-icon {
-  animation: checkDraw 0.6s ease-out forwards;
+  animation: checkPop 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-@keyframes checkDraw {
-  from {
-    transform: scale(0);
-  }
-  to {
-    transform: scale(1);
-  }
+@keyframes pulse-success {
+  0%   { transform: translateX(-50%) scale(1); opacity: 0.4; }
+  100% { transform: translateX(-50%) scale(1.7); opacity: 0; }
+}
+
+@keyframes checkPop {
+  from { transform: scale(0); }
+  to   { transform: scale(1); }
 }

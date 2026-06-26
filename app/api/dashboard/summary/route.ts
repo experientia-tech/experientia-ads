@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import jwt from 'jsonwebtoken';
 import { dashboardService } from '@/services/dashboard.services';
 import { response } from '@/utils/response';
 
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
         response(false, 401, undefined, 'Missing or invalid bearer token'),
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
     }
 
     const token = authHeader.substring(7);
-    
+
     if (!token) {
       return NextResponse.json(
         response(false, 401, undefined, 'Token is required'),
@@ -22,9 +23,19 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get organization ID from token
-    const decodedToken = JSON.parse(atob(token.split('.')[1]));
-    const organizationId = decodedToken.orgId;
+    // Verify the token signature instead of blindly decoding it.
+    let organizationId: string;
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+        orgId: string;
+      };
+      organizationId = decoded.orgId;
+    } catch {
+      return NextResponse.json(
+        response(false, 401, undefined, 'Invalid or expired token'),
+        { status: 401 }
+      );
+    }
 
     const summary = await dashboardService.getSummary(organizationId);
     

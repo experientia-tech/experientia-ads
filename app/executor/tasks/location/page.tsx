@@ -36,6 +36,7 @@ const TaskLocation = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAddressFetching, setIsAddressFetching] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [description, setDescription] = useState("");
 
   useEffect(() => {
     // Clear all geocoding cache to force fresh lookup
@@ -231,6 +232,7 @@ const TaskLocation = () => {
         longitude: location?.lng,
         address: fullAddress,
         accuracy: locationAccuracy?.toString() || "0",
+        notes: description.trim() || null,
         metadata: {
           ...serviceData,
         },
@@ -362,6 +364,18 @@ const TaskLocation = () => {
               </div>
             )}
           </div>
+        </div>
+
+        <div className="place-input-section">
+          <span className="input-label">Description (Optional)</span>
+          <textarea
+            className="place-input"
+            style={{ minHeight: "100px", fontFamily: "inherit", resize: "vertical" }}
+            placeholder="Add comments or description..."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+          />
         </div>
       </div>
 

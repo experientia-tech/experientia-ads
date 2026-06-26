@@ -28,13 +28,12 @@ export interface CampaignCardProps {
 
 const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
   const totalTasksFromApi = campaign.totalTasks || 0;
-  // Use taskCount from backend if available, otherwise fall back to tasks array length
-  const actualTasksCount = campaign.taskCount !== undefined
-    ? campaign.taskCount
-    : (Array.isArray(campaign.tasks) ? campaign.tasks.length : 0);
-  const completedTasks = actualTasksCount;
+  // Completed tasks are those with ACCEPTED status
+  const completedTasks = Array.isArray(campaign.tasks) && campaign.tasks.length > 0
+    ? campaign.tasks.filter((t: any) => t.status === "ACCEPTED").length
+    : (campaign.taskCount !== undefined ? campaign.taskCount : 0);
 
-  const pendingTasks = totalTasksFromApi - actualTasksCount;
+  const pendingTasks = totalTasksFromApi - completedTasks;
 
   const progressPercentage = (completed: number, total: number) => {
     return total > 0 ? Math.round((completed / total) * 100) : 0;

@@ -1,42 +1,72 @@
+/* ============================================================
+   EXECUTOR DESIGN TOKENS — Mobile-first field worker UI
+   ============================================================ */
 :root {
-  --executor-primary: #1e88e5;
-  --executor-bg: #f8f9fa;
-  --executor-surface: #ffffff;
-  --executor-text-main: #1a1a1a;
-  --executor-text-muted: #64748b;
-  --executor-border: #e2e8f0;
-  --executor-radius: 16px;
+  /* Primary — action blue */
+  --ex-primary:        #2563eb;
+  --ex-primary-light:  #dbeafe;
+  --ex-primary-dark:   #1d4ed8;
 
-  /* Status Colors */
-  --status-pending-bg: #fff3e0;
-  --status-pending-text: #ef6c00;
-  --status-progress-bg: #e3f2fd;
-  --status-progress-text: #1e88e5;
-  --status-scheduled-bg: #f5f5f5;
-  --status-scheduled-text: #616161;
+  /* Surface & Background */
+  --ex-bg:             #f1f5f9;
+  --ex-surface:        #ffffff;
+  --ex-surface-raised: #f8fafc;
+
+  /* Text */
+  --ex-text-main:      #0f172a;
+  --ex-text-body:      #334155;
+  --ex-text-muted:     #64748b;
+  --ex-text-subtle:    #94a3b8;
+
+  /* Border */
+  --ex-border:         #e2e8f0;
+  --ex-border-focus:   #2563eb;
+
+  /* Radius */
+  --ex-radius-sm:   8px;
+  --ex-radius-md:   12px;
+  --ex-radius-lg:   16px;
+  --ex-radius-xl:   20px;
+  --ex-radius-full: 9999px;
+
+  /* Bottom Nav */
+  --ex-nav-height: 72px;
+
+  /* Status */
+  --ex-status-pending-bg:    #fef3c7;
+  --ex-status-pending-text:  #92400e;
+  --ex-status-progress-bg:   #dbeafe;
+  --ex-status-progress-text: #1e40af;
+  --ex-status-done-bg:       #dcfce7;
+  --ex-status-done-text:     #166534;
+  --ex-status-rejected-bg:   #fee2e2;
+  --ex-status-rejected-text: #991b1b;
 }
 
+/* ============================================================
+   EXECUTOR APP SHELL
+   ============================================================ */
 .executor-app-container {
   display: flex;
   justify-content: center;
-  height: 100vh;
-  height: 100dvh;
-  background: var(--executor-bg);
-  font-family: inherit;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--ex-bg);
+  font-family: var(--font-family);
   overflow: hidden;
 
   .executor-mobile-frame {
     width: 100%;
-    background: var(--executor-surface);
-    height: 100%;
+    background: var(--ex-surface);
+    height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
     position: relative;
-    box-shadow: 0 0 40px rgba(0, 0, 0, 0.05);
 
-    // Only apply max-width on mobile devices (below tablet size)
     @media (max-width: 767px) {
       max-width: 480px;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 20px 60px rgba(0, 0, 0, 0.12);
     }
   }
 
@@ -49,66 +79,146 @@
     flex-direction: column;
     -webkit-overflow-scrolling: touch;
 
-    &.login-view {
-      padding: 0;
-    }
+    /* Smooth custom scrollbar on desktop */
+    &::-webkit-scrollbar { width: 0; }
 
-    &::-webkit-scrollbar {
-      display: none;
-    }
+    &.login-view { padding: 0; }
   }
 }
 
-/* Global Card style from screenshots */
-.design-card {
-  background: var(--executor-surface);
-  border-radius: var(--executor-radius);
-  border: 1px solid var(--executor-border);
-  padding: 16px;
-  margin-bottom: 16px;
-  transition: transform 0.2s ease;
+/* ============================================================
+   REUSABLE EXECUTOR COMPONENTS
+   ============================================================ */
 
-  &:active {
-    transform: scale(0.98);
+/* Card */
+.ex-card {
+  background: var(--ex-surface);
+  border-radius: var(--ex-radius-lg);
+  border: 1px solid var(--ex-border);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+  transition: transform 0.15s ease;
+
+  &:active { transform: scale(0.985); }
+
+  &--raised {
+    box-shadow: var(--shadow-sm);
+    border-color: var(--color-gray-200);
   }
 }
 
-.status-badge {
-  padding: 4px 12px;
-  border-radius: 20px;
+/* Status Badge */
+.ex-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--ex-radius-full);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 
-  &.pending {
-    background: var(--status-pending-bg);
-    color: var(--status-pending-text);
-  }
-  &.in-progress {
-    background: var(--status-progress-bg);
-    color: var(--status-progress-text);
-  }
-  &.scheduled {
-    background: var(--status-scheduled-bg);
-    color: var(--status-scheduled-text);
-  }
+  &--pending  { background: var(--ex-status-pending-bg);  color: var(--ex-status-pending-text);  }
+  &--progress { background: var(--ex-status-progress-bg); color: var(--ex-status-progress-text); }
+  &--done     { background: var(--ex-status-done-bg);     color: var(--ex-status-done-text);     }
+  &--rejected { background: var(--ex-status-rejected-bg); color: var(--ex-status-rejected-text); }
 }
 
-.primary-button {
-  background: var(--executor-primary);
+/* Primary Button */
+.ex-btn-primary {
+  background: var(--ex-primary);
   color: white;
   border: none;
-  border-radius: 12px;
-  padding: 14px 24px;
-  font-weight: 600;
+  border-radius: var(--ex-radius-md);
+  padding: 16px var(--space-6);
+  font-weight: 700;
   font-size: 16px;
+  font-family: var(--font-family);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  transition: opacity 0.2s;
+  gap: var(--space-2);
+  transition: all 0.15s ease;
+  width: 100%;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 
-  &:active {
-    opacity: 0.8;
+  &:active { transform: scale(0.97); box-shadow: none; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+/* Secondary Button */
+.ex-btn-secondary {
+  background: var(--ex-surface);
+  color: var(--ex-text-body);
+  border: 1.5px solid var(--ex-border);
+  border-radius: var(--ex-radius-md);
+  padding: 14px var(--space-5);
+  font-weight: 600;
+  font-size: 15px;
+  font-family: var(--font-family);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  transition: all 0.15s ease;
+  width: 100%;
+
+  &:active { background: var(--color-gray-50); }
+}
+
+/* Input */
+.ex-input {
+  width: 100%;
+  padding: 14px var(--space-4);
+  background: var(--color-gray-50);
+  border: 1.5px solid var(--ex-border);
+  border-radius: var(--ex-radius-md);
+  font-size: 16px;
+  font-family: var(--font-family);
+  color: var(--ex-text-main);
+  outline: none;
+  transition: all 0.15s ease;
+
+  &::placeholder { color: var(--ex-text-subtle); }
+
+  &:focus {
+    background: var(--ex-surface);
+    border-color: var(--ex-border-focus);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
   }
+}
+
+/* Spinner */
+.ex-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+/* Section Heading inside content */
+.ex-section-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--ex-text-main);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+/* ============================================================
+   LEGACY ALIASES (preserve backward compat with old classes)
+   ============================================================ */
+.design-card  { @extend .ex-card; }
+.primary-button { @extend .ex-btn-primary; }
+
+.status-badge {
+  @extend .ex-badge;
+  &.pending    { @extend .ex-badge--pending;  }
+  &.in-progress { @extend .ex-badge--progress; }
+  &.scheduled  { background: var(--color-gray-100); color: var(--color-gray-500); }
+  &.completed  { @extend .ex-badge--done; }
 }

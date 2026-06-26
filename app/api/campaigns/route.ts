@@ -9,28 +9,34 @@ const campaignService = new CampaignService();
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = authorize(request, [ROLES.ADMIN, ROLES.EXECUTOR, ROLES.SUPERVISOR, ROLES.CAMPAIGN_MANAGER]);
+    const auth = authorize(request, [
+      ROLES.ADMIN,
+      ROLES.EXECUTOR,
+      ROLES.SUPERVISOR,
+      ROLES.CAMPAIGN_MANAGER,
+    ]);
     if (auth instanceof NextResponse) return auth;
 
     const { searchParams } = new URL(request.url);
-    const search = searchParams.get('search') || '';
-    const status = searchParams.get('status') as CampaignStatus | null;
-    const serviceType = searchParams.get('serviceType') || '';
-    const location = searchParams.get('location') || '';
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const sortBy = searchParams.get('sortBy') || 'createdAt';
-    const sortOrder = searchParams.get('sortOrder') as 'asc' | 'desc' || 'desc';
-    const scope = searchParams.get('scope');
+    const search = searchParams.get("search") || "";
+    const status = searchParams.get("status") as CampaignStatus | null;
+    const serviceType = searchParams.get("serviceType") || "";
+    const location = searchParams.get("location") || "";
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "10");
+    const sortBy = searchParams.get("sortBy") || "createdAt";
+    const sortOrder =
+      (searchParams.get("sortOrder") as "asc" | "desc") || "desc";
+    const scope = searchParams.get("scope");
 
     let memberId: string | undefined;
     let memberRole: any | undefined;
 
-    if (scope === 'assigned') {
+    if (scope === "assigned") {
       memberId = auth.sub;
-    } else if (scope === 'CAMPAIGN_MANAGER') {
+    } else if (scope === "CAMPAIGN_MANAGER") {
       memberId = auth.sub;
-      memberRole = 'CAMPAIGN_MANAGER';
+      memberRole = "CAMPAIGN_MANAGER";
     }
 
     const campaigns = await campaignService.getCampaigns({
@@ -47,15 +53,13 @@ export async function GET(request: NextRequest) {
       memberRole,
     });
     const authToken = request.headers.get("authorization") || "";
-    return NextResponse.json(
-      {
-        success: true,
-        statusCode: 200,
-        token: authToken,
-        message: "Campaigns fetched successfully",
-        ...campaigns,
-      },
-    );
+    return NextResponse.json({
+      success: true,
+      statusCode: 200,
+      token: authToken,
+      message: "Campaigns fetched successfully",
+      ...campaigns,
+    });
   } catch (error) {
     console.error("Error fetching campaigns:", error);
     const errorMessage =
@@ -77,7 +81,10 @@ export async function POST(request: NextRequest) {
       organizationId: auth.orgId,
     };
 
-    const createdCampaign = await campaignService.createCampaign(campaignData, auth.sub);
+    const createdCampaign = await campaignService.createCampaign(
+      campaignData,
+      auth.sub,
+    );
     const authToken = request.headers.get("authorization") || "";
     return NextResponse.json(
       response(

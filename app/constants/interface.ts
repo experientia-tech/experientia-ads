@@ -30,6 +30,8 @@ export interface ICampaign {
   createdAt: string;
   updatedAt: string;
   taskCount?: number;
+  brandId?: string;
+  brand?: any;
 }
 
 export interface IDashboardSummary {

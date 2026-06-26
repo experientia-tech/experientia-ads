@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from 'react';
-import { FiMapPin, FiClock, FiUser, FiFlag, FiNavigation, FiMap, FiX, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import React, { useState, useRef, useEffect } from 'react';
+import { FiMapPin, FiClock, FiUser, FiFlag, FiNavigation, FiMap, FiX, FiChevronLeft, FiChevronRight, FiCheck, FiTrash2, FiPlus, FiLoader } from 'react-icons/fi';
 import dynamic from 'next/dynamic';
 import styles from './TaskDetail.module.scss';
+import { uploadFileToS3 } from '@/app/constants/upload';
 
 // Dynamically import map component from executor to avoid SSR issues
 const MapComponent = dynamic(() => import('../../../executor/tasks/location/MapComponent'), {
@@ -29,13 +30,142 @@ interface TaskDetailProps {
     latitude?: number;
     longitude?: number;
     metadata?: any;
+    status: string;
+    rejectionReason?: string;
+    notes?: string | null;
   };
   onClose: () => void;
+  onStatusUpdate?: () => void;
 }
 
-const TaskDetail = ({ task, onClose }: TaskDetailProps) => {
-  const images = task.metadata?.images || [];
+const TaskDetail = ({ task, onClose, onStatusUpdate }: TaskDetailProps) => {
+  const [images, setImages] = useState<any[]>(task.metadata?.images || []);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [showRejectionInput, setShowRejectionInput] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isUpdatingImages, setIsUpdatingImages] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setImages(task.metadata?.images || []);
+    setCurrentImageIndex(0);
+  }, [task.id]);
+
+  const handleUpdateStatus = async (newStatus: "ACCEPTED" | "REJECTED") => {
+    setIsUpdating(true);
+    try {
+      const token = localStorage.getItem("token");
+      const body: any = { status: newStatus };
+      if (newStatus === "REJECTED") {
+        body.rejectionReason = rejectionReason;
+      }
+
+      const res = await fetch(`/api/tasks/${task.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to update task status");
+      }
+
+      if (onStatusUpdate) {
+        onStatusUpdate();
+      }
+      onClose();
+    } catch (err: any) {
+      alert(err.message || "Something went wrong while updating status.");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDeletePhoto = async (indexToDelete: number) => {
+    if (!window.confirm("Are you sure you want to delete this photo?")) {
+      return;
+    }
+
+    const newImages = images.filter((_, index) => index !== indexToDelete);
+    setIsUpdatingImages(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/tasks/${task.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ images: newImages }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.message || "Failed to delete photo");
+      }
+
+      setImages(newImages);
+      setCurrentImageIndex((prev) => 
+        prev >= newImages.length ? Math.max(0, newImages.length - 1) : prev
+      );
+
+      if (onStatusUpdate) {
+        onStatusUpdate();
+      }
+    } catch (err: any) {
+      alert(err.message || "Error deleting photo");
+    } finally {
+      setIsUpdatingImages(false);
+    }
+  };
+
+  const handleUploadPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingImage(true);
+    setIsUpdatingImages(true);
+    try {
+      const uploadedUrl = await uploadFileToS3(file);
+      const newImages = [...images, { url: uploadedUrl }];
+
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/tasks/${task.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ images: newImages }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.message || "Failed to add photo");
+      }
+
+      setImages(newImages);
+      setCurrentImageIndex(newImages.length - 1);
+
+      if (onStatusUpdate) {
+        onStatusUpdate();
+      }
+    } catch (err: any) {
+      alert(err.message || "Error adding photo");
+    } finally {
+      setIsUploadingImage(false);
+      setIsUpdatingImages(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
   
   const handlePreviousImage = () => {
     setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
@@ -59,6 +189,18 @@ const TaskDetail = ({ task, onClose }: TaskDetailProps) => {
                 alt={`Task image ${currentImageIndex + 1}`}
                 className={styles.taskImage}
               />
+              <button 
+                className={styles.deletePhotoBtn}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeletePhoto(currentImageIndex);
+                }}
+                disabled={isUpdatingImages}
+                title="Delete this photo"
+                type="button"
+              >
+                <FiTrash2 size={16} />
+              </button>
             </div>
             
             <div className={styles.imageNavigation}>
@@ -84,6 +226,25 @@ const TaskDetail = ({ task, onClose }: TaskDetailProps) => {
                 <FiChevronRight size={20} />
               </button>
             </div>
+
+            <div className={styles.galleryActions}>
+              <button 
+                className={styles.addPhotoBtn}
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUpdatingImages}
+                type="button"
+              >
+                {isUploadingImage ? <FiLoader className={styles.spinnerIcon} size={16} /> : <FiPlus size={16} />}
+                <span>Add Photo</span>
+              </button>
+              <input 
+                type="file"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                accept="image/*"
+                onChange={handleUploadPhoto}
+              />
+            </div>
             
             <div className={styles.imageScrollbar}>
               <div 
@@ -96,6 +257,24 @@ const TaskDetail = ({ task, onClose }: TaskDetailProps) => {
           <div className={styles.mapPlaceholder}>
             <FiMap size={48} />
             <p>No images available</p>
+            <div className={styles.galleryActions} style={{ marginTop: '12px' }}>
+              <button 
+                className={styles.addPhotoBtn}
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUpdatingImages}
+                type="button"
+              >
+                {isUploadingImage ? <FiLoader className={styles.spinnerIcon} size={16} /> : <FiPlus size={16} />}
+                <span>Add Photo</span>
+              </button>
+              <input 
+                type="file"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                accept="image/*"
+                onChange={handleUploadPhoto}
+              />
+            </div>
           </div>
         )}
       </div>
@@ -121,7 +300,28 @@ const TaskDetail = ({ task, onClose }: TaskDetailProps) => {
           </div>
           
           <div className={styles.metaItem}>
-            <span className={styles.metaLabel}>Completed On</span>
+            <span className={styles.metaLabel}>Status</span>
+            <span className={`${styles.statusBadge} ${task.status?.toUpperCase() === "PENDING" ? styles.pending : styles.accepted}`}>
+              {task.status?.toUpperCase() === "PENDING" ? "PENDING" : "CREATED"}
+            </span>
+          </div>
+
+          {task.status === "REJECTED" && task.rejectionReason && (
+            <div className={styles.metaItem}>
+              <span className={styles.metaLabel}>Rejection Reason</span>
+              <div className={styles.rejectionReasonText}>{task.rejectionReason}</div>
+            </div>
+          )}
+
+          {task.notes && (
+            <div className={styles.metaItem}>
+              <span className={styles.metaLabel}>Description</span>
+              <div className={styles.descriptionText}>{task.notes}</div>
+            </div>
+          )}
+
+          <div className={styles.metaItem}>
+            <span className={styles.metaLabel}>Submitted On</span>
             <div className={styles.timeInfo}>
               <FiClock className={styles.icon} />
               <span>{task.completedOn}</span>
@@ -186,10 +386,6 @@ const TaskDetail = ({ task, onClose }: TaskDetailProps) => {
         </div>
         
         <div className={styles.actions}>
-       {/*    <button className={`${styles.flagButton} ${task.isFlagged ? styles.flagged : ''}`}>
-            <FiFlag className={styles.icon} />
-            {task.isFlagged ? 'Unflag Task' : 'Flag Task'}
-          </button> */}
         </div>
       </div>
     </div>

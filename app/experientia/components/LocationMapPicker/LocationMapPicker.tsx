@@ -38,6 +38,11 @@ export default function LocationMapPicker({
     const [isLoadingAddress, setIsLoadingAddress] = useState(false);
     const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
+    const [searchMode, setSearchMode] = useState<"address" | "coordinates">("address");
+    const [latInput, setLatInput] = useState(initialLat ? initialLat.toFixed(6) : "");
+    const [lngInput, setLngInput] = useState(initialLng ? initialLng.toFixed(6) : "");
+    const [coordError, setCoordError] = useState<string | null>(null);
+
     // Get user's current location
     useEffect(() => {
         // If initial coordinates are provided, don't get current location
@@ -188,14 +193,67 @@ export default function LocationMapPicker({
     };
 
     // Handle location selection
-    const handleLocationSelect = async (lat: number, lng: number) => {
+    const handleLocationSelect = async (lat: number, lng: number, updateInputs = true) => {
         setSelectedCoords({ lat, lng });
+        if (updateInputs) {
+            setLatInput(lat.toFixed(6));
+            setLngInput(lng.toFixed(6));
+            setCoordError(null);
+        }
         const address = await reverseGeocode(lat, lng);
         onLocationSelect({
             address,
             latitude: lat,
             longitude: lng,
         });
+    };
+
+    const handleCoordinateInputChange = (type: "lat" | "lng", val: string) => {
+        if (val !== "" && !/^-?\d*\.?\d*$/.test(val)) {
+            return;
+        }
+
+        const nextLat = type === "lat" ? val : latInput;
+        const nextLng = type === "lng" ? val : lngInput;
+
+        if (type === "lat") setLatInput(val);
+        else setLngInput(val);
+
+        if (nextLat === "" || nextLng === "") {
+            setCoordError("Latitude and Longitude coordinates cannot be empty.");
+            return;
+        }
+
+        const parsedLat = parseFloat(nextLat);
+        const parsedLng = parseFloat(nextLng);
+
+        if (isNaN(parsedLat) || isNaN(parsedLng)) {
+            setCoordError("Please enter valid numeric coordinates.");
+            return;
+        }
+
+        if (parsedLat < -90 || parsedLat > 90) {
+            setCoordError("Latitude must be between -90 and 90.");
+            return;
+        }
+
+        if (parsedLng < -180 || parsedLng > 180) {
+            setCoordError("Longitude must be between -180 and 180.");
+            return;
+        }
+
+        setCoordError(null);
+
+        if (mapRef.current) {
+            mapRef.current.flyTo({
+                center: [parsedLng, parsedLat],
+                zoom: 14,
+                essential: true,
+            });
+            markerRef.current?.setLngLat([parsedLng, parsedLat]);
+        }
+
+        handleLocationSelect(parsedLat, parsedLng, false);
     };
     // Handle search
     const handleSearch = async (e?: React.FormEvent | React.MouseEvent) => {
@@ -272,36 +330,83 @@ export default function LocationMapPicker({
     return (
         <div className="location-map-picker">
             <div className="map-search-container">
-                <div className="search-form">
-                    <FiSearch className="search-icon" />
-                    <input
-                        type="text"
-                        placeholder="Search for a location..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
+                <div className="search-mode-tabs">
+                    <button
+                        type="button"
+                        className={`tab-btn ${searchMode === "address" ? "active" : ""}`}
+                        onClick={() => setSearchMode("address")}
+                    >
+                        Search Address
+                    </button>
+                    <button
+                        type="button"
+                        className={`tab-btn ${searchMode === "coordinates" ? "active" : ""}`}
+                        onClick={() => setSearchMode("coordinates")}
+                    >
+                        Search Coordinates
+                    </button>
+                </div>
+
+                {searchMode === "address" ? (
+                    <div className="search-form">
+                        <FiSearch className="search-icon" />
+                        <input
+                            type="text"
+                            placeholder="Search for a location..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleSearch(e as any);
+                                }
+                            }}
+                            className="search-input"
+                            disabled={isLoadingAddress}
+                        />
+                        <button
+                            type="button"
+                            className="search-button"
+                            disabled={isLoadingAddress || !searchQuery.trim()}
+                            onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
                                 handleSearch(e as any);
-                            }
-                        }}
-                        className="search-input"
-                        disabled={isLoadingAddress}
-                    />
-                    <button
-                        type="button"
-                        className="search-button"
-                        disabled={isLoadingAddress || !searchQuery.trim()}
-                        onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleSearch(e as any);
-                        }}
-                    >
-                        {isLoadingAddress ? "Searching..." : "Search"}
-                    </button>
-                </div>
+                            }}
+                        >
+                            {isLoadingAddress ? "Searching..." : "Search"}
+                        </button>
+                    </div>
+                ) : (
+                    <div className="coordinates-form">
+                        <div className="coord-input-group">
+                            <label htmlFor="lat-input">Latitude</label>
+                            <input
+                                type="text"
+                                id="lat-input"
+                                value={latInput}
+                                onChange={(e) => handleCoordinateInputChange("lat", e.target.value)}
+                                placeholder="e.g., 28.6139"
+                                className="coord-input"
+                            />
+                        </div>
+                        <div className="coord-input-group">
+                            <label htmlFor="lng-input">Longitude</label>
+                            <input
+                                type="text"
+                                id="lng-input"
+                                value={lngInput}
+                                onChange={(e) => handleCoordinateInputChange("lng", e.target.value)}
+                                placeholder="e.g., 77.2090"
+                                className="coord-input"
+                            />
+                        </div>
+                        {coordError && (
+                            <div className="coordinate-error-msg">{coordError}</div>
+                        )}
+                    </div>
+                )}
             </div>
 
             <div ref={mapContainerRef} className="map-container" />

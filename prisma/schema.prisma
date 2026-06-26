@@ -22,8 +22,7 @@ enum CampaignRole {
 
 enum TaskStatus {
   PENDING
-  IN_PROGRESS
-  COMPLETED
+  ACCEPTED
   REJECTED
 }
 
@@ -37,6 +36,7 @@ model Organization {
 
   users     User[]
   campaigns Campaign[]
+  brands    Brand[]
 }
 
 model User {
@@ -80,6 +80,9 @@ model Campaign {
   organization    Organization @relation(fields: [organizationId], references: [id])
   members         CampaignMember[]
   tasks           Task[]
+
+  brandId         String?   @db.Uuid
+  brand           Brand?    @relation(fields: [brandId], references: [id])
 }
 
 model CampaignMember {
@@ -105,7 +108,7 @@ model Task {
   campaignId      String      @db.Uuid
   executorUserId  String      @db.Uuid
 
-  status          TaskStatus  @default(PENDING)
+  status          TaskStatus  @default(ACCEPTED)
   assignedAt      DateTime    @default(now()) @db.Timestamptz
   startedAt       DateTime?
   completedAt     DateTime?
@@ -118,6 +121,20 @@ model Task {
 
   campaign        Campaign @relation(fields: [campaignId], references: [id])
   executor        User     @relation(fields: [executorUserId], references: [id])
+}
+
+model Brand {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @db.Uuid
+  name           String
+  description    String?   @db.Text
+  image          String?   @db.Text
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now()) @db.Timestamptz
+  updatedAt      DateTime  @default(now()) @db.Timestamptz
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  campaigns      Campaign[]
 }
 
 

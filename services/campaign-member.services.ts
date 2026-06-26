@@ -83,59 +83,34 @@ export class CampaignMemberService {
       throw new Error('User is already a member of this campaign');
     }
 
-    if (role === 'EXECUTOR') {
-      const activeCampaignMembership = await prisma.campaignMember.findFirst({
-        where: {
+    // Removed restriction to allow executors to be assigned to multiple campaigns simultaneously
+
+    try {
+      return await prisma.campaignMember.create({
+        data: {
+          campaignId,
           userId,
-          role: 'EXECUTOR',
-          active: true,
-          campaign: {
-            status: {
-              notIn: ['Completed', 'Cancelled']
-            }
-          }
+          role,
+          assignedBy
         },
         include: {
-          campaign: true
-        }
-      });
-
-      if (activeCampaignMembership) {
-        // Check if all tasks are completed for the current campaign
-        const incompleteTasks = await prisma.task.count({
-          where: {
-            campaignId: activeCampaignMembership.campaignId,
-            executorUserId: userId,
-            status: {
-              not: 'COMPLETED'
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true
             }
           }
-        });
-
-        if (incompleteTasks > 0) {
-          throw new Error(`This executor is already assigned to another active campaign with incomplete tasks: ${activeCampaignMembership.campaign.name}`);
         }
+      });
+    } catch (error) {
+      // Concurrent request created the same membership first (campaignId+userId+role unique).
+      if (typeof error === 'object' && error !== null && (error as { code?: string }).code === 'P2002') {
+        throw new Error('User is already a member of this campaign');
       }
+      throw error;
     }
-
-    return prisma.campaignMember.create({
-      data: {
-        campaignId,
-        userId,
-        role,
-        assignedBy
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            phone: true
-          }
-        }
-      }
-    });
   }
 
   async removeCampaignMember(memberId: string) {

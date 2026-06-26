@@ -15,13 +15,33 @@ export const GET: RequestHandler = async (request) => {
     if (auth instanceof NextResponse) return auth;
 
     const authToken = request.headers.get('authorization')?.split(' ')[1] || '';
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search') || searchParams.get('name') || undefined;
+    const pageVal = searchParams.get('page');
+    const limitVal = searchParams.get('limit');
+    const page = pageVal ? parseInt(pageVal, 10) : undefined;
+    const limit = limitVal ? parseInt(limitVal, 10) : undefined;
+
+    const where: any = {
+      role: 'SUPERVISOR' as const,
+      active: true,
+    };
+
+    if (search) {
+      where.user = {
+        OR: [
+          { firstName: { contains: search, mode: 'insensitive' } },
+          { lastName: { contains: search, mode: 'insensitive' } },
+          { phone: { contains: search, mode: 'insensitive' } }
+        ]
+      };
+    }
     
     const supervisorAssignments = await prisma.campaignMember.findMany({
-      where: {
-        role: 'SUPERVISOR' as const,
-        active: true,
-      },
+      where,
       distinct: ['userId'],
+      take: limit,
+      skip: page && limit ? (page - 1) * limit : undefined,
       include: {
         user: {
           select: {
@@ -76,7 +96,15 @@ export const POST: RequestHandler = async (request) => {
       );
     }
 
-    const supervisor = await addSupervisor(firstName, lastName, phone, location, organizationId, campaignId, assignedBy);
+    // Validate Indian phone number format (10 digits, starting 6-9).
+    if (!/^[6-9]\d{9}$/.test(String(phone).trim())) {
+      return NextResponse.json(
+        response(false, 400, authToken, 'Invalid phone number. Enter a 10-digit mobile number.'),
+        { status: 400 }
+      );
+    }
+
+    const supervisor = await addSupervisor(firstName, lastName, String(phone).trim(), location, organizationId, campaignId, assignedBy);
 
     return NextResponse.json(
       response(true, 201, authToken, 'Supervisor created successfully', supervisor),

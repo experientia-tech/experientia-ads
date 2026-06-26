@@ -91,20 +91,25 @@ const TaskCapture = () => {
         },
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data) {
-          setCampaignData(data.data);
-          if (data.data.latitude && data.data.longitude) {
-            setTargetLocation({
-              lat: data.data.latitude,
-              lng: data.data.longitude,
-            });
-          }
+      if (!response.ok) {
+        throw new Error("Failed to load campaign data");
+      }
+
+      const data = await response.json();
+      if (data.success && data.data) {
+        setCampaignData(data.data);
+        if (data.data.latitude && data.data.longitude) {
+          setTargetLocation({
+            lat: data.data.latitude,
+            lng: data.data.longitude,
+          });
         }
       }
     } catch (error) {
       console.error("Error fetching campaign data:", error);
+      alert(
+        "We couldn't load this campaign's details. Please go back and try again.",
+      );
     } finally {
       setIsLoading(false);
     }

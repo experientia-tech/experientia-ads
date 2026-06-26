@@ -8,20 +8,16 @@ export const metadata: Metadata = {
   description: "devloped by Dealberg",
 };
 
-export default function RootLayout({
+export default function ExperientiaLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="antialiased">
-        <div className="app-layout">
-          <SideMenu />
-          <Navbar />
-          <main className="main-content">{children}</main>
-        </div>
-      </body>
-    </html>
+    <div className="app-layout">
+      <SideMenu />
+      <Navbar />
+      <main className="main-content">{children}</main>
+    </div>
   );
 }

@@ -1,45 +1,89 @@
+/* ============================================================
+   EXECUTOR BOTTOM NAVIGATION — Mobile tab bar
+   ============================================================ */
+
 .bottom-nav {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 80px;
-  background: #ffffff;
-  border-top: 1px solid #e2e8f0;
+  height: var(--ex-nav-height);
+  background: var(--ex-surface);
+  border-top: 1px solid var(--ex-border);
   display: flex;
   justify-content: space-around;
-  align-items: center;
-  padding: 0 10px 10px 10px; /* Extra bottom padding for safe area feel */
-  z-index: 1000;
+  align-items: stretch;
+  padding: 0 var(--space-2);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  z-index: 100;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
 
   .nav-item {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 4px;
     text-decoration: none;
-    color: #94a3b8;
-    transition: all 0.2s ease;
+    color: var(--ex-text-subtle);
+    transition: color 0.15s ease;
     flex: 1;
+    padding: var(--space-2) var(--space-1);
+    border-radius: var(--ex-radius-md);
+    position: relative;
+    min-width: 0;
+    -webkit-tap-highlight-color: transparent;
 
-    .icon {
-      font-size: 24px;
+    .icon-wrap {
+      position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: var(--ex-radius-md);
+      transition: all 0.15s ease;
+
+      .icon {
+        font-size: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.15s ease;
+      }
+
+      /* Active indicator pill */
+      &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: var(--ex-radius-md);
+        background: transparent;
+        transition: background 0.15s ease;
+      }
     }
 
     .label {
-      font-size: 12px;
-      font-weight: 500;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      line-height: 1;
     }
 
+    /* Active state */
     &.active {
-      color: #1e88e5;
+      color: var(--ex-primary);
 
-      .icon {
-        /* You could swap to filled icons here if using a library that supports it */
+      .icon-wrap {
+        &::after { background: var(--ex-primary-light); }
+
+        .icon { transform: scale(1.1); }
       }
+    }
+
+    /* Touch feedback */
+    &:active {
+      .icon-wrap { transform: scale(0.92); }
     }
   }
 }

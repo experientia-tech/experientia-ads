@@ -12,8 +12,6 @@ export default function AuthProvider({
   const fetchProfile = useAuthStore((state) => state.fetchProfile);
   const user = useAuthStore((state) => state.user);
 
-  console.log(user, "The User");
-
   useEffect(() => {
     const token = getToken();
     if (token && !user) {

@@ -13,10 +13,7 @@ const ExecutorDashboard = () => {
   const [currentLocation, setCurrentLocation] =
     React.useState<string>("Loading...");
 
-  useEffect(() => {
-    getCampaigns();
-    getProfile();
-
+  const getUserCurrentLocationAndSetter = () => {
     // Get user's current location
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -40,6 +37,13 @@ const ExecutorDashboard = () => {
     } else {
       setCurrentLocation("Location unavailable");
     }
+  };
+
+  useEffect(() => {
+    getCampaigns();
+    getProfile();
+    const timeoutId = window.setTimeout(getUserCurrentLocationAndSetter, 0);
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   // Format current date

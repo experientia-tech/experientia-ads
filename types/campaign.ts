@@ -17,6 +17,7 @@ export interface CampaignTaskInput {
   address?: string;
   accuracy?: number;
   metadata?: any;
+  notes?: string;
 }
 
 export interface CreateCampaignInput {
@@ -32,13 +33,14 @@ export interface CreateCampaignInput {
   endDate?: Date | string;
   totalTasks?: number;
   logo?: string;
+  brandId?: string;
 }
 
 export interface CampaignTaskResponse {
   id: string;
   title: string;
   description: string | null;
-  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'REJECTED';
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
   executorUserId: string;
   dueDate: Date | null;
   priority: 'LOW' | 'MEDIUM' | 'HIGH';
@@ -90,6 +92,8 @@ export interface CampaignResponse {
   createdAt: Date;
   updatedAt: Date;
   taskCount?: number;
+  brandId?: string;
+  brand?: any;
 }
 
 export interface ErrorResponse {

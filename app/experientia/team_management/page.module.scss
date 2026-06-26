@@ -1,355 +1,591 @@
+/* ============================================================
+   TEAM MANAGEMENT PAGE
+   ============================================================ */
+
 .teamPage {
-  padding: 24px;
-  //max-width: 1200px;
-  //margin: 30px auto 0;
-  //padding-top: 90px;
+  width: 100%;
+  animation: fadeInUp 0.3s ease-out;
 }
 
 .header {
-  margin-bottom: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--space-7);
+  gap: var(--space-4);
+  flex-wrap: wrap;
 
   h1 {
-    font-size: 32px;
-      font-weight: 600;
-      color: #1a1a1a;
-      margin: 0 0 8px 0;
+    font-size: var(--font-size-3xl);
+    font-weight: 700;
+    color: var(--color-gray-900);
+    margin: 0 0 var(--space-1) 0;
+    letter-spacing: -0.025em;
   }
 
   .subtitle {
-    color: #666;
-    font-size: 1.2rem;
-    font-weight: 500;
+    font-size: var(--font-size-base);
+    color: var(--color-gray-500);
     margin: 0;
   }
 }
 
-.controls {
-  margin-bottom: 24px;
-}
+.quickAddSection {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
 
-.searchBar {
-  max-width: 400px;
-  position: relative;
+  .campaignSelect {
+    padding: 10px var(--space-4);
+    border: 1.5px solid var(--color-gray-200);
+    border-radius: var(--radius-lg);
+    font-size: var(--font-size-sm);
+    font-family: var(--font-family);
+    background: var(--color-white);
+    color: var(--color-gray-800);
+    cursor: pointer;
+    outline: none;
+    transition: all var(--transition-fast);
+    min-width: 250px;
 
-  input {
-    width: 100%;
-    padding: 10px 16px 10px 40px;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    transition: border-color 0.2s;
-
+    &:hover {
+      border-color: var(--color-gray-300);
+    }
     &:focus {
-      outline: none;
-      border-color: #4f46e5;
+      border-color: var(--color-primary-500);
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
     }
   }
 
-  .searchIcon {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #9ca3af;
-  }
-}
+  .addBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 10px var(--space-5);
+    border-radius: var(--radius-lg);
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border: none;
 
-.campaignsList {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.campaignCard {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.campaignHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 24px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-
-  &:hover {
-    background-color: #f9fafb;
-  }
-}
-
-.campaignInfo {
-  h3 {
-    margin: 0 0 8px 0;
-    font-size: 1.1rem;
-    color: #111827;
-  }
-}
-
-.stats {
-  display: flex;
-  gap: 20px;
-}
-
-.statItem {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.9rem;
-  color: #6b7280;
-
-  &.active {
-    color: #10b981;
-  }
-}
-
-.statIcon {
-  font-size: 1rem;
-}
-
-.chevron {
-  color: #9ca3af;
-  transition: transform 0.2s;
-}
-
-.tableContainer {
-  border-top: 1px solid #f3f4f6;
-  overflow-x: auto;
-  width: 100%;
-
-  .membersTable {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed; // Use fixed layout for better column control
-
-    .tableHeaderRow {
-      .tableHeaderCell {
-        background-color: #f9fafb;
-        color: #4b5563;
-        font-weight: 500;
-        font-size: 0.8rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        padding: 12px 16px;
-        text-align: left;
-        border-bottom: 1px solid #f3f4f6;
-        
-      }
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
+  }
 
-    .tableRow {
-      &:last-child {
-        .tableCell {
-          border-bottom: none;
-        }
-      }
+  .supervisorBtn {
+    background: #7c3aed;
+    color: white;
+
+    &:hover:not(:disabled) {
+      background: #6d28d9;
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
     }
+  }
 
-    .tableCell {
-      padding: 12px 16px;
-      text-align: left;
-      border-bottom: 1px solid #f3f4f6;
+  .executorBtn {
+    background: #1f2937;
+    color: white;
+
+    &:hover:not(:disabled) {
+      background: #111827;
+      box-shadow: 0 4px 12px rgba(31, 41, 55, 0.2);
+    }
+  }
+
+  .brandBtn {
+    background: #10b981;
+    color: white;
+
+    &:hover:not(:disabled) {
+      background: #059669;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
     }
   }
 }
 
-.memberCell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.userIcon {
-  color: #9ca3af;
-}
-
-.emailLink, .phoneLink {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: #3b82f6;
-  text-decoration: none;
-  transition: color 0.2s;
-
-  &:hover {
-    color: #2563eb;
-    text-decoration: underline;
-  }
-}
-
-.icon {
-  font-size: 0.9rem;
-}
-
-.status {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  background-color: #f3f4f6;
-  color: #6b7280;
-
-  &.active {
-    background-color: #dcfce7;
-    color: #166534;
-  }
-}
-
-.noMembers {
-  text-align: center;
-  padding: 40px 20px;
-  color: #6b7280;
-  font-style: italic;
-  background-color: #f9fafb;
-  border-radius: 8px;
-  margin: 16px;
-}
-
-@media (max-width: 768px) {
-  .campaignHeader {
-    padding: 12px 16px;
-  }
-
-  .stats {
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .tableContainer {
-    overflow-x: auto;
-    
-    .membersTable {
-      min-width: 600px; // Ensure minimum width for mobile scroll
-      
-      .tableHeaderCell {
-      }
-    }
-  }
-}
 .controls {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
 
   .searchBar {
     max-width: 400px;
     position: relative;
+    display: flex;
+    align-items: center;
+    background: var(--color-white);
+    border: 1.5px solid var(--color-gray-200);
+    border-radius: var(--radius-full);
+    padding: 0 var(--space-4);
+    gap: var(--space-2);
 
-    input {
-      width: 100%;
-      padding: 10px 16px 10px 40px;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      transition: border-color 0.2s;
-
-      &:focus {
-        outline: none;
-        border-color: #4f46e5;
-      }
+    &:focus-within {
+      border-color: var(--color-primary-400);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
 
-    .searchIcon {
-      position: absolute;
-      left: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #9ca3af;
+    .searchIcon { color: var(--color-gray-400); flex-shrink: 0; }
+
+    input {
+      border: none;
+      background: none;
+      outline: none;
+      font-size: var(--font-size-sm);
+      color: var(--color-gray-700);
+      font-family: var(--font-family);
+      width: 100%;
+      padding: 10px 0;
+
+      &::placeholder { color: var(--color-gray-400); }
     }
   }
 
   .filters {
     display: flex;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: var(--space-3);
     align-items: center;
 
-    .filterGroup {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-  /*   .filterLabel {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 0.9rem;
-      color: #4b5563;
-    }
-
-    .filterIcon {
-      color: #9ca3af;
-      font-size: 0.9rem;
-    } */
+    .filterGroup { display: flex; align-items: center; gap: var(--space-2); }
 
     .filterSelect {
-      padding: 8px 12px;
-      border: 1px solid #e5e7eb;
-      border-radius: 6px;
-      background-color: white;
-      font-size: 0.9rem;
-      color: #1f2937;
+      padding: 9px var(--space-3);
+      border: 1.5px solid var(--color-gray-200);
+      border-radius: var(--radius-lg);
+      background: var(--color-white);
+      font-size: var(--font-size-sm);
+      color: var(--color-gray-700);
+      font-family: var(--font-family);
       cursor: pointer;
-      transition: border-color 0.2s;
+      outline: none;
+      transition: all var(--transition-fast);
 
-      &:focus {
-        outline: none;
-        border-color: #4f46e5;
-      }
+      &:hover { border-color: var(--color-gray-300); }
+      &:focus { border-color: var(--color-primary-500); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
     }
 
     .checkboxLabel {
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 0.9rem;
-      color: #4b5563;
+      gap: var(--space-2);
+      font-size: var(--font-size-sm);
+      color: var(--color-gray-600);
       cursor: pointer;
     }
 
     .checkboxInput {
-      position: absolute;
-      opacity: 0;
-      width: 0;
-      height: 0;
-
-      &:checked + .checkboxCustom {
-        background-color: #4f46e5;
-        border-color: #4f46e5;
-
-        &::after {
-          opacity: 1;
-        }
-      }
-    }
-
-    .checkboxCustom {
-      position: relative;
-      width: 16px;
-      height: 16px;
-      border: 2px solid #d1d5db;
-      border-radius: 4px;
-      transition: all 0.2s;
-
-      &::after {
-        content: '';
-        position: absolute;
-        opacity: 0;
-        left: 5px;
-        top: 1px;
-        width: 4px;
-        height: 8px;
-        border: solid white;
-        border-width: 0 2px 2px 0;
-        transform: rotate(45deg);
-        transition: opacity 0.2s;
-      }
+      accent-color: var(--color-primary-600);
+      width: 15px;
+      height: 15px;
+      cursor: pointer;
     }
   }
 }
+
+/* ---- Campaign Cards List ---- */
+.campaignsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.campaignCard {
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-base);
+
+  &:hover { box-shadow: var(--shadow-md); }
+}
+
+.campaignHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-5) var(--space-6);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+
+  &:hover { background: var(--color-gray-50); }
+}
+
+.campaignInfo {
+  h3 {
+    margin: 0 0 var(--space-2) 0;
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--color-gray-900);
+  }
+}
+
+.stats {
+  display: flex;
+  gap: var(--space-5);
+}
+
+.statItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-500);
+
+  &.active { color: var(--color-success-600); }
+}
+
+.statIcon { font-size: var(--font-size-base); }
+
+.chevron {
+  color: var(--color-gray-400);
+  transition: transform var(--transition-base);
+
+  &.open { transform: rotate(180deg); }
+}
+
+/* ---- Table ---- */
+.tableContainer {
+  border-top: 1px solid var(--color-gray-100);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+
+  .membersTable {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;
+
+    .tableHeaderRow {
+      .tableHeaderCell {
+        background: var(--color-gray-50);
+        color: var(--color-gray-500);
+        font-weight: 700;
+        font-size: var(--font-size-xs);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding: var(--space-3) var(--space-5);
+        text-align: left;
+        border-bottom: 1px solid var(--color-gray-200);
+        white-space: nowrap;
+      }
+    }
+
+    .tableRow {
+      transition: background var(--transition-fast);
+
+      &:hover { background: var(--color-gray-50); }
+
+      &:last-child .tableCell { border-bottom: none; }
+    }
+
+    .tableCell {
+      padding: var(--space-4) var(--space-5);
+      text-align: left;
+      border-bottom: 1px solid var(--color-gray-100);
+      font-size: var(--font-size-sm);
+      color: var(--color-gray-700);
+      vertical-align: middle;
+    }
+  }
+}
+
+/* ---- Member Cell ---- */
+.memberCell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.userIcon { color: var(--color-gray-400); }
+
+.memberAvatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--color-primary-100);
+  color: var(--color-primary-700);
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ---- Links ---- */
+.emailLink, .phoneLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-primary-600);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  transition: color var(--transition-fast);
+
+  &:hover { color: var(--color-primary-700); text-decoration: underline; }
+}
+
+.icon { font-size: var(--font-size-sm); }
+
+/* ---- Status Badge ---- */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  background: var(--color-gray-100);
+  color: var(--color-gray-600);
+
+  &.active {
+    background: var(--color-success-50);
+    color: var(--color-success-700);
+  }
+
+  &.inactive {
+    background: var(--color-gray-100);
+    color: var(--color-gray-500);
+  }
+
+  &.pending {
+    background: var(--color-warning-50);
+    color: var(--color-warning-700);
+  }
+}
+
+/* ---- Empty / No Members ---- */
+.noMembers {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-10) var(--space-5);
+  text-align: center;
+  color: var(--color-gray-500);
+  background: var(--color-gray-50);
+  margin: var(--space-4);
+  border-radius: var(--radius-xl);
+  border: 1px dashed var(--color-gray-200);
+  font-size: var(--font-size-sm);
+}
+
+/* ---- Mobile ---- */
+@media (max-width: 768px) {
+  .header { flex-direction: column; align-items: flex-start; }
+
+  .campaignHeader { padding: var(--space-4); }
+
+  .stats { flex-direction: column; gap: var(--space-2); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Tabs Layout ---- */
+.tabsContainer {
+  display: flex;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+  border-bottom: 2px solid var(--color-gray-200);
+  padding-bottom: 2px;
+
+  .tabBtn {
+    padding: var(--space-2) var(--space-4);
+    background: none;
+    border: none;
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--color-gray-500);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -4px;
+
+    &:hover {
+      color: var(--color-gray-800);
+    }
+  }
+
+  .activeTab {
+    color: #7c3aed !important;
+    border-bottom-color: #7c3aed !important;
+  }
+}
+
+/* ---- Pagination Controls ---- */
+.paginationControls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+  padding: var(--space-4) 0;
+
+  .pageBtn {
+    padding: 8px 16px;
+    border: 1.5px solid var(--color-gray-200);
+    border-radius: var(--radius-lg);
+    background: var(--color-white);
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-700);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    &:hover:not(:disabled) {
+      border-color: var(--color-gray-300);
+      background: var(--color-gray-50);
+    }
+  }
+
+  .pageInfo {
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-600);
+  }
+}
+
+/* ---- User Listing Aesthetics ---- */
+.userName {
+  font-weight: 600;
+  color: var(--color-gray-900);
+}
+
+.rolesList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.roleBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+
+  &.supervisor {
+    background: rgba(124, 58, 237, 0.1);
+    color: #7c3aed;
+  }
+
+  &.executor {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+  }
+
+  &.campaign_manager {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+  }
+
+  &.brand_viewer {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+  }
+}
+
+.noRole {
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-400);
+  font-style: italic;
+}
+
+.campaignNames {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+  max-width: 250px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.noneText {
+  color: var(--color-gray-400);
+  font-style: italic;
+}
+
+/* ---- Loading Spinner ---- */
+.loadingCell {
+  padding: var(--space-8) 0;
+  text-align: center;
+  color: var(--color-gray-500);
+
+  .spinner {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 3px solid rgba(124, 58, 237, 0.1);
+    border-radius: 50%;
+    border-top-color: #7c3aed;
+    animation: spin 1s ease-in-out infinite;
+    margin-bottom: var(--space-2);
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---- Brand Directory specific ---- */
+.brandLogoCol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brandLogoImg {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-gray-200);
+  background: white;
+}
+
+.brandLogoPlaceholder {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-100);
+  color: var(--color-primary-700);
+  font-weight: 700;
+  font-size: var(--font-size-md);
+}
+
+.brandNameText {
+  font-weight: 600;
+  color: var(--color-gray-900);
+}
+
+.brandDescText {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+  max-width: 300px;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+

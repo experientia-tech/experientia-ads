@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import styles from "./ReportsMap.module.scss";
@@ -15,14 +15,23 @@ interface TaskLocation {
 interface ReportsMapProps {
   tasks: TaskLocation[];
   totalTasks: number;
+  campaignLocation?: {
+    latitude?: number | null;
+    longitude?: number | null;
+    name: string;
+    address?: string | null;
+  };
 }
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
 
-export default function ReportsMap({ tasks, totalTasks }: ReportsMapProps) {
+export default function ReportsMap({ tasks, totalTasks, campaignLocation }: ReportsMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const campaignMarkerRef = useRef<mapboxgl.Marker | null>(null);
+
+  const [showCampaignLocation, setShowCampaignLocation] = useState(true);
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -237,11 +246,67 @@ export default function ReportsMap({ tasks, totalTasks }: ReportsMapProps) {
           bounds.extend([lng, lat]);
         }
       });
+
+      const campaignLat = campaignLocation?.latitude ? parseFloat(campaignLocation.latitude.toString()) : null;
+      const campaignLng = campaignLocation?.longitude ? parseFloat(campaignLocation.longitude.toString()) : null;
+      if (showCampaignLocation && campaignLat !== null && campaignLng !== null && !isNaN(campaignLat) && !isNaN(campaignLng)) {
+        bounds.extend([campaignLng, campaignLat]);
+      }
+
       if (!bounds.isEmpty()) {
         mapRef.current.fitBounds(bounds, { padding: 50, maxZoom: 15 });
       }
     }
-  }, [tasks]);
+    return () => {
+      campaignMarkerRef.current?.remove();
+      campaignMarkerRef.current = null;
+      mapRef.current?.remove();
+      mapRef.current = null;
+    };
+  }, [tasks, showCampaignLocation, campaignLocation]);
+
+  // Manage campaign target location marker
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    const lat = campaignLocation?.latitude ? parseFloat(campaignLocation.latitude.toString()) : null;
+    const lng = campaignLocation?.longitude ? parseFloat(campaignLocation.longitude.toString()) : null;
+
+    if (!showCampaignLocation || lat === null || lng === null || isNaN(lat) || isNaN(lng)) {
+      if (campaignMarkerRef.current) {
+        campaignMarkerRef.current.remove();
+        campaignMarkerRef.current = null;
+      }
+      return;
+    }
+
+    if (campaignMarkerRef.current) {
+      campaignMarkerRef.current.setLngLat([lng, lat]);
+      return;
+    }
+
+    const el = document.createElement("div");
+    el.className = styles.campaignTargetMarker;
+    el.innerHTML = `
+      <div class="${styles.targetPinOuter}">
+        <div class="${styles.targetPinInner}"></div>
+      </div>
+    `;
+
+    const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
+      <div style="font-family: sans-serif; padding: 4px; max-width: 200px;">
+        <h4 style="margin: 0 0 4px 0; color: #7c3aed; font-weight: 700; font-size: 13px;">Target Campaign Location</h4>
+        <p style="margin: 0 0 2px 0; font-size: 11px; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${campaignLocation?.name || ""}</p>
+        <p style="margin: 0; font-size: 10px; color: #64748b; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${campaignLocation?.address || "No address provided"}</p>
+        <p style="margin: 4px 0 0 0; font-size: 9px; font-family: monospace; color: #94a3b8;">Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}</p>
+      </div>
+    `);
+
+    campaignMarkerRef.current = new mapboxgl.Marker({ element: el })
+      .setLngLat([lng, lat])
+      .setPopup(popup)
+      .addTo(mapRef.current);
+  }, [showCampaignLocation, campaignLocation, mapRef.current]);
 
   if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
     return <div className={styles.mapError}>Mapbox token not configured</div>;
@@ -277,7 +342,28 @@ export default function ReportsMap({ tasks, totalTasks }: ReportsMapProps) {
               <div className={`${styles.dot} ${styles.green}`} />
               <span>Green: 500+ Tasks</span>
             </div>
+            {showCampaignLocation && campaignLocation?.latitude && campaignLocation?.longitude && (
+              <div className={styles.legendItem}>
+                <div className={`${styles.dot} ${styles.purple}`} />
+                <span>Purple: Target Location</span>
+              </div>
+            )}
           </div>
+
+          {campaignLocation?.latitude && campaignLocation?.longitude && (
+            <div className={styles.toggleContainer}>
+              <hr className={styles.divider} />
+              <label className={styles.toggleLabel}>
+                <input
+                  type="checkbox"
+                  checked={showCampaignLocation}
+                  onChange={(e) => setShowCampaignLocation(e.target.checked)}
+                  className={styles.toggleInput}
+                />
+                <span className={styles.toggleText}>Show Target Location</span>
+              </label>
+            </div>
+          )}
 
           <div className={styles.zoomNotice}>💡 Click clusters to zoom in</div>
         </div>

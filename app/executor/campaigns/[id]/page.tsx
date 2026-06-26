@@ -11,6 +11,7 @@ import "./campaign-details.scss";
 import { useExecutorStore } from "@/app/store/Executor";
 import { getExecutorToken } from "@/app/store/Executor";
 import { CampaignTaskResponse } from "@/types/campaign";
+import ErrorModal from "@/app/experientia/components/error_modal/ErrorModal";
 
 interface Campaign {
   id: string;
@@ -42,6 +43,7 @@ const CampaignDetails = () => {
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [tasks, setTasks] = useState<CampaignTaskResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (campaignId) {
@@ -65,14 +67,21 @@ const CampaignDetails = () => {
         },
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data) {
-          setCampaign(data.data);
-        }
+      if (!response.ok) {
+        throw new Error("We couldn't load this campaign. Please try again.");
+      }
+
+      const data = await response.json();
+      if (data.success && data.data) {
+        setCampaign(data.data);
       }
     } catch (error) {
       console.error("Error fetching campaign:", error);
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "We couldn't load this campaign. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
@@ -83,7 +92,6 @@ const CampaignDetails = () => {
       const token = getExecutorToken();
       if (!token) return;
 
-      // You'll need to create this API endpoint or use existing one
       const response = await fetch(
         `/api/executor/campaigns/${campaignId}/tasks`,
         {
@@ -94,16 +102,41 @@ const CampaignDetails = () => {
         },
       );
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data) {
-          setTasks(data.data);
-        }
+      if (!response.ok) {
+        throw new Error("We couldn't load your tasks. Please try again.");
+      }
+
+      const data = await response.json();
+      if (data.success && data.data) {
+        setTasks(data.data);
       }
     } catch (error) {
       console.error("Error fetching tasks:", error);
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "We couldn't load your tasks. Please try again.",
+      );
     }
   };
+
+  if (loading) {
+    return (
+      <div className="campaign-details-page">
+        <header className="details-header">
+          <button className="back-btn" onClick={() => window.history.back()}>
+            <FiChevronLeft size={24} />
+          </button>
+          <h1 className="header-title">Campaign Details</h1>
+          <button className="menu-btn"></button>
+        </header>
+        <div className="page-loading-state">
+          <div className="page-spinner"></div>
+          <p>Loading campaign...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="campaign-details-page">
@@ -198,6 +231,14 @@ const CampaignDetails = () => {
           ))}
         </div>
       </section>
+
+      <ErrorModal
+        isOpen={!!errorMessage}
+        onClose={() => setErrorMessage(null)}
+        title="Something went wrong"
+        message={errorMessage || ""}
+        buttonText="Dismiss"
+      />
     </div>
   );
 };

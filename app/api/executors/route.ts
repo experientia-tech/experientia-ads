@@ -19,8 +19,12 @@ export const GET: RequestHandler = async (request) => {
     const organizationId = searchParams.get('organizationId') || undefined;
     const executorId = searchParams.get('id') || searchParams.get('executorId') || undefined;
     const search = searchParams.get('search') || searchParams.get('name') || undefined;
+    const pageVal = searchParams.get('page');
+    const limitVal = searchParams.get('limit');
+    const page = pageVal ? parseInt(pageVal, 10) : undefined;
+    const limit = limitVal ? parseInt(limitVal, 10) : undefined;
 
-    const executors = await getAllExecutors(organizationId, executorId, search);
+    const executors = await getAllExecutors(organizationId, executorId, search, page, limit);
 
     return NextResponse.json(
       response(true, 200, authToken, 'Executors fetched successfully', executors)
@@ -56,7 +60,15 @@ export const POST: RequestHandler = async (request) => {
       );
     }
 
-    const executor = await addExecutor(firstName, lastName, phone, location, organizationId, campaignId, assignedBy);
+    // Validate Indian phone number format (10 digits, starting 6-9).
+    if (!/^[6-9]\d{9}$/.test(String(phone).trim())) {
+      return NextResponse.json(
+        response(false, 400, authToken, 'Invalid phone number. Enter a 10-digit mobile number.'),
+        { status: 400 }
+      );
+    }
+
+    const executor = await addExecutor(firstName, lastName, String(phone).trim(), location, organizationId, campaignId, assignedBy);
 
     return NextResponse.json(
       response(true, 201, authToken, 'Executor created successfully', executor),
@@ -66,7 +78,7 @@ export const POST: RequestHandler = async (request) => {
     console.error('Error creating executor:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to create executor';
     const authToken = request.headers.get('authorization')?.split(' ')[1] || '';
-    if (errorMessage === 'User with this phone number is already an executor') {
+    if (errorMessage === 'This executor is already assigned to this campaign') {
       return NextResponse.json(
         response(false, 409, authToken, errorMessage),
         { status: 409 }

@@ -1,89 +1,97 @@
+/* ============================================================
+   BRAND CARD COMPONENT
+   ============================================================ */
+
 .brandSummary {
-  background-color: #ffffff;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: var(--color-white);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-gray-200);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: all 0.3s ease;
-  border: 1px solid #eeeeee;
+  transition: all var(--transition-base);
   cursor: pointer;
 
   &:hover {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-md);
+    border-color: var(--color-gray-300);
+    transform: translateY(-1px);
   }
+
+  @media (min-width: 769px) { padding: var(--space-5); }
 }
 
 .brandInfo {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--space-4);
+  flex: 1;
+  min-width: 0;
 }
 
 .brandLogo {
   width: 48px;
   height: 48px;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   flex-shrink: 0;
+  border: 1px solid var(--color-gray-200);
+  background: var(--color-gray-50);
 }
 
 .brandDetails {
+  flex: 1;
+  min-width: 0;
+
   h3 {
-    margin: 0 0 4px 0;
-    font-size: 16px;
+    margin: 0 0 var(--space-1) 0;
+    font-size: var(--font-size-base);
     font-weight: 600;
-    color: #1a1a1a;
+    color: var(--color-gray-900);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    @media (min-width: 769px) { font-size: var(--font-size-lg); }
   }
 }
 
 .campaignStats {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: #666666;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-500);
+  flex-wrap: wrap;
 }
 
-.divider {
-  color: #dddddd;
-}
+.divider { color: var(--color-gray-300); }
 
 .active {
-  color: #10b981;
-  font-weight: 500;
+  color: var(--color-success-600);
+  font-weight: 600;
 }
 
 .expandBtn {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 8px;
+  padding: var(--space-2);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.3s ease;
-  color: #666666;
+  transition: all var(--transition-base);
+  color: var(--color-gray-400);
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
 
   &:hover {
-    color: #1a1a1a;
+    color: var(--color-gray-700);
+    background: var(--color-gray-100);
   }
 
-  &.expanded {
-    transform: rotate(180deg);
-  }
-}
-
-@media (min-width: 769px) {
-  .brandSummary {
-    padding: 20px;
-  }
-  
-  .brandDetails {
-    h3 {
-      font-size: 18px;
-    }
-  }
+  &.expanded { transform: rotate(180deg); }
 }

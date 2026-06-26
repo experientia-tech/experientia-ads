@@ -1,44 +1,71 @@
+/* ============================================================
+   SUMMARY CARD — Metric stat card
+   ============================================================ */
+
 .summaryCard {
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e5e7eb;
+  background: var(--color-white);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-gray-200);
   display: flex;
   align-items: center;
-  gap: 16px;
-  transition: transform 0.2s, box-shadow 0.2s;
+  gap: var(--space-4);
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+  position: relative;
+  overflow: hidden;
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Subtle accent line on left */
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--accent-color, var(--color-primary-500));
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   }
 
   .iconContainer {
     width: 48px;
     height: 48px;
-    border-radius: 12px;
+    border-radius: var(--radius-xl);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--accent-color, #4f46e5);
-    font-size: 24px;
+    background: color-mix(in srgb, var(--accent-color, var(--color-primary-500)) 12%, transparent);
+    color: var(--accent-color, var(--color-primary-600));
+    font-size: 22px;
+    flex-shrink: 0;
   }
 
   .content {
+    flex: 1;
+    min-width: 0;
+
     .value {
-      font-size: 24px;
-      font-weight: 600;
-      color: #1a1a1a;
-      margin: 0 0 4px 0;
-      line-height: 1.2;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--color-gray-900);
+      margin: 0 0 2px 0;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
     }
 
     .title {
-      color: #666;
-      font-size: 14px;
+      color: var(--color-gray-500);
+      font-size: var(--font-size-sm);
       margin: 0;
       font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   }
 }

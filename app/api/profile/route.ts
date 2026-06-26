@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAuthUser } from '@/lib/auth';
 import { userService } from '@/services/user.services';
+import type { UpdateProfileInput } from '@/types/user';
 
 export async function GET() {
   try {
@@ -44,7 +45,21 @@ export async function PATCH(request: Request) {
     }
 
     const data = await request.json();
-    const updatedProfile = await userService.updateProfile(authUser.userId, data);
+
+    // Whitelist updatable fields so callers can't write arbitrary columns
+    // (e.g. organizationId, phone, isActive) via the profile endpoint.
+    const updateData: UpdateProfileInput = {};
+    if (typeof data.firstName === 'string') updateData.firstName = data.firstName;
+    if (typeof data.lastName === 'string') updateData.lastName = data.lastName;
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json(
+        { error: 'No valid fields to update' },
+        { status: 400 }
+      );
+    }
+
+    const updatedProfile = await userService.updateProfile(authUser.userId, updateData);
 
     return NextResponse.json(updatedProfile);
   } catch (error) {
