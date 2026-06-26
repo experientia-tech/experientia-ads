@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(zsh -lic 'nvm use >/dev/null 2>&1; node -e \"try{const m=require\\(\\\\\"./app/generated/prisma/client\\\\\"\\);console.log\\(\\\\\"client OK keys:\\\\\",Object.keys\\(m\\).slice\\(0,5\\)\\)}catch\\(e\\){console.log\\(\\\\\"path require failed:\\\\\",e.code||e.message\\)}; try{require\\(\\\\\"@prisma/adapter-pg\\\\\"\\);console.log\\(\\\\\"adapter-pg OK\\\\\"\\)}catch\\(e\\){console.log\\(\\\\\"adapter fail\\\\\",e.code\\)}; try{require\\(\\\\\"pg\\\\\"\\);console.log\\(\\\\\"pg OK\\\\\"\\)}catch\\(e\\){console.log\\(\\\\\"pg fail\\\\\",e.code\\)}\"')",
+      "Bash(timeout 60 npx prisma migrate status)",
+      "Bash(npx prisma *)",
+      "Read(//Users/nevil/.nvm/versions/node/**)",
+      "Read(//opt/homebrew/opt/**)",
+      "Bash(brew list *)"
+    ]
+  }
+}
