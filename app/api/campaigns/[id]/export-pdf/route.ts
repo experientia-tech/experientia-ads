@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { CampaignService } from "@/services/campaign.services";
 import { authorize } from "@/lib/middleware";
 import { ROLES } from "@/lib/roles";
+import { getPresignedGetUrl } from "@/utils/s3";
 import PDFDocument from "pdfkit";
 
 type RequestHandler = (
@@ -388,9 +389,16 @@ export const GET: RequestHandler = async (request, { params }) => {
         const task = tasksWithImages[i];
         const taskImages = (task.metadata as any).images || [];
         
-        // Fetch valid image buffers
+        // Fetch valid image buffers. S3 objects are private, so presign the URL
+        // before fetching; leave data: URLs and non-S3 URLs untouched.
         const imageBuffers = await Promise.all(
-          taskImages.map((img: any) => fetchImageBuffer(img.url))
+          taskImages.map(async (img: any) => {
+            const src =
+              typeof img.url === "string" && img.url.startsWith("http")
+                ? (await getPresignedGetUrl(img.url)) ?? img.url
+                : img.url;
+            return fetchImageBuffer(src);
+          })
         );
         const validImages = imageBuffers.filter((buf): buf is Buffer => buf !== null);
         if (validImages.length === 0) continue;

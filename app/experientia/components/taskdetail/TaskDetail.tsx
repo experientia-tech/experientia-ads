@@ -38,6 +38,11 @@ interface TaskDetailProps {
   onStatusUpdate?: () => void;
 }
 
+// `signedUrl` is a display-only presigned URL added by the API; never persist it
+// (it expires). Strip it so only the permanent `url` and other fields are saved.
+const stripSignedUrls = (images: any[]) =>
+  images.map(({ signedUrl, ...rest }: any) => rest);
+
 const TaskDetail = ({ task, onClose, onStatusUpdate }: TaskDetailProps) => {
   const [images, setImages] = useState<any[]>(task.metadata?.images || []);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -48,10 +53,16 @@ const TaskDetail = ({ task, onClose, onStatusUpdate }: TaskDetailProps) => {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Reset to the first image when switching tasks.
   useEffect(() => {
-    setImages(task.metadata?.images || []);
     setCurrentImageIndex(0);
   }, [task.id]);
+
+  // Re-seed images whenever the task's images change (e.g. after a refetch
+  // re-signs the URLs), so freshly signed `signedUrl`s propagate to display.
+  useEffect(() => {
+    setImages(task.metadata?.images || []);
+  }, [task.metadata?.images]);
 
   const handleUpdateStatus = async (newStatus: "ACCEPTED" | "REJECTED") => {
     setIsUpdating(true);
@@ -102,7 +113,7 @@ const TaskDetail = ({ task, onClose, onStatusUpdate }: TaskDetailProps) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ images: newImages }),
+        body: JSON.stringify({ images: stripSignedUrls(newImages) }),
       });
 
       if (!res.ok) {
@@ -142,7 +153,7 @@ const TaskDetail = ({ task, onClose, onStatusUpdate }: TaskDetailProps) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ images: newImages }),
+        body: JSON.stringify({ images: stripSignedUrls(newImages) }),
       });
 
       if (!res.ok) {
@@ -184,8 +195,8 @@ const TaskDetail = ({ task, onClose, onStatusUpdate }: TaskDetailProps) => {
         {images.length > 0 ? (
           <div className={styles.imageGallery}>
             <div className={styles.imageContainer}>
-              <img 
-                src={currentImage?.url || currentImage} 
+              <img
+                src={currentImage?.signedUrl || currentImage?.url || currentImage}
                 alt={`Task image ${currentImageIndex + 1}`}
                 className={styles.taskImage}
               />

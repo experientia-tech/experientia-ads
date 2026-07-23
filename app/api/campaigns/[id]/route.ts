@@ -4,6 +4,28 @@ import type { CreateCampaignInput } from '@/types/campaign';
 import { response } from '@/utils/response';
 import { authorize } from '@/lib/middleware';
 import { ROLES } from '@/lib/roles';
+import { getPresignedGetUrl } from '@/utils/s3';
+
+// Task image URLs are stored as permanent (private) S3 URLs. Add a short-lived
+// presigned `signedUrl` to each image for display, while leaving the original
+// `url` intact so the client can still round-trip it back on save.
+async function signTaskImageUrls(data: any): Promise<void> {
+  const tasks = data?.tasks;
+  if (!Array.isArray(tasks)) return;
+  await Promise.all(
+    tasks.map(async (task: any) => {
+      const images = task?.metadata?.images;
+      if (!Array.isArray(images)) return;
+      await Promise.all(
+        images.map(async (image: any) => {
+          if (image?.url) {
+            image.signedUrl = (await getPresignedGetUrl(image.url)) ?? image.url;
+          }
+        }),
+      );
+    }),
+  );
+}
 
 type RequestHandler = (
   request: NextRequest,
@@ -35,6 +57,8 @@ export const GET: RequestHandler = async (request, { params }) => {
         { status: campaign.statusCode }
       );
     }
+
+    await signTaskImageUrls(campaign.data);
 
     return NextResponse.json(response(true, 200, authToken, campaign.message, campaign.data));
   } catch (error) {

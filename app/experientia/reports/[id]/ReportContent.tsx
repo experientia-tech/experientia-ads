@@ -166,7 +166,9 @@ const ReportContent = ({
             id: task.id,
             taskId: task.id,
             productImage:
-              metadata.images?.[0]?.url || "/path/to/product-image.jpg",
+              metadata.images?.[0]?.signedUrl ||
+              metadata.images?.[0]?.url ||
+              "/path/to/product-image.jpg",
             date: task.createdAt
               ? new Date(task.createdAt).toLocaleDateString("en-US", {
                   month: "short",

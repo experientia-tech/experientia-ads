@@ -2,7 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { response } from "@/utils/response";
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
-import { isMsg91Configured, verifyOtpSms } from "@/services/msg91";
 
 export async function POST(req: Request) {
   try {
@@ -18,17 +17,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "OTP is required" }, { status: 400 });
     }
 
-    // Fail closed until MSG91 credentials are configured.
-    if (!isMsg91Configured()) {
-      console.error("MSG91 is not configured; rejecting all logins.");
+    // Static dummy OTP verification. Login fails closed if ADMIN_DUMMY_OTP is unset.
+    const expectedOtp = process.env.ADMIN_DUMMY_OTP;
+    if (!expectedOtp) {
+      console.error("ADMIN_DUMMY_OTP is not set; rejecting all admin logins.");
       return NextResponse.json(
         { error: "Login is temporarily unavailable" },
         { status: 503 }
       );
     }
-
-    const isValid = await verifyOtpSms(phone, otp);
-    if (!isValid) {
+    if (otp !== expectedOtp) {
       return NextResponse.json({ error: "Invalid OTP" }, { status: 401 });
     }
 
