@@ -2,31 +2,34 @@ import { prisma } from "@/lib/prisma";
 import { response } from "@/utils/response";
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
-// import { sendOtp } from "@/services/auth.services";
+import { isMsg91Configured, verifyOtpSms } from "@/services/msg91";
 
 export async function POST(req: Request) {
   try {
     const { phone, otp } = await req.json();
-
-    // OTP verification against the configured static OTP.
-    // Replace with a real OTP-provider lookup once SMS is integrated.
-    const expectedOtp = process.env.AUTH_OTP;
-    if (!expectedOtp) {
-      console.error("AUTH_OTP env var is not set; rejecting all logins.");
-      return NextResponse.json(
-        { error: "Login is temporarily unavailable" },
-        { status: 503 }
-      );
-    }
-    if (!otp || otp !== expectedOtp) {
-      return NextResponse.json({ error: "Invalid OTP" }, { status: 401 });
-    }
 
     if (!phone) {
       return NextResponse.json(
         { error: "Phone number is required" },
         { status: 400 }
       );
+    }
+    if (!otp) {
+      return NextResponse.json({ error: "OTP is required" }, { status: 400 });
+    }
+
+    // Fail closed until MSG91 credentials are configured.
+    if (!isMsg91Configured()) {
+      console.error("MSG91 is not configured; rejecting all logins.");
+      return NextResponse.json(
+        { error: "Login is temporarily unavailable" },
+        { status: 503 }
+      );
+    }
+
+    const isValid = await verifyOtpSms(phone, otp);
+    if (!isValid) {
+      return NextResponse.json({ error: "Invalid OTP" }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
