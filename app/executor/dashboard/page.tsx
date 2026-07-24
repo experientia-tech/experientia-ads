@@ -6,6 +6,7 @@ import { FiCheckCircle, FiClock } from "react-icons/fi";
 import "./dashboard.scss";
 import { useExecutorStore } from "@/app/store/Executor";
 import { useEffect } from "react";
+import GlobalLoader from "@/app/components/loader/GlobalLoader";
 
 const ExecutorDashboard = () => {
   const { getCampaigns, campaigns, isLoading, getProfile, profile } =
@@ -100,7 +101,7 @@ const ExecutorDashboard = () => {
 
         <div className="campaign-list">
           {isLoading ? (
-            <p>Loading campaigns...</p>
+            <GlobalLoader />
           ) : campaigns && campaigns.length > 0 ? (
             campaigns.map((campaign) => (
               <CampaignCard

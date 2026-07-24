@@ -5,6 +5,8 @@ import { FiMapPin, FiClock, FiUser, FiFlag, FiNavigation, FiMap, FiX, FiChevronL
 import dynamic from 'next/dynamic';
 import styles from './TaskDetail.module.scss';
 import { uploadFileToS3 } from '@/app/constants/upload';
+import ConfirmDialog from '@/app/components/confirm_dialog/ConfirmDialog';
+import ErrorModal from '../error_modal/ErrorModal';
 
 // Dynamically import map component from executor to avoid SSR issues
 const MapComponent = dynamic(() => import('../../../executor/tasks/location/MapComponent'), {
@@ -51,6 +53,8 @@ const TaskDetail = ({ task, onClose, onStatusUpdate }: TaskDetailProps) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isUpdatingImages, setIsUpdatingImages] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [indexPendingDelete, setIndexPendingDelete] = useState<number | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Reset to the first image when switching tasks.
@@ -98,10 +102,9 @@ const TaskDetail = ({ task, onClose, onStatusUpdate }: TaskDetailProps) => {
     }
   };
 
-  const handleDeletePhoto = async (indexToDelete: number) => {
-    if (!window.confirm("Are you sure you want to delete this photo?")) {
-      return;
-    }
+  const handleDeletePhotoConfirmed = async () => {
+    if (indexPendingDelete === null) return;
+    const indexToDelete = indexPendingDelete;
 
     const newImages = images.filter((_, index) => index !== indexToDelete);
     setIsUpdatingImages(true);
@@ -122,15 +125,17 @@ const TaskDetail = ({ task, onClose, onStatusUpdate }: TaskDetailProps) => {
       }
 
       setImages(newImages);
-      setCurrentImageIndex((prev) => 
+      setCurrentImageIndex((prev) =>
         prev >= newImages.length ? Math.max(0, newImages.length - 1) : prev
       );
 
       if (onStatusUpdate) {
         onStatusUpdate();
       }
+      setIndexPendingDelete(null);
     } catch (err: any) {
-      alert(err.message || "Error deleting photo");
+      setIndexPendingDelete(null);
+      setErrorMessage(err.message || "Error deleting photo");
     } finally {
       setIsUpdatingImages(false);
     }
@@ -204,7 +209,7 @@ const TaskDetail = ({ task, onClose, onStatusUpdate }: TaskDetailProps) => {
                 className={styles.deletePhotoBtn}
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleDeletePhoto(currentImageIndex);
+                  setIndexPendingDelete(currentImageIndex);
                 }}
                 disabled={isUpdatingImages}
                 title="Delete this photo"
@@ -399,6 +404,23 @@ const TaskDetail = ({ task, onClose, onStatusUpdate }: TaskDetailProps) => {
         <div className={styles.actions}>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={indexPendingDelete !== null}
+        title="Delete this photo?"
+        message="Are you sure you want to delete this photo? This action cannot be undone."
+        confirmText="Delete"
+        isConfirming={isUpdatingImages}
+        onConfirm={handleDeletePhotoConfirmed}
+        onCancel={() => setIndexPendingDelete(null)}
+      />
+
+      <ErrorModal
+        isOpen={errorMessage !== null}
+        title="Error"
+        message={errorMessage ?? undefined}
+        onClose={() => setErrorMessage(null)}
+      />
     </div>
   );
 };

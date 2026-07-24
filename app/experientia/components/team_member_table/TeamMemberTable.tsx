@@ -2,6 +2,8 @@
 import { useState } from 'react';
 import { FiSearch, FiFilter, FiChevronDown, FiChevronUp, FiTrash2 } from 'react-icons/fi';
 import styles from './TeamMemberTable.module.scss';
+import ConfirmDialog from '../../../components/confirm_dialog/ConfirmDialog';
+import ErrorModal from '../error_modal/ErrorModal';
 
 interface TeamMember {
   id: string;
@@ -23,6 +25,8 @@ const TeamMemberTable: React.FC<TeamMemberTableProps> = ({ members = [], onDelet
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [memberPendingDelete, setMemberPendingDelete] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const roles = ['all', ...Array.from(new Set(members.map(member => member.role)))];
 
@@ -38,18 +42,24 @@ const TeamMemberTable: React.FC<TeamMemberTableProps> = ({ members = [], onDelet
     return matchesSearch && matchesRole;
   });
 
-  const handleDelete = async (memberId: string) => {
+  const handleDeleteClick = (memberId: string) => {
     if (!onDelete) return;
-    if (window.confirm('Are you sure you want to remove this member?')) {
-      try {
-        setDeletingId(memberId);
-        await onDelete(memberId);
-      } catch (error) {
-        console.error('Error deleting member:', error);
-        alert('Failed to delete member');
-      } finally {
-        setDeletingId(null);
-      }
+    setMemberPendingDelete(memberId);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!onDelete || !memberPendingDelete) return;
+    const memberId = memberPendingDelete;
+    try {
+      setDeletingId(memberId);
+      await onDelete(memberId);
+      setMemberPendingDelete(null);
+    } catch (error) {
+      console.error('Error deleting member:', error);
+      setMemberPendingDelete(null);
+      setDeleteError('Failed to delete member');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -146,7 +156,7 @@ const TeamMemberTable: React.FC<TeamMemberTableProps> = ({ members = [], onDelet
                   <td>
                     <button
                       className={styles.deleteButton}
-                      onClick={() => handleDelete(member.id)}
+                      onClick={() => handleDeleteClick(member.id)}
                       disabled={deletingId === member.id}
                       title="Remove member"
                       style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#EF4444' }}
@@ -166,6 +176,23 @@ const TeamMemberTable: React.FC<TeamMemberTableProps> = ({ members = [], onDelet
           </tbody>
         </table>
       </div>
+
+      <ConfirmDialog
+        isOpen={memberPendingDelete !== null}
+        title="Remove team member?"
+        message="Are you sure you want to remove this member? This action cannot be undone."
+        confirmText="Remove"
+        isConfirming={deletingId !== null}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setMemberPendingDelete(null)}
+      />
+
+      <ErrorModal
+        isOpen={deleteError !== null}
+        title="Error"
+        message={deleteError ?? undefined}
+        onClose={() => setDeleteError(null)}
+      />
     </div>
   );
 };

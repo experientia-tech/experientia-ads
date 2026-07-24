@@ -20,6 +20,7 @@ import {
 import SummaryCard from "../components/summary_card/SummaryCard";
 import { useCampaignStore } from "../../store/Campaigns";
 import ErrorModal from "../components/error_modal/ErrorModal";
+import GlobalLoader from "../../components/loader/GlobalLoader";
 
 const DashboardPage = () => {
   const router = useRouter();
@@ -115,14 +116,7 @@ const DashboardPage = () => {
   }, [fetchSummary]);
 
   if (summaryLoading) {
-    return (
-      <div className={styles.dashboard}>
-        <div className={styles.header}>
-          <h1>Dashboard</h1>
-          <p className={styles.subtitle}>Loading dashboard data...</p>
-        </div>
-      </div>
-    );
+    return <GlobalLoader />;
   }
 
   if (!summaryData) {
