@@ -8,10 +8,11 @@ import {
   FiZap,
   FiX,
   FiMapPin,
-  FiLoader,
 } from "react-icons/fi";
 import "./capture.scss";
 import { uploadFileToS3 } from "@/app/constants/upload";
+import PhotoReviewModal from "./PhotoReviewModal";
+import ErrorModal from "@/app/experientia/components/error_modal/ErrorModal";
 
 interface CapturedPhoto {
   dataUrl: string;
@@ -19,6 +20,27 @@ interface CapturedPhoto {
   timestamp: Date;
   view?: string | null;
 }
+
+// A frame just grabbed from the camera, awaiting the user's Retake/Use Photo
+// decision. Nothing is uploaded until it's confirmed — so a blurry shot never
+// touches S3 and retaking is instant (no network round trip).
+interface PendingCapture {
+  dataUrl: string;
+  view?: string | null;
+  // Set when this capture is replacing an already-confirmed photo (retake from
+  // the thumbnail strip) rather than being appended as a new one.
+  replaceIndex?: number;
+}
+
+// Sequential views required for the Auto Hood service type. Tracking "next
+// view needed" by which views are missing (rather than by capturedPhotos.length)
+// means deleting/retaking a photo out of order can never mislabel the rest.
+const AUTO_HOOD_VIEWS = ["front", "side", "back"] as const;
+const AUTO_HOOD_LABELS: Record<string, string> = {
+  front: "Front View",
+  side: "Side View",
+  back: "Back View",
+};
 
 interface LocationData {
   lat: number;
@@ -50,6 +72,10 @@ const TaskCapture = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isCameraLoading, setIsCameraLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [pendingCapture, setPendingCapture] = useState<PendingCapture | null>(null);
+  const [viewingIndex, setViewingIndex] = useState<number | null>(null);
+  const [retakeTarget, setRetakeTarget] = useState<{ index: number; view?: string | null } | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showAutoHoodForm, setShowAutoHoodForm] = useState(false);
   const [autoHoodData, setAutoHoodData] = useState({
     driverName: '',
@@ -432,11 +458,13 @@ const TaskCapture = () => {
     return new File([u8arr], filename, { type: mime });
   };
 
-  const capturePhoto = async (view?: string) => {
+  // Just grabs a frame onto the canvas and hands it to the review modal — no
+  // upload happens here, so retaking a blurry shot is instant and free.
+  const capturePhoto = (view?: string) => {
     const requiredCount = getRequiredPhotoCount();
 
-    if (capturedPhotos.length >= requiredCount) {
-      alert(`You can only capture ${requiredCount} photo(s) for this service type`);
+    if (!retakeTarget && capturedPhotos.length >= requiredCount) {
+      setErrorMessage(`You can only capture ${requiredCount} photo(s) for this service type`);
       return;
     }
 
@@ -451,41 +479,98 @@ const TaskCapture = () => {
         context.drawImage(video, 0, 0);
 
         const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+        const effectiveView = retakeTarget ? retakeTarget.view : view || null;
 
-        try {
-          setIsUploading(true);
-          const file = dataURLtoFile(dataUrl, `capture-${Date.now()}.jpg`);
-          const s3Url = await uploadFileToS3(file);
-
-          const newPhoto: CapturedPhoto = {
-            dataUrl,
-            s3Url,
-            timestamp: new Date(),
-            view: view || null,
-          };
-
-          setCapturedPhotos(prev => [...prev, newPhoto]);
-          if ((needsAutoHoodForm() || needsGymForm()) && capturedPhotos.length + 1 === getRequiredPhotoCount()) {
-            setTimeout(() => {
-              if (needsAutoHoodForm()) {
-                setShowAutoHoodForm(true);
-              } else if (needsGymForm()) {
-                setShowGymForm(true);
-              }
-            }, 500);
-          }
-        } catch (error) {
-          console.error("Error uploading photo:", error);
-          alert("Failed to upload photo. Please try again.");
-        } finally {
-          setIsUploading(false);
-        }
+        setPendingCapture({
+          dataUrl,
+          view: effectiveView,
+          replaceIndex: retakeTarget?.index,
+        });
       }
     }
   };
 
+  // Discards the just-captured frame and returns to the live camera feed —
+  // the stream never stopped, so this is instant with no re-initialization.
+  const retakePendingCapture = () => {
+    setPendingCapture(null);
+  };
+
+  // Uploads the confirmed frame to S3 and commits it into capturedPhotos —
+  // either appended (new photo) or swapped in place (retake of a confirmed one).
+  const confirmPendingCapture = async () => {
+    if (!pendingCapture) return;
+
+    setIsUploading(true);
+    try {
+      const file = dataURLtoFile(pendingCapture.dataUrl, `capture-${Date.now()}.jpg`);
+      const s3Url = await uploadFileToS3(file);
+
+      const newPhoto: CapturedPhoto = {
+        dataUrl: pendingCapture.dataUrl,
+        s3Url,
+        timestamp: new Date(),
+        view: pendingCapture.view,
+      };
+
+      const isReplace = pendingCapture.replaceIndex !== undefined;
+
+      setCapturedPhotos((prev) => {
+        if (isReplace) {
+          const next = [...prev];
+          next[pendingCapture.replaceIndex as number] = newPhoto;
+          return next;
+        }
+        return [...prev, newPhoto];
+      });
+
+      const totalAfter = capturedPhotos.length + 1;
+      setPendingCapture(null);
+      setRetakeTarget(null);
+
+      // Only auto-open the service-specific form the first time all required
+      // photos are gathered — not on a later retake of an already-confirmed one.
+      if (!isReplace && (needsAutoHoodForm() || needsGymForm()) && totalAfter === getRequiredPhotoCount()) {
+        setTimeout(() => {
+          if (needsAutoHoodForm()) {
+            setShowAutoHoodForm(true);
+          } else if (needsGymForm()) {
+            setShowGymForm(true);
+          }
+        }, 500);
+      }
+    } catch (error) {
+      console.error("Error uploading photo:", error);
+      setErrorMessage("Failed to upload photo. Please try again.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const openPhotoViewer = (index: number) => setViewingIndex(index);
+  const closePhotoViewer = () => setViewingIndex(null);
+
+  // Sends the user back to the live camera to reshoot a specific already-
+  // confirmed photo; the next capture will replace that slot instead of
+  // appending, and its original view label (front/side/back) is preserved.
+  const retakeFromViewer = () => {
+    if (viewingIndex === null) return;
+    const photo = capturedPhotos[viewingIndex];
+    setRetakeTarget({ index: viewingIndex, view: photo.view });
+    setViewingIndex(null);
+    if (!isCameraActive) {
+      startCamera();
+    }
+  };
+
+  const cancelRetake = () => setRetakeTarget(null);
+
   const deletePhoto = (index: number) => {
     setCapturedPhotos((prev) => prev.filter((_, i) => i !== index));
+    // Indices shift after a delete, so any in-flight retake/viewer targeting
+    // by index is no longer valid — drop it rather than risk mistargeting.
+    setRetakeTarget(null);
+    setViewingIndex(null);
   };
 
   const handleBack = () => {
@@ -582,6 +667,13 @@ const TaskCapture = () => {
     );
   }
 
+  // Which Auto Hood view still needs a photo, derived from which views are
+  // actually present rather than from array length — so deleting/retaking a
+  // photo out of sequence can never mislabel the remaining ones.
+  const nextAutoHoodView = AUTO_HOOD_VIEWS.find(
+    (v) => !capturedPhotos.some((p) => p.view === v),
+  ) ?? null;
+
   return (
     <div className="task-capture-page">
       <div className="camera-container">
@@ -635,6 +727,21 @@ const TaskCapture = () => {
             </div>
           </div>
 
+          {/* Retake Mode Banner */}
+          {retakeTarget && (
+            <div className="retake-banner">
+              <span>
+                Retaking{" "}
+                {retakeTarget.view
+                  ? AUTO_HOOD_LABELS[retakeTarget.view] ?? retakeTarget.view
+                  : "photo"}
+              </span>
+              <button onClick={cancelRetake} type="button">
+                Cancel
+              </button>
+            </div>
+          )}
+
           {/* Location Status Overlay */}
           {!currentLocation && (
             <div className="location-status-overlay">
@@ -648,8 +755,8 @@ const TaskCapture = () => {
                 {!isCameraLoading && (
                   <button
                     className="refresh-location-btn"
-                    onClick={() => window.location.reload()}
-                    title="Refresh page"
+                    onClick={refreshLocation}
+                    title="Retry location"
                   >
                     <FiRotateCw size={16} />
                   </button>
@@ -685,11 +792,21 @@ const TaskCapture = () => {
             <div className="photo-preview-overlay">
               <div className="photo-preview-grid">
                 {capturedPhotos.map((photo, index) => (
-                  <div key={index} className="photo-preview-item">
+                  <div
+                    key={index}
+                    className="photo-preview-item"
+                    onClick={() => openPhotoViewer(index)}
+                    role="button"
+                    tabIndex={0}
+                    title="Tap to preview"
+                  >
                     <img src={photo.dataUrl} alt={`Captured ${index + 1}`} />
                     <button
                       className="delete-photo-btn"
-                      onClick={() => deletePhoto(index)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deletePhoto(index);
+                      }}
                       title="Delete photo"
                     >
                       <FiX size={16} />
@@ -714,76 +831,38 @@ const TaskCapture = () => {
           {/* Capture Button Overlay */}
           <div className="capture-button-overlay">
             {needsAutoHoodForm() ? (
-              // Auto Hood specific capture buttons - sequential
+              // Auto Hood: one button for whichever view is still missing,
+              // or for reshooting the view targeted by an active retake.
               <div className="auto-hood-capture-buttons">
-                {capturedPhotos.length === 0 && (
+                {(retakeTarget || nextAutoHoodView) && (
                   <button
                     className="view-capture-btn"
-                    onClick={isCameraActive ? () => capturePhoto('front') : toggleCamera}
-                    disabled={isUploading}
+                    onClick={isCameraActive ? () => capturePhoto(retakeTarget ? undefined : nextAutoHoodView!) : toggleCamera}
                   >
                     <div className="capture-btn-inner">
-                      {isUploading ? (
-                        <FiLoader size={32} className="animate-spin" />
-                      ) : isCameraActive ? (
+                      {isCameraActive ? (
                         <div className="capture-circle" />
                       ) : (
                         <FiCamera size={32} />
                       )}
                     </div>
-                    <span className="capture-label">Capture Front View</span>
-                  </button>
-                )}
-
-                {capturedPhotos.length === 1 && (
-                  <button
-                    className="view-capture-btn"
-                    onClick={isCameraActive ? () => capturePhoto('side') : toggleCamera}
-                    disabled={isUploading}
-                  >
-                    <div className="capture-btn-inner">
-                      {isUploading ? (
-                        <FiLoader size={32} className="animate-spin" />
-                      ) : isCameraActive ? (
-                        <div className="capture-circle" />
-                      ) : (
-                        <FiCamera size={32} />
-                      )}
-                    </div>
-                    <span className="capture-label">Capture Side View</span>
-                  </button>
-                )}
-
-                {capturedPhotos.length === 2 && (
-                  <button
-                    className="view-capture-btn"
-                    onClick={isCameraActive ? () => capturePhoto('back') : toggleCamera}
-                    disabled={isUploading}
-                  >
-                    <div className="capture-btn-inner">
-                      {isUploading ? (
-                        <FiLoader size={32} className="animate-spin" />
-                      ) : isCameraActive ? (
-                        <div className="capture-circle" />
-                      ) : (
-                        <FiCamera size={32} />
-                      )}
-                    </div>
-                    <span className="capture-label">Capture Back View</span>
+                    <span className="capture-label">
+                      {retakeTarget
+                        ? `Retake ${retakeTarget.view ? AUTO_HOOD_LABELS[retakeTarget.view] ?? retakeTarget.view : "Photo"}`
+                        : `Capture ${AUTO_HOOD_LABELS[nextAutoHoodView!]}`}
+                    </span>
                   </button>
                 )}
               </div>
             ) : (
               // Generic capture button for other service types
               <button
-                className={`capture-btn ${capturedPhotos.length >= getRequiredPhotoCount() || isUploading ? "disabled" : ""}`}
+                className={`capture-btn ${(!retakeTarget && capturedPhotos.length >= getRequiredPhotoCount()) ? "disabled" : ""}`}
                 onClick={isCameraActive ? () => capturePhoto() : toggleCamera}
-                disabled={capturedPhotos.length >= getRequiredPhotoCount() || isUploading}
+                disabled={!retakeTarget && capturedPhotos.length >= getRequiredPhotoCount()}
               >
                 <div className="capture-btn-inner">
-                  {isUploading ? (
-                    <FiLoader size={32} className="animate-spin" />
-                  ) : isCameraActive ? (
+                  {isCameraActive ? (
                     <div className="capture-circle" />
                   ) : (
                     <FiCamera size={32} />
@@ -792,7 +871,7 @@ const TaskCapture = () => {
               </button>
             )}
 
-            {capturedPhotos.length >= getRequiredPhotoCount() && (
+            {!retakeTarget && capturedPhotos.length >= getRequiredPhotoCount() && (
               <button className="proceed-btn-overlay" onClick={handleProceed}>
                 Proceed
               </button>
@@ -800,6 +879,36 @@ const TaskCapture = () => {
           </div>
         </div>
       </div>
+
+      {/* Pending capture review — must Retake or confirm before it's uploaded */}
+      {pendingCapture && (
+        <PhotoReviewModal
+          imageUrl={pendingCapture.dataUrl}
+          mode="pending"
+          label={pendingCapture.view}
+          isSaving={isUploading}
+          onRetake={retakePendingCapture}
+          onConfirm={confirmPendingCapture}
+        />
+      )}
+
+      {/* Full-size preview of an already-confirmed photo, opened from the thumbnail strip */}
+      {viewingIndex !== null && capturedPhotos[viewingIndex] && (
+        <PhotoReviewModal
+          imageUrl={capturedPhotos[viewingIndex].dataUrl}
+          mode="view"
+          label={capturedPhotos[viewingIndex].view}
+          onRetake={retakeFromViewer}
+          onClose={closePhotoViewer}
+        />
+      )}
+
+      <ErrorModal
+        isOpen={errorMessage !== null}
+        title="Error"
+        message={errorMessage ?? undefined}
+        onClose={() => setErrorMessage(null)}
+      />
 
       {/* Auto Hood Form Popup */}
       {showAutoHoodForm && (

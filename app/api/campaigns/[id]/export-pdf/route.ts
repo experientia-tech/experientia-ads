@@ -4,6 +4,8 @@ import { authorize } from "@/lib/middleware";
 import { ROLES } from "@/lib/roles";
 import { getPresignedGetUrl } from "@/utils/s3";
 import PDFDocument from "pdfkit";
+import fs from "fs";
+import path from "path";
 
 type RequestHandler = (
   request: NextRequest,
@@ -12,50 +14,40 @@ type RequestHandler = (
 
 const campaignService = new CampaignService();
 
-// ─── Colours ─────────────────────────────────────────────────────────────────
+// ─── Colours (Experientia brand) ───────────────────────────────────────────────
 const C = {
   dark:     "#1e293b",
   blue:     "#2563eb",
+  blueDark: "#1d4ed8",
   red:      "#dc2626",
   green:    "#16a34a",
   amber:    "#d97706",
   muted:    "#64748b",
   border:   "#e2e8f0",
-  rowAlt:   "#f8fafc",
+  panel:    "#f8fafc",
   white:    "#ffffff",
-  badge:    "#eff6ff",
-  badgeText:"#1d4ed8",
 };
 
-// ─── Haversine ────────────────────────────────────────────────────────────────
-function haversine(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371000;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+
+function shortReference(id: string) {
+  return id.replace(/-/g, "").slice(0, 8).toUpperCase();
 }
 
-// ─── Draw a filled rect helper ────────────────────────────────────────────────
+// ─── Draw helpers ───────────────────────────────────────────────────────────────
 function fillRect(doc: PDFKit.PDFDocument, x: number, y: number, w: number, h: number, color: string) {
   doc.save().rect(x, y, w, h).fill(color).restore();
 }
 
-// ─── Draw bordered rect helper ────────────────────────────────────────────────
 function strokeRect(doc: PDFKit.PDFDocument, x: number, y: number, w: number, h: number, color: string, lw = 0.5) {
   doc.save().rect(x, y, w, h).lineWidth(lw).strokeColor(color).stroke().restore();
 }
 
-// ─── Text clipped to width ────────────────────────────────────────────────────
 function clampText(text: string, maxLen: number) {
   return text.length > maxLen ? text.slice(0, maxLen - 1) + "…" : text;
 }
 
-// ─── Fetch image buffer helper ────────────────────────────────────────────────
+// ─── Fetch any image (S3/http/data URL) as a Buffer ────────────────────────────
 async function fetchImageBuffer(url: string): Promise<Buffer | null> {
   try {
     if (url.startsWith("data:image/")) {
@@ -73,6 +65,21 @@ async function fetchImageBuffer(url: string): Promise<Buffer | null> {
     console.error(`Failed to fetch image from ${url}:`, error);
     return null;
   }
+}
+
+// ─── Mapbox Static Images helpers ──────────────────────────────────────────────
+function singleMarkerMapUrl(lat: number, lng: number, width: number, height: number): string | null {
+  if (!MAPBOX_TOKEN) return null;
+  const marker = `pin-l+2563eb(${lng},${lat})`;
+  return `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/${marker}/${lng},${lat},14,0/${width}x${height}@2x?access_token=${MAPBOX_TOKEN}`;
+}
+
+function clusterMapUrl(points: { lat: number; lng: number }[], width: number, height: number): string | null {
+  if (!MAPBOX_TOKEN || points.length === 0) return null;
+  // Mapbox overlays have a practical marker cap; 100 keeps the URL well within limits.
+  const capped = points.slice(0, 100);
+  const markers = capped.map((p) => `pin-s+2563eb(${p.lng},${p.lat})`).join(",");
+  return `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/${markers}/auto/${width}x${height}@2x?access_token=${MAPBOX_TOKEN}`;
 }
 
 export const GET: RequestHandler = async (request, { params }) => {
@@ -97,386 +104,304 @@ export const GET: RequestHandler = async (request, { params }) => {
       (a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
-    // ── Format task rows ──────────────────────────────────────────────────────
-    const rows = tasks.map((task: any, i: number) => {
-      const meta     = (task.metadata as any) || {};
-      const loc      = meta.location?.latitude ? meta.location : { latitude: task.latitude, longitude: task.longitude, address: task.address, accuracy: task.accuracy };
-      const prevTask = tasks[i - 1];
+    // Resolve each task's location the same way regardless of where it's stored.
+    const taskLocation = (task: any) => {
+      const meta = (task.metadata as any) || {};
+      return meta.location?.latitude
+        ? meta.location
+        : { latitude: task.latitude, longitude: task.longitude, address: task.address };
+    };
 
-      let distance = "N/A";
-      if (i > 0 && prevTask) {
-        const prevMeta = (prevTask.metadata as any) || {};
-        const prevLoc  = prevMeta.location?.latitude ? prevMeta.location : { latitude: prevTask.latitude, longitude: prevTask.longitude };
-        if (loc.latitude && loc.longitude && prevLoc.latitude && prevLoc.longitude) {
-          const d = haversine(loc.latitude, loc.longitude, prevLoc.latitude, prevLoc.longitude);
-          distance = d >= 1000 ? `${(d / 1000).toFixed(1)} km` : `${Math.round(d)} m`;
-        }
-      } else {
-        distance = loc.accuracy ? `±${Math.round(parseFloat(loc.accuracy))} m` : "N/A";
-      }
-
-      let timeLater = "0s";
-      if (i > 0 && prevTask) {
-        const ms = new Date(task.createdAt).getTime() - new Date(prevTask.createdAt).getTime();
-        timeLater = ms < 60_000 ? `${Math.round(ms / 1_000)}s` : ms < 3_600_000 ? `${Math.round(ms / 60_000)}m` : `${Math.round(ms / 3_600_000)}h`;
-      }
-
-      const inGeo = loc.accuracy !== undefined && loc.accuracy !== null ? parseFloat(loc.accuracy) <= 100 : null;
-
-      return {
-        num:      i + 1,
-        date:     task.createdAt ? new Date(task.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—",
-        time:     task.createdAt ? new Date(task.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }) : "—",
-        executor: task.executor ? `${task.executor.firstName} ${task.executor.lastName}` : "Unknown",
-        location: clampText(loc.address || data.address || "Unknown", 28),
-        distance,
-        timeLater,
-        inGeo,
-        status:   (task.status || "ACCEPTED").toUpperCase(),
-      };
+    // ── Flatten every photo across every task into one page-per-photo list ─────
+    const tasksWithImages = tasks.filter((t: any) => {
+      const meta = (t.metadata as any) || {};
+      return (meta.images || []).length > 0;
     });
 
+    type PhotoEntry = { task: any; buffer: Buffer; view?: string | null };
+    const photoEntries: PhotoEntry[] = [];
+
+    for (const task of tasksWithImages) {
+      const taskMeta = (task.metadata as any) || {};
+      const taskImages = taskMeta.images || [];
+
+      const resolved = await Promise.all(
+        taskImages.map(async (img: any) => {
+          const src =
+            typeof img.url === "string" && img.url.startsWith("http")
+              ? (await getPresignedGetUrl(img.url)) ?? img.url
+              : img.url;
+          const buffer = await fetchImageBuffer(src);
+          return buffer ? { buffer, view: img.view ?? null } : null;
+        })
+      );
+
+      for (const r of resolved) {
+        if (r) photoEntries.push({ task, buffer: r.buffer, view: r.view });
+      }
+    }
+
+    // ── Cover stats ──────────────────────────────────────────────────────────
+    const completedCount = tasks.filter((t: any) => (t.status || "").toUpperCase() === "ACCEPTED").length;
+    const totalTasks     = data.totalTasks || tasks.length || 1;
+    const progress        = Math.round((completedCount / totalTasks) * 100);
+
+    const coverPoints = tasks
+      .map((t) => taskLocation(t))
+      .filter((l) => l.latitude && l.longitude)
+      .map((l) => ({ lat: Number(l.latitude), lng: Number(l.longitude) }));
+
     // ── PDF setup ─────────────────────────────────────────────────────────────
-    const ML = 40;          // margin left
-    const MR = 40;          // margin right
-    const MT = 40;          // margin top
-    const doc = new PDFDocument({ size: "A4", margin: 0, compress: true, autoFirstPage: true });
+    const ML = 40;
+    const MR = 40;
+    const MT = 40;
+    const doc = new PDFDocument({ size: "A4", margin: 0, compress: true, autoFirstPage: false });
     const chunks: Buffer[] = [];
     doc.on("data", (c: Buffer) => chunks.push(c));
 
-    const PW = doc.page.width;   // 595.28
-    const PH = doc.page.height;  // 841.89
-    const CW = PW - ML - MR;     // content width
+    // A4 in points — fixed, so these are safe to read before any page exists
+    // (autoFirstPage is off; doc.page is null until the first addPage()).
+    const PW = 595.28;
+    const PH = 841.89;
+    const CW = PW - ML - MR;
 
-    // ── Helper: draw page footer ──────────────────────────────────────────────
-    const drawFooter = () => {
-      const fy = PH - 28;
-      doc.save()
-        .moveTo(ML, fy)
-        .lineTo(PW - MR, fy)
-        .lineWidth(0.5)
-        .strokeColor(C.border)
-        .stroke()
-        .restore();
-      doc.save()
-        .fill(C.muted)
-        .fontSize(7)
-        .font("Helvetica")
-        .text("Experientia by Dealberg", ML, fy + 6, { width: CW / 2 })
-        .text(`Campaign ID: ${id}`, ML, fy + 6, { width: CW, align: "right" })
-        .restore();
+    const BAR_H = 6;
+
+    const drawBars = () => {
+      fillRect(doc, 0, 0, PW, BAR_H, C.blue);
+      fillRect(doc, 0, PH - BAR_H, PW, BAR_H, C.blue);
     };
 
+    const logoPath = path.join(process.cwd(), "public", "experientia.png");
+    const logoBuffer = fs.existsSync(logoPath) ? fs.readFileSync(logoPath) : null;
+
     // ═══════════════════════════════════════════════════════════════════════════
-    // PAGE 1 — COVER + STATS + TABLE START
+    // COVER PAGE
     // ═══════════════════════════════════════════════════════════════════════════
+    doc.addPage({ size: "A4", margin: 0 });
+    drawBars();
 
-    // ── Header band ───────────────────────────────────────────────────────────
-    fillRect(doc, 0, 0, PW, 72, C.dark);
+    let curY = 28;
 
-    doc.save()
-      .fill(C.white)
-      .fontSize(20)
-      .font("Helvetica-Bold")
-      .text("EXPERIENTIA", ML, 18, { width: CW / 2 })
-      .restore();
-
-    doc.save()
-      .fill("#94a3b8")
-      .fontSize(9)
-      .font("Helvetica")
-      .text("Campaign Task Report", ML, 44, { width: CW / 2 })
-      .restore();
+    if (logoBuffer) {
+      doc.image(logoBuffer, ML, curY, { fit: [110, 32] });
+    } else {
+      doc.save().fill(C.dark).fontSize(16).font("Helvetica-Bold").text("EXPERIENTIA", ML, curY).restore();
+    }
 
     const genDate = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
     doc.save()
-      .fill("#94a3b8")
+      .fill(C.muted)
       .fontSize(9)
       .font("Helvetica")
-      .text(`Generated: ${genDate}`, ML, 44, { width: CW, align: "right" })
+      .text(`Report generated on ${genDate}`, ML, curY + 10, { width: CW, align: "right" })
       .restore();
 
-    // ── Campaign name ─────────────────────────────────────────────────────────
-    let curY = 90;
+    curY += 46;
+    doc.save().moveTo(ML, curY).lineTo(PW - MR, curY).lineWidth(1).strokeColor(C.blue).stroke().restore();
 
+    curY += 70;
     doc.save()
       .fill(C.dark)
-      .fontSize(17)
+      .fontSize(30)
       .font("Helvetica-Bold")
-      .text(data.name || "Untitled Campaign", ML, curY, { width: CW })
+      .text(data.name || "Untitled Campaign", ML, curY, { width: CW, align: "center" })
       .restore();
 
-    curY += 26;
+    curY = doc.y + 30;
 
-    // Service type badge
-    const badgeLabel = (data.serviceType || "Campaign").toUpperCase();
-    const badgeW     = 7 * badgeLabel.length + 16;
-    fillRect(doc, ML, curY, badgeW, 16, C.blue);
-    doc.save()
-      .fill(C.white)
-      .fontSize(7)
-      .font("Helvetica-Bold")
-      .text(badgeLabel, ML + 6, curY + 5, { width: badgeW - 10 })
-      .restore();
+    // Cover map (all task locations)
+    const coverMapW = CW;
+    const coverMapH = 260;
+    const coverMapUrl = clusterMapUrl(coverPoints, Math.round(coverMapW), Math.round(coverMapH));
+    const coverMapBuffer = coverMapUrl ? await fetchImageBuffer(coverMapUrl) : null;
 
-    curY += 26;
-
-    // Meta row (Status · Address · Dates)
-    const metaItems = [
-      { label: "STATUS",   value: (data.status || "ACTIVE").toUpperCase() },
-      { label: "TOTAL",    value: `${tasks.length} / ${data.totalTasks || tasks.length} tasks` },
-      { label: "LOCATION", value: clampText(data.address || "N/A", 40) },
-    ];
-    const colW3 = CW / metaItems.length;
-    metaItems.forEach((item, i) => {
-      const x = ML + i * colW3;
-      doc.save().fill(C.muted).fontSize(7).font("Helvetica-Bold").text(item.label, x, curY, { width: colW3 - 8 }).restore();
-      doc.save().fill(C.dark).fontSize(9).font("Helvetica").text(item.value, x, curY + 10, { width: colW3 - 8 }).restore();
-    });
-
-    curY += 30;
-
-    // Divider
-    doc.save().moveTo(ML, curY).lineTo(PW - MR, curY).lineWidth(0.5).strokeColor(C.border).stroke().restore();
-    curY += 14;
-
-    // ── Summary cards ─────────────────────────────────────────────────────────
-    const completedCount = tasks.filter((t: any) => (t.status || "").toUpperCase() === "ACCEPTED").length;
-    const totalTasks     = data.totalTasks || tasks.length || 1;
-    const progress       = Math.round((completedCount / totalTasks) * 100);
-
-    const cards = [
-      { label: "Total Tasks",  value: String(totalTasks),                  accent: C.blue  },
-      { label: "Accepted",     value: String(completedCount),              accent: C.green },
-      { label: "Remaining",    value: String(totalTasks - completedCount), accent: C.amber },
-      { label: "Progress",     value: `${progress}%`,                     accent: C.blue  },
-    ];
-
-    const cardGap = 8;
-    const cardW   = (CW - cardGap * (cards.length - 1)) / cards.length;
-    const cardH   = 50;
-
-    cards.forEach((card, i) => {
-      const cx = ML + i * (cardW + cardGap);
-      fillRect(doc, cx, curY, cardW, cardH, "#f1f5f9");
-      fillRect(doc, cx, curY, 3, cardH, card.accent);
-      doc.save().fill(C.muted).fontSize(7).font("Helvetica-Bold").text(card.label.toUpperCase(), cx + 10, curY + 9, { width: cardW - 14 }).restore();
-      doc.save().fill(C.dark).fontSize(19).font("Helvetica-Bold").text(card.value, cx + 10, curY + 21, { width: cardW - 14 }).restore();
-    });
-
-    curY += cardH + 18;
-
-    // ── Table header ──────────────────────────────────────────────────────────
-    doc.save()
-      .fill(C.dark)
-      .fontSize(10)
-      .font("Helvetica-Bold")
-      .text("Task Details", ML, curY)
-      .restore();
-
-    curY += 14;
-
-    // Column config: [label, width, align]
-    // Note: Helvetica (WinAnsi) does not support Unicode outside Latin-1; avoid symbols like Δ
-    const cols: [string, number, "left" | "center" | "right"][] = [
-      ["#",        20,  "center"],
-      ["Date",     62,  "left"],
-      ["Time",     48,  "left"],
-      ["Executor", 90,  "left"],
-      ["Location", 145, "left"],
-      ["Distance", 60,  "left"],
-      ["Lag",      40,  "left"],
-      ["Status",   50,  "center"],
-    ];
-
-    // derive x offsets
-    const colX: number[] = [];
-    cols.reduce((acc, [, w]) => { colX.push(acc); return acc + w; }, ML);
-
-    const ROW_H     = 24;
-    const HEADER_H  = 16;
-    const FOOT_H    = 36;          // footer reserve
-
-    const drawTableHeader = (y: number) => {
-      fillRect(doc, ML, y, CW, HEADER_H, C.dark);
-      cols.forEach(([label, w, align], i) => {
-        doc.save()
-          .fill(C.white)
-          .fontSize(7)
-          .font("Helvetica-Bold")
-          .text(label, colX[i] + 3, y + 5, { width: w - 6, align })
-          .restore();
-      });
-    };
-
-    drawTableHeader(curY);
-    curY += HEADER_H;
-
-    // ── Table rows ────────────────────────────────────────────────────────────
-    rows.forEach((row, ri) => {
-      // Page break
-      if (curY + ROW_H + FOOT_H > PH) {
-        drawFooter();
-        doc.addPage({ size: "A4", margin: 0 });
-        curY = MT;
-        drawTableHeader(curY);
-        curY += HEADER_H;
-      }
-
-      // Row bg
-      fillRect(doc, ML, curY, CW, ROW_H, ri % 2 === 0 ? C.white : C.rowAlt);
-      strokeRect(doc, ML, curY, CW, ROW_H, C.border, 0.3);
-
-      const statusColor = row.status === "ACCEPTED" ? C.green : row.status === "REJECTED" ? C.red : C.muted;
-      const inGeoStr    = row.inGeo === null ? "—" : row.inGeo ? "✓" : "✗";
-      const inGeoCol    = row.inGeo === null ? C.muted : row.inGeo ? C.green : C.red;
-
-      const cells = [
-        { text: String(row.num),  color: C.muted,       align: "center" as const },
-        { text: row.date,          color: C.dark,         align: "left"   as const },
-        { text: row.time,          color: C.dark,         align: "left"   as const },
-        { text: clampText(row.executor, 18), color: C.dark, align: "left" as const },
-        { text: row.location,      color: C.muted,        align: "left"  as const },
-        { text: row.distance,      color: C.muted,        align: "left"  as const },
-        { text: row.timeLater,     color: C.muted,        align: "left"  as const },
-        { text: row.status,        color: statusColor,    align: "center" as const },
-      ];
-
-      cells.forEach((cell, ci) => {
-        const [, w, ] = cols[ci];
-        doc.save()
-          .fill(cell.color)
-          .fontSize(7)
-          .font("Helvetica")
-          .text(cell.text, colX[ci] + 3, curY + 7, { width: w - 6, align: cell.align, lineBreak: false })
-          .restore();
-      });
-
-      curY += ROW_H;
-    });
-
-    if (rows.length === 0) {
-      doc.save().fill(C.muted).fontSize(10).font("Helvetica")
-        .text("No tasks found for this campaign.", ML, curY + 10)
+    if (coverMapBuffer) {
+      doc.save().roundedRect(ML, curY, coverMapW, coverMapH, 10).clip();
+      doc.image(coverMapBuffer, ML, curY, { width: coverMapW, height: coverMapH });
+      doc.restore();
+      strokeRect(doc, ML, curY, coverMapW, coverMapH, C.border, 0.5);
+    } else {
+      fillRect(doc, ML, curY, coverMapW, coverMapH, C.panel);
+      strokeRect(doc, ML, curY, coverMapW, coverMapH, C.border, 0.5);
+      doc.save().fill(C.muted).fontSize(9).font("Helvetica")
+        .text("Map unavailable", ML, curY + coverMapH / 2 - 5, { width: coverMapW, align: "center" })
         .restore();
-      curY += 30;
     }
 
-    drawFooter();
+    curY += coverMapH + 24;
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // EVIDENCE GALLERY
-    // ═══════════════════════════════════════════════════════════════════════════
-    const tasksWithImages = tasks.filter((t: any) => {
-      const meta = (t.metadata as any) || {};
-      const imgs = meta.images || [];
-      return imgs.length > 0;
-    });
+    // Stat cards
+    const statCards = [
+      { label: "Service Type", value: data.serviceType || "Campaign" },
+      { label: "Locations",    value: String(totalTasks) },
+      { label: "Verified",     value: String(completedCount) },
+      { label: "Completion",   value: `${progress}%` },
+    ];
 
-    if (tasksWithImages.length > 0) {
-      doc.addPage({ size: "A4", margin: 0 });
-      curY = MT;
+    const cardGap = 12;
+    const cardW   = (CW - cardGap * (statCards.length - 1)) / statCards.length;
+    const cardH   = 78;
 
+    statCards.forEach((card, i) => {
+      const cx = ML + i * (cardW + cardGap);
+      fillRect(doc, cx, curY, cardW, cardH, C.panel);
+      strokeRect(doc, cx, curY, cardW, cardH, C.border, 0.5);
       doc.save()
         .fill(C.dark)
-        .fontSize(14)
+        .fontSize(15)
         .font("Helvetica-Bold")
-        .text("Task Evidence Gallery", ML, curY)
+        .text(clampText(card.value, 16), cx + 6, curY + 22, { width: cardW - 12, align: "center" })
         .restore();
-      curY += 24;
+      doc.save()
+        .fill(C.red)
+        .fontSize(8)
+        .font("Helvetica-Bold")
+        .text(card.label, cx + 6, curY + 48, { width: cardW - 12, align: "center" })
+        .restore();
+    });
 
-      for (let i = 0; i < tasksWithImages.length; i++) {
-        const task = tasksWithImages[i];
-        const taskImages = (task.metadata as any).images || [];
-        
-        // Fetch valid image buffers. S3 objects are private, so presign the URL
-        // before fetching; leave data: URLs and non-S3 URLs untouched.
-        const imageBuffers = await Promise.all(
-          taskImages.map(async (img: any) => {
-            const src =
-              typeof img.url === "string" && img.url.startsWith("http")
-                ? (await getPresignedGetUrl(img.url)) ?? img.url
-                : img.url;
-            return fetchImageBuffer(src);
-          })
-        );
-        const validImages = imageBuffers.filter((buf): buf is Buffer => buf !== null);
-        if (validImages.length === 0) continue;
+    // ═══════════════════════════════════════════════════════════════════════════
+    // ONE PAGE PER PHOTO
+    // ═══════════════════════════════════════════════════════════════════════════
+    const totalPhotoPages = photoEntries.length;
 
-        // Calculate rows
-        const imageRows = Math.ceil(validImages.length / 2);
-        const taskHeaderHeight = task.notes ? 40 : 28;
-        const rowHeight = 155;
-        const spacing = 15;
-        const requiredHeight = taskHeaderHeight + (rowHeight * imageRows) + (spacing * (imageRows - 1)) + 30;
+    for (let i = 0; i < photoEntries.length; i++) {
+      const { task, buffer, view } = photoEntries[i];
+      doc.addPage({ size: "A4", margin: 0 });
+      drawBars();
 
-        if (curY + requiredHeight > PH - 40) {
-          drawFooter();
-          doc.addPage({ size: "A4", margin: 0 });
-          curY = MT;
-        }
+      let py = 24;
 
-        // Draw task header
-        const execName = task.executor ? `${task.executor.firstName} ${task.executor.lastName}` : "Unknown";
-        const taskDate = task.createdAt ? new Date(task.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
-        const taskTime = task.createdAt ? new Date(task.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }) : "—";
-        const loc = (task.metadata as any)?.location?.address || task.address || "Unknown Location";
-        const originalIndex = tasks.indexOf(task) + 1;
+      if (logoBuffer) {
+        doc.image(logoBuffer, ML, py, { fit: [70, 20] });
+      }
 
-        doc.save()
-          .fill(C.dark)
-          .fontSize(10)
-          .font("Helvetica-Bold")
-          .text(`Task #${originalIndex} — Submitted by ${execName}`, ML, curY)
+      const headerRight = `${clampText(data.name || "Campaign", 40)}   •   ${data.serviceType || "Campaign"}   •   ${i + 1}/${totalPhotoPages}`;
+      doc.save()
+        .fill(C.muted)
+        .fontSize(8)
+        .font("Helvetica")
+        .text(headerRight, ML, py + 5, { width: CW, align: "right" })
+        .restore();
+
+      py += 32;
+      doc.save().moveTo(ML, py).lineTo(PW - MR, py).lineWidth(0.5).strokeColor(C.border).stroke().restore();
+      py += 20;
+
+      const colGap   = 24;
+      const leftW    = CW * 0.44;
+      const rightW   = CW - leftW - colGap;
+      const rightX   = ML + leftW + colGap;
+      const bodyH    = PH - py - 40;
+
+      // Photo (left column)
+      fillRect(doc, ML, py, leftW, bodyH, "#0f172a");
+      try {
+        doc.image(buffer, ML, py, { fit: [leftW, bodyH], align: "center", valign: "center" });
+      } catch (imgErr) {
+        console.error("Failed to render image in PDF:", imgErr);
+        doc.save().fill(C.muted).fontSize(9).font("Helvetica")
+          .text("Image rendering failed", ML, py + bodyH / 2 - 5, { width: leftW, align: "center" })
           .restore();
+      }
+      strokeRect(doc, ML, py, leftW, bodyH, C.border, 0.5);
 
-        doc.save()
-          .fill(C.muted)
-          .fontSize(8)
-          .font("Helvetica")
-          .text(`Date/Time: ${taskDate} at ${taskTime}  |  Location: ${clampText(loc, 60)}`, ML, curY + 13)
-          .restore();
+      // Details (right column)
+      let ry = py;
+      const loc = taskLocation(task);
+      const completedDate = task.completedAt || task.createdAt;
 
-        if (task.notes) {
-          doc.save()
-            .fill(C.muted)
-            .fontSize(8)
-            .font("Helvetica-Oblique")
-            .text(`Description: "${task.notes}"`, ML, curY + 25)
+      doc.save().fill(C.muted).fontSize(8).font("Helvetica-Bold").text("COMPLETED", rightX, ry).restore();
+      doc.save().fill(C.muted).fontSize(8).font("Helvetica-Bold")
+        .text("REFERENCE", rightX, ry, { width: rightW, align: "right" }).restore();
+      ry += 12;
+      doc.save().fill(C.dark).fontSize(13).font("Helvetica-Bold")
+        .text(completedDate ? new Date(completedDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—", rightX, ry)
+        .restore();
+      doc.save().fill(C.dark).fontSize(13).font("Helvetica-Bold")
+        .text(shortReference(task.id), rightX, ry, { width: rightW, align: "right" })
+        .restore();
+
+      ry += 24;
+      doc.save().moveTo(rightX, ry).lineTo(rightX + rightW, ry).lineWidth(0.5).strokeColor(C.border).stroke().restore();
+      ry += 16;
+
+      if (view) {
+        doc.save().fill(C.blue).fontSize(7).font("Helvetica-Bold")
+          .text(String(view).toUpperCase(), rightX, ry).restore();
+        ry += 14;
+      }
+
+      doc.save().fill(C.muted).fontSize(8).font("Helvetica-Bold").text("LOCATION", rightX, ry).restore();
+      ry += 12;
+      doc.save().fill(C.dark).fontSize(10).font("Helvetica")
+        .text(loc.address || data.address || "Unknown location", rightX, ry, { width: rightW })
+        .restore();
+      ry = doc.y + 12;
+
+      // Mini map
+      const miniMapW = rightW;
+      const miniMapH = 180;
+      if (loc.latitude && loc.longitude) {
+        const mapUrl = singleMarkerMapUrl(Number(loc.latitude), Number(loc.longitude), Math.round(miniMapW), Math.round(miniMapH));
+        const mapBuffer = mapUrl ? await fetchImageBuffer(mapUrl) : null;
+
+        if (mapBuffer) {
+          doc.save().roundedRect(rightX, ry, miniMapW, miniMapH, 8).clip();
+          doc.image(mapBuffer, rightX, ry, { width: miniMapW, height: miniMapH });
+          doc.restore();
+          strokeRect(doc, rightX, ry, miniMapW, miniMapH, C.border, 0.5);
+        } else {
+          fillRect(doc, rightX, ry, miniMapW, miniMapH, C.panel);
+          strokeRect(doc, rightX, ry, miniMapW, miniMapH, C.border, 0.5);
+          doc.save().fill(C.muted).fontSize(8).font("Helvetica")
+            .text(`${Number(loc.latitude).toFixed(6)}, ${Number(loc.longitude).toFixed(6)}`, rightX, ry + miniMapH / 2 - 4, { width: miniMapW, align: "center" })
             .restore();
         }
+        ry += miniMapH + 16;
 
-        curY += taskHeaderHeight;
-
-        // Render images
-        for (let j = 0; j < validImages.length; j++) {
-          const row = Math.floor(j / 2);
-          const col = j % 2;
-          const imgX = ML + col * (240 + 35);
-          const imgY = curY + row * (rowHeight + spacing);
-
-          try {
-            doc.image(validImages[j], imgX, imgY, { width: 240, height: rowHeight, fit: [240, rowHeight] });
-            
-            // Draw a border around the image
-            strokeRect(doc, imgX, imgY, 240, rowHeight, C.border, 0.5);
-          } catch (imgErr) {
-            console.error("Failed to render image in PDF:", imgErr);
-            fillRect(doc, imgX, imgY, 240, rowHeight, "#f1f5f9");
-            strokeRect(doc, imgX, imgY, 240, rowHeight, C.border, 0.5);
-            doc.save()
-              .fill(C.muted)
-              .fontSize(8)
-              .font("Helvetica")
-              .text("Image rendering failed", imgX + 10, imgY + rowHeight / 2 - 4, { width: 220, align: "center" })
-              .restore();
-          }
-        }
-
-        curY += (rowHeight * imageRows) + (spacing * (imageRows - 1)) + 30;
+        // "Open in Google Maps" button (clickable link)
+        const btnH = 30;
+        fillRect(doc, rightX, ry, miniMapW, btnH, C.blue);
+        doc.save().fill(C.white).fontSize(10).font("Helvetica-Bold")
+          .text("Open in Google Maps", rightX, ry + 10, { width: miniMapW, align: "center" })
+          .restore();
+        doc.link(rightX, ry, miniMapW, btnH, `https://www.google.com/maps/search/?api=1&query=${loc.latitude},${loc.longitude}`);
       }
-      drawFooter();
     }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // THANK YOU PAGE
+    // ═══════════════════════════════════════════════════════════════════════════
+    doc.addPage({ size: "A4", margin: 0 });
+    drawBars();
+
+    let ty = 140;
+    doc.save().fill(C.dark).fontSize(40).font("Helvetica-Bold")
+      .text("Thank You", ML, ty, { width: CW, align: "center" }).restore();
+
+    ty += 60;
+    doc.save().fill(C.muted).fontSize(11).font("Helvetica")
+      .text("This report was prepared for", ML, ty, { width: CW, align: "center" }).restore();
+
+    ty += 18;
+    doc.save().fill(C.dark).fontSize(16).font("Helvetica-Bold")
+      .text(data.name || "Untitled Campaign", ML, ty, { width: CW, align: "center" }).restore();
+
+    ty += 60;
+    if (logoBuffer) {
+      const logoW = 140;
+      doc.image(logoBuffer, ML + CW / 2 - logoW / 2, ty, { fit: [logoW, 40] });
+      ty += 60;
+    }
+
+    doc.save().moveTo(ML, ty).lineTo(PW - MR, ty).lineWidth(0.5).strokeColor(C.border).stroke().restore();
+    ty += 16;
+
+    doc.save().fill(C.muted).fontSize(9).font("Helvetica")
+      .text("Powered by Experientia — field campaign reporting & monitoring", ML, ty, { width: CW, align: "center" })
+      .restore();
 
     doc.end();
 

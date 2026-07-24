@@ -205,7 +205,7 @@ const TaskDetail = ({ task, onClose, onStatusUpdate }: TaskDetailProps) => {
                 alt={`Task image ${currentImageIndex + 1}`}
                 className={styles.taskImage}
               />
-              <button 
+              <button
                 className={styles.deletePhotoBtn}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -217,6 +217,20 @@ const TaskDetail = ({ task, onClose, onStatusUpdate }: TaskDetailProps) => {
               >
                 <FiTrash2 size={16} />
               </button>
+
+              {typeof task.latitude === 'number' && typeof task.longitude === 'number' && (
+                <div className={styles.locationStamp}>
+                  <FiMapPin size={14} className={styles.locationStampIcon} />
+                  <div className={styles.locationStampText}>
+                    <span className={styles.locationStampCoords}>
+                      {task.latitude.toFixed(6)}, {task.longitude.toFixed(6)}
+                    </span>
+                    {task.location && (
+                      <span className={styles.locationStampAddress}>{task.location}</span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
             
             <div className={styles.imageNavigation}>

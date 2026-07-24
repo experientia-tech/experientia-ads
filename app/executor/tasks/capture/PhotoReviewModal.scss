@@ -1,0 +1,128 @@
+.photo-review-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  animation: photoReviewFadeIn 0.15s ease-out;
+
+  .photo-review-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    min-height: 24px;
+    padding: 20px;
+
+    .photo-review-label {
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      margin-right: auto;
+    }
+
+    .photo-review-close {
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: background 0.2s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.25);
+      }
+    }
+  }
+
+  .photo-review-image-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 0 12px;
+
+    .photo-review-image {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+  }
+
+  .photo-review-actions {
+    display: flex;
+    gap: 12px;
+    padding: 20px;
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+
+    .photo-review-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: none;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &.retake {
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+
+        &:hover:not(:disabled) {
+          background: rgba(255, 255, 255, 0.25);
+        }
+      }
+
+      &.confirm {
+        background: linear-gradient(135deg, #4caf50, #45a049);
+        color: white;
+        box-shadow: 0 4px 16px rgba(76, 175, 80, 0.4);
+
+        &:hover:not(:disabled) {
+          transform: translateY(-1px);
+        }
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .photo-review-spin {
+        animation: photoReviewSpin 1s linear infinite;
+      }
+    }
+  }
+}
+
+@keyframes photoReviewFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes photoReviewSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
