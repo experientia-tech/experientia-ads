@@ -5,7 +5,6 @@ import { ROLES } from "@/lib/roles";
 import { getPresignedGetUrl, uploadStreamToS3 } from "@/utils/s3";
 import PDFDocument from "pdfkit";
 import fs from "fs";
-import path from "path";
 import { PassThrough } from "stream";
 
 type RequestHandler = (
@@ -49,14 +48,15 @@ function clampText(text: string, maxLen: number) {
 }
 
 // ─── Fetch any image (S3/http/data URL) as a Buffer ────────────────────────────
-async function fetchImageBuffer(url: string): Promise<Buffer | null> {
+async function fetchImageBuffer(url: string, timeoutMs = 15000): Promise<Buffer | null> {
   try {
+    if (!url) return null;
     if (url.startsWith("data:image/")) {
       const base64Data = url.split(",")[1];
       return Buffer.from(base64Data, "base64");
     }
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
     const res = await fetch(url, { signal: controller.signal });
     clearTimeout(timeoutId);
     if (!res.ok) return null;
@@ -170,7 +170,6 @@ export const GET: RequestHandler = async (request, { params }) => {
     // ── PDF setup ─────────────────────────────────────────────────────────────
     const ML = 40;
     const MR = 40;
-    const MT = 40;
     const doc = new PDFDocument({ size: "A4", margin: 0, compress: true, autoFirstPage: false });
 
     // Stream pages straight to S3 as pdfkit produces them instead of buffering
@@ -209,8 +208,17 @@ export const GET: RequestHandler = async (request, { params }) => {
       fillRect(doc, 0, PH - BAR_H, PW, BAR_H, C.blue);
     };
 
-    const logoPath = path.join(process.cwd(), "public", "experientia.png");
-    const logoBuffer = fs.existsSync(logoPath) ? fs.readFileSync(logoPath) : null;
+    // Fetch logo from campaign or use a fallback — never try to read from
+    // the local filesystem in Lambda, where public/ doesn't exist.
+    let logoBuffer: Buffer | null = null;
+    if (data.logo) {
+      logoBuffer = await fetchImageBuffer(data.logo, 10000);
+    }
+    // Fallback: attempt to fetch Experientia logo from public URL if campaign has none
+    if (!logoBuffer) {
+      const fallbackLogoUrl = "https://experientia-ads.vercel.app/experientia.png";
+      logoBuffer = await fetchImageBuffer(fallbackLogoUrl, 10000);
+    }
 
     // ═══════════════════════════════════════════════════════════════════════════
     // COVER PAGE
@@ -318,20 +326,43 @@ export const GET: RequestHandler = async (request, { params }) => {
     // ═══════════════════════════════════════════════════════════════════════════
     const totalPhotoPages = photoEntries.length;
 
-    // Prefetch every mini-map concurrently — doing this one Mapbox call per
-    // loop iteration (blocking) was the other major source of serial latency.
+    // Prefetch every mini-map concurrently and deduplicate by location to
+    // avoid redundant Mapbox API calls for nearby/same locations.
     const miniMapW = CW - CW * 0.44 - 24;
     const miniMapH = 180;
     const __tMiniMaps = __t0();
-    const miniMapBuffers = await Promise.all(
-      photoEntries.map(({ task }) => {
-        const loc = taskLocation(task);
-        if (!loc.latitude || !loc.longitude) return Promise.resolve(null);
-        const mapUrl = singleMarkerMapUrl(Number(loc.latitude), Number(loc.longitude), Math.round(miniMapW), Math.round(miniMapH));
-        return mapUrl ? fetchImageBuffer(mapUrl) : Promise.resolve(null);
+
+    // Deduplicate by lat/lng to avoid redundant Mapbox calls
+    const locationToBuffer = new Map<string, Buffer | null>();
+    const uniqueLocations = new Map<string, { lat: number; lng: number }>();
+    for (const { task } of photoEntries) {
+      const loc = taskLocation(task);
+      if (loc.latitude && loc.longitude) {
+        const key = `${loc.latitude}|${loc.longitude}`;
+        if (!uniqueLocations.has(key)) {
+          uniqueLocations.set(key, { lat: Number(loc.latitude), lng: Number(loc.longitude) });
+        }
+      }
+    }
+
+    // Fetch Mapbox images for unique locations only
+    await Promise.all(
+      Array.from(uniqueLocations.entries()).map(async ([key, loc]) => {
+        const mapUrl = singleMarkerMapUrl(loc.lat, loc.lng, Math.round(miniMapW), Math.round(miniMapH));
+        const buffer = mapUrl ? await fetchImageBuffer(mapUrl, 20000) : null;
+        locationToBuffer.set(key, buffer);
       })
     );
-    __log("mini map fetch (parallel)", __tMiniMaps);
+
+    // Reuse cached buffers for all photo entries
+    const miniMapBuffers = photoEntries.map(({ task }) => {
+      const loc = taskLocation(task);
+      if (!loc.latitude || !loc.longitude) return null;
+      const key = `${loc.latitude}|${loc.longitude}`;
+      return locationToBuffer.get(key) || null;
+    });
+
+    __log("mini map fetch (parallel, deduplicated)", __tMiniMaps);
 
     for (let i = 0; i < photoEntries.length; i++) {
       const { task, buffer, view } = photoEntries[i];
@@ -504,9 +535,14 @@ export const GET: RequestHandler = async (request, { params }) => {
 
     return NextResponse.json({ success: true, url: downloadUrl, filename });
   } catch (error) {
-    console.error("Error generating PDF:", error);
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error("Error generating PDF:", errorMsg, error);
     return NextResponse.json(
-      { success: false, message: error instanceof Error ? error.message : "Failed to generate PDF" },
+      {
+        success: false,
+        message: `PDF generation failed: ${errorMsg}`,
+        error: process.env.NODE_ENV === "development" ? String(error) : undefined,
+      },
       { status: 500 }
     );
   }

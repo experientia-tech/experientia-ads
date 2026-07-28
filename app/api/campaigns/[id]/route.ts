@@ -6,6 +6,24 @@ import { authorize } from '@/lib/middleware';
 import { ROLES } from '@/lib/roles';
 import { getPresignedGetUrl } from '@/utils/s3';
 
+// In-memory cache for presigned URLs to avoid regenerating them on every request.
+// Each entry caches for 1 hour (presigned URLs are valid for 1 hour by default).
+const presignedUrlCache = new Map<string, { url: string; expiresAt: number }>();
+
+async function getCachedPresignedUrl(s3Key: string): Promise<string | null> {
+  const cached = presignedUrlCache.get(s3Key);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.url;
+  }
+  presignedUrlCache.delete(s3Key);
+
+  const url = await getPresignedGetUrl(s3Key, 3600);
+  if (url) {
+    presignedUrlCache.set(s3Key, { url, expiresAt: Date.now() + 3600000 });
+  }
+  return url;
+}
+
 // Task image URLs are stored as permanent (private) S3 URLs. Add a short-lived
 // presigned `signedUrl` to each image for display, while leaving the original
 // `url` intact so the client can still round-trip it back on save.
@@ -19,7 +37,7 @@ async function signTaskImageUrls(data: any): Promise<void> {
       await Promise.all(
         images.map(async (image: any) => {
           if (image?.url) {
-            image.signedUrl = (await getPresignedGetUrl(image.url)) ?? image.url;
+            image.signedUrl = (await getCachedPresignedUrl(image.url)) ?? image.url;
           }
         }),
       );
