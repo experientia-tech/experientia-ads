@@ -84,7 +84,13 @@ function clusterMapUrl(points: { lat: number; lng: number }[], width: number, he
 }
 
 const __t0 = () => Date.now();
-const __log = (label: string, start: number) => fs.appendFileSync("/tmp/pdf-timing.log", `${label}: ${Date.now() - start}ms\n`);
+const __log = (label: string, start: number) => {
+  try {
+    fs.appendFileSync("/tmp/pdf-timing.log", `${label}: ${Date.now() - start}ms\n`);
+  } catch {
+    // Silently ignore logging errors — don't crash the PDF generation
+  }
+};
 
 export const GET: RequestHandler = async (request, { params }) => {
   const __reqStart = __t0();
