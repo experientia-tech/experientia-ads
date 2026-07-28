@@ -29,7 +29,33 @@ export default $config({
     const mapboxToken = new sst.Secret("MapboxToken");
     const s3BucketName = new sst.Secret("S3BucketName");
 
-    new sst.aws.Nextjs("Web", {
+    // PDF Processor Lambda Function
+    const pdfProcessor = new sst.aws.Function("PdfProcessor", {
+      handler: "app/api/lambda/process-pdf/index.handler",
+      timeout: "300 seconds", // 5 minutes for PDF generation
+      memory: "2048 MB",
+      environment: {
+        DATABASE_URL: databaseUrl.value,
+        REGION_AWS: "ap-south-1",
+        S3_BUCKET_NAME: s3BucketName.value,
+        NEXT_PUBLIC_MAPBOX_TOKEN: mapboxToken.value,
+      },
+      permissions: [
+        {
+          actions: ["s3:PutObject", "s3:GetObject"],
+          resources: [
+            $interpolate`arn:aws:s3:::${s3BucketName.value}`,
+            $interpolate`arn:aws:s3:::${s3BucketName.value}/*`,
+          ],
+        },
+        {
+          actions: ["ses:SendEmail"],
+          resources: ["*"],
+        },
+      ],
+    });
+
+    const web = new sst.aws.Nextjs("Web", {
       // Injected as Lambda env vars AND made available during `next build`
       // (NEXT_PUBLIC_* must exist at build time to be baked into the client bundle).
       environment: {
@@ -39,6 +65,7 @@ export default $config({
         REGION_AWS: "ap-south-1",
         S3_BUCKET_NAME: s3BucketName.value,
         NEXT_PUBLIC_MAPBOX_TOKEN: mapboxToken.value,
+        PDF_PROCESSOR_FUNCTION_NAME: pdfProcessor.name,
       },
       // PDF export fans out many S3/Mapbox fetches per request; the default
       // 20s Lambda timeout was getting hit before larger campaigns finished,
@@ -47,8 +74,8 @@ export default $config({
       server: {
         timeout: "60 seconds",
       },
-      // Grant the server Lambda's execution role access to the uploads bucket so
-      // we don't ship long-lived AWS keys. The SDK uses the role automatically.
+      // Grant the server Lambda's execution role access to the uploads bucket and
+      // ability to invoke the PDF processor Lambda.
       transform: {
         server: (args) => {
           args.permissions = [
@@ -59,6 +86,10 @@ export default $config({
                 $interpolate`arn:aws:s3:::${s3BucketName.value}`,
                 $interpolate`arn:aws:s3:::${s3BucketName.value}/*`,
               ],
+            },
+            {
+              actions: ["lambda:InvokeFunction"],
+              resources: [pdfProcessor.arn],
             },
           ];
         },
