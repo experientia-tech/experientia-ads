@@ -152,12 +152,15 @@ model PDFJob {
   downloadUrl   String?        @db.Text
   expiresAt     DateTime?      @db.Timestamptz
   error         String?        @db.Text
+  userEmail     String?        @db.Text
+  emailSent     Boolean        @default(false)
   createdAt     DateTime       @default(now()) @db.Timestamptz
   updatedAt     DateTime       @default(now()) @db.Timestamptz
   processedAt   DateTime?      @db.Timestamptz
 
   @@index([status, createdAt])
   @@index([campaignId])
+  @@index([userEmail])
 }
 
 

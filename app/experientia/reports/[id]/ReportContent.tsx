@@ -66,6 +66,8 @@ const ReportContent = ({
     false,
   );
   const [showAllMaps, setShowAllMaps] = useState(false);
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [emailInput, setEmailInput] = useState("");
 
   const [campaignData, setCampaignData] = useState<any>(null);
 
@@ -272,9 +274,15 @@ const ReportContent = ({
     }
   };
 
-  const handleExportToPdf = async () => {
+  const handleExportToPdfClick = () => {
+    setEmailInput("");
+    setEmailModalOpen(true);
+  };
+
+  const handleProceedWithPdfExport = async (email?: string) => {
     if (isExporting) return;
     setIsExporting("pdf");
+    setEmailModalOpen(false);
     const token = localStorage.getItem("token");
 
     try {
@@ -282,24 +290,35 @@ const ReportContent = ({
         `/api/campaigns/${campaignId}/export-pdf`,
         {
           method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userEmail: email || null }),
         }
       );
 
       const queueData = await queueResponse.json();
-      if (!queueResponse.ok || !queueData.success || !queueData.jobId) {
+      if (!queueResponse.ok || !queueData.success) {
         throw new Error(queueData.message || "Failed to queue PDF export");
       }
 
-      const jobId = queueData.jobId;
-      setErrorMessage(`PDF is being generated (Job: ${jobId.slice(0, 8)}...)`);
+      setErrorMessage(
+        queueData.message ||
+          "PDF is being generated. Check your email for the download link."
+      );
 
-      // Poll for job completion
-      const maxAttempts = 360; // 30 minutes with 5-second intervals
+      if (email) {
+        return;
+      }
+
+      const jobId = queueData.jobId;
+
+      const maxAttempts = 720;
       let attempts = 0;
 
       while (attempts < maxAttempts) {
-        await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait 5 seconds
+        await new Promise((resolve) => setTimeout(resolve, 5000));
         attempts++;
 
         const statusResponse = await fetch(`/api/jobs/${jobId}`, {
@@ -337,7 +356,7 @@ const ReportContent = ({
         }
       }
 
-      throw new Error("PDF generation timed out after 30 minutes");
+      throw new Error("PDF generation timed out");
     } catch (error) {
       console.error("Error exporting to PDF:", error);
       setErrorMessage(
@@ -461,7 +480,7 @@ const ReportContent = ({
 
           <button
             className={styles.pdfButton}
-            onClick={handleExportToPdf}
+            onClick={handleExportToPdfClick}
             disabled={!!isExporting}
             title="Download as PDF report"
           >
@@ -654,6 +673,63 @@ const ReportContent = ({
           onClose={() => setSelectedTask(null)}
           onStatusUpdate={fetchTasks}
         />
+      )}
+
+      {emailModalOpen && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <div className={styles.modalHeader}>
+              <h3>Export PDF</h3>
+              <button
+                onClick={() => setEmailModalOpen(false)}
+                className={styles.closeButton}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className={styles.modalBody}>
+              <p>
+                Your PDF report is being generated. It will be ready shortly.
+              </p>
+
+              <label className={styles.inputLabel}>
+                <span>Email Address (Optional)</span>
+                <input
+                  type="email"
+                  placeholder="your@email.com"
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  className={styles.emailInput}
+                />
+              </label>
+
+              <p className={styles.helperText}>
+                If you provide an email, we'll send you the download link when
+                the PDF is ready. Without an email, you can check the status
+                here.
+              </p>
+
+              <div className={styles.modalActions}>
+                <button
+                  onClick={() => setEmailModalOpen(false)}
+                  className={`${styles.button} ${styles.cancelButton}`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() =>
+                    handleProceedWithPdfExport(emailInput.trim() || undefined)
+                  }
+                  disabled={isExporting === "pdf"}
+                  className={`${styles.button} ${styles.confirmButton}`}
+                >
+                  {isExporting === "pdf" ? "Generating..." : "Generate PDF"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       <ErrorModal
