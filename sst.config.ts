@@ -40,6 +40,13 @@ export default $config({
         S3_BUCKET_NAME: s3BucketName.value,
         NEXT_PUBLIC_MAPBOX_TOKEN: mapboxToken.value,
       },
+      // PDF export fans out many S3/Mapbox fetches per request; the default
+      // 20s Lambda timeout was getting hit before larger campaigns finished,
+      // surfacing as a bare "Internal Server Error". 60s is the max CloudFront
+      // will wait for an origin response, so that's the effective ceiling here.
+      server: {
+        timeout: "60 seconds",
+      },
       // Grant the server Lambda's execution role access to the uploads bucket so
       // we don't ship long-lived AWS keys. The SDK uses the role automatically.
       transform: {

@@ -1,5 +1,7 @@
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { Upload } from "@aws-sdk/lib-storage";
+import type { Readable } from "stream";
 
 // On Lambda, AWS injects the execution role's *temporary* credentials (access key,
 // secret, AND session token) and the SDK's default provider chain picks them up.
@@ -53,15 +55,51 @@ export function extractS3Key(urlOrKey: string): string | null {
 export async function getPresignedGetUrl(
   urlOrKey: string,
   expiresIn = 3600,
+  responseContentDisposition?: string,
 ): Promise<string | null> {
   const bucket = process.env.S3_BUCKET_NAME;
   const key = extractS3Key(urlOrKey);
   if (!bucket || !key) return null;
   try {
-    const command = new GetObjectCommand({ Bucket: bucket, Key: key });
+    const command = new GetObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      ...(responseContentDisposition ? { ResponseContentDisposition: responseContentDisposition } : {}),
+    });
     return await getSignedUrl(s3Client, command, { expiresIn });
   } catch (error) {
     console.error("Failed to presign GET URL for", key, error);
     return null;
   }
+}
+
+/**
+ * Stream a Readable body straight into S3 via a multipart upload, without
+ * ever buffering the whole object in memory. Used for server-generated
+ * files (e.g. PDF reports) that are produced incrementally and can be large
+ * enough to blow past a Lambda response's payload size limit if returned
+ * inline instead of stored and linked to.
+ */
+export async function uploadStreamToS3(params: {
+  key: string;
+  body: Readable;
+  contentType: string;
+}): Promise<string> {
+  const bucket = process.env.S3_BUCKET_NAME;
+  if (!bucket) throw new Error("S3_BUCKET_NAME is not configured");
+
+  const upload = new Upload({
+    client: s3Client,
+    params: {
+      Bucket: bucket,
+      Key: params.key,
+      Body: params.body,
+      ContentType: params.contentType,
+      ACL: "private",
+      ServerSideEncryption: "AES256",
+    },
+  });
+
+  await upload.done();
+  return params.key;
 }

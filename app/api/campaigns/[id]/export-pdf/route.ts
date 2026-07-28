@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { CampaignService } from "@/services/campaign.services";
 import { authorize } from "@/lib/middleware";
 import { ROLES } from "@/lib/roles";
-import { getPresignedGetUrl } from "@/utils/s3";
+import { getPresignedGetUrl, uploadStreamToS3 } from "@/utils/s3";
 import PDFDocument from "pdfkit";
 import fs from "fs";
 import path from "path";
+import { PassThrough } from "stream";
 
 type RequestHandler = (
   request: NextRequest,
@@ -82,7 +83,11 @@ function clusterMapUrl(points: { lat: number; lng: number }[], width: number, he
   return `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/${markers}/auto/${width}x${height}@2x?access_token=${MAPBOX_TOKEN}`;
 }
 
+const __t0 = () => Date.now();
+const __log = (label: string, start: number) => fs.appendFileSync("/tmp/pdf-timing.log", `${label}: ${Date.now() - start}ms\n`);
+
 export const GET: RequestHandler = async (request, { params }) => {
+  const __reqStart = __t0();
   try {
     const auth = authorize(request, [ROLES.ADMIN, ROLES.EXECUTOR]);
     if (auth instanceof NextResponse) return auth;
@@ -93,7 +98,9 @@ export const GET: RequestHandler = async (request, { params }) => {
     }
 
     const authToken = request.headers.get("authorization")?.split(" ")[1] || "";
+    const __tCampaign = __t0();
     const campaign  = await campaignService.getCampaignById(id, authToken);
+    __log("campaign fetch", __tCampaign);
 
     if (!campaign.success || !campaign.data) {
       return NextResponse.json({ success: false, message: "Campaign not found" }, { status: 404 });
@@ -119,27 +126,36 @@ export const GET: RequestHandler = async (request, { params }) => {
     });
 
     type PhotoEntry = { task: any; buffer: Buffer; view?: string | null };
-    const photoEntries: PhotoEntry[] = [];
 
-    for (const task of tasksWithImages) {
-      const taskMeta = (task.metadata as any) || {};
-      const taskImages = taskMeta.images || [];
+    // Fetch every task's images concurrently instead of one task at a time —
+    // sequential per-task fetching turned a 40-task campaign into 60s+ of
+    // serial network I/O, which routinely exceeded the Lambda/CloudFront
+    // timeout and surfaced as a bare "Internal Server Error".
+    const __tImages = __t0();
+    const perTaskPhotos = await Promise.all(
+      tasksWithImages.map(async (task: any) => {
+        const taskMeta = (task.metadata as any) || {};
+        const taskImages = taskMeta.images || [];
 
-      const resolved = await Promise.all(
-        taskImages.map(async (img: any) => {
-          const src =
-            typeof img.url === "string" && img.url.startsWith("http")
-              ? (await getPresignedGetUrl(img.url)) ?? img.url
-              : img.url;
-          const buffer = await fetchImageBuffer(src);
-          return buffer ? { buffer, view: img.view ?? null } : null;
-        })
-      );
+        const resolved = await Promise.all(
+          taskImages.map(async (img: any) => {
+            const src =
+              typeof img.url === "string" && img.url.startsWith("http")
+                ? (await getPresignedGetUrl(img.url)) ?? img.url
+                : img.url;
+            const buffer = await fetchImageBuffer(src);
+            return buffer ? { buffer, view: img.view ?? null } : null;
+          })
+        );
 
-      for (const r of resolved) {
-        if (r) photoEntries.push({ task, buffer: r.buffer, view: r.view });
-      }
-    }
+        return resolved
+          .filter((r): r is { buffer: Buffer; view: string | null } => !!r)
+          .map((r) => ({ task, buffer: r.buffer, view: r.view }));
+      })
+    );
+    __log("task image fetch (parallel)", __tImages);
+
+    const photoEntries: PhotoEntry[] = perTaskPhotos.flat();
 
     // ── Cover stats ──────────────────────────────────────────────────────────
     const completedCount = tasks.filter((t: any) => (t.status || "").toUpperCase() === "ACCEPTED").length;
@@ -156,8 +172,29 @@ export const GET: RequestHandler = async (request, { params }) => {
     const MR = 40;
     const MT = 40;
     const doc = new PDFDocument({ size: "A4", margin: 0, compress: true, autoFirstPage: false });
-    const chunks: Buffer[] = [];
-    doc.on("data", (c: Buffer) => chunks.push(c));
+
+    // Stream pages straight to S3 as pdfkit produces them instead of buffering
+    // the whole PDF in memory and returning it inline — large campaigns can
+    // produce multi-hundred-page reports that blow past the Lambda response
+    // payload limit, which is what was surfacing as a bare "Internal Server
+    // Error" for those campaigns.
+    const slug     = (data.name || "campaign").replace(/[^a-zA-Z0-9]/g, "_");
+    const dateStr  = new Date().toISOString().split("T")[0];
+    const filename = `${slug}_report_${dateStr}.pdf`;
+    const s3Key    = `campaign-reports/${id}/${filename}`;
+
+    const pdfStream = new PassThrough();
+    // .pipe() doesn't forward "error" events from the source, so without this
+    // a PDFKit failure mid-generation would leave the S3 upload hanging
+    // instead of rejecting.
+    doc.on("error", (err) => pdfStream.destroy(err));
+    doc.pipe(pdfStream);
+    const __tUpload = __t0();
+    const uploadPromise = uploadStreamToS3({
+      key: s3Key,
+      body: pdfStream,
+      contentType: "application/pdf",
+    });
 
     // A4 in points — fixed, so these are safe to read before any page exists
     // (autoFirstPage is off; doc.page is null until the first addPage()).
@@ -183,9 +220,16 @@ export const GET: RequestHandler = async (request, { params }) => {
 
     let curY = 28;
 
+    let logoDrawn = false;
     if (logoBuffer) {
-      doc.image(logoBuffer, ML, curY, { fit: [110, 32] });
-    } else {
+      try {
+        doc.image(logoBuffer, ML, curY, { fit: [110, 32] });
+        logoDrawn = true;
+      } catch (logoErr) {
+        console.error("Failed to render logo in PDF:", logoErr);
+      }
+    }
+    if (!logoDrawn) {
       doc.save().fill(C.dark).fontSize(16).font("Helvetica-Bold").text("EXPERIENTIA", ML, curY).restore();
     }
 
@@ -216,12 +260,20 @@ export const GET: RequestHandler = async (request, { params }) => {
     const coverMapUrl = clusterMapUrl(coverPoints, Math.round(coverMapW), Math.round(coverMapH));
     const coverMapBuffer = coverMapUrl ? await fetchImageBuffer(coverMapUrl) : null;
 
+    let coverMapDrawn = false;
     if (coverMapBuffer) {
-      doc.save().roundedRect(ML, curY, coverMapW, coverMapH, 10).clip();
-      doc.image(coverMapBuffer, ML, curY, { width: coverMapW, height: coverMapH });
-      doc.restore();
-      strokeRect(doc, ML, curY, coverMapW, coverMapH, C.border, 0.5);
-    } else {
+      try {
+        doc.save().roundedRect(ML, curY, coverMapW, coverMapH, 10).clip();
+        doc.image(coverMapBuffer, ML, curY, { width: coverMapW, height: coverMapH });
+        doc.restore();
+        strokeRect(doc, ML, curY, coverMapW, coverMapH, C.border, 0.5);
+        coverMapDrawn = true;
+      } catch (mapErr) {
+        console.error("Failed to render cover map in PDF:", mapErr);
+        doc.restore();
+      }
+    }
+    if (!coverMapDrawn) {
       fillRect(doc, ML, curY, coverMapW, coverMapH, C.panel);
       strokeRect(doc, ML, curY, coverMapW, coverMapH, C.border, 0.5);
       doc.save().fill(C.muted).fontSize(9).font("Helvetica")
@@ -266,6 +318,21 @@ export const GET: RequestHandler = async (request, { params }) => {
     // ═══════════════════════════════════════════════════════════════════════════
     const totalPhotoPages = photoEntries.length;
 
+    // Prefetch every mini-map concurrently — doing this one Mapbox call per
+    // loop iteration (blocking) was the other major source of serial latency.
+    const miniMapW = CW - CW * 0.44 - 24;
+    const miniMapH = 180;
+    const __tMiniMaps = __t0();
+    const miniMapBuffers = await Promise.all(
+      photoEntries.map(({ task }) => {
+        const loc = taskLocation(task);
+        if (!loc.latitude || !loc.longitude) return Promise.resolve(null);
+        const mapUrl = singleMarkerMapUrl(Number(loc.latitude), Number(loc.longitude), Math.round(miniMapW), Math.round(miniMapH));
+        return mapUrl ? fetchImageBuffer(mapUrl) : Promise.resolve(null);
+      })
+    );
+    __log("mini map fetch (parallel)", __tMiniMaps);
+
     for (let i = 0; i < photoEntries.length; i++) {
       const { task, buffer, view } = photoEntries[i];
       doc.addPage({ size: "A4", margin: 0 });
@@ -274,7 +341,11 @@ export const GET: RequestHandler = async (request, { params }) => {
       let py = 24;
 
       if (logoBuffer) {
-        doc.image(logoBuffer, ML, py, { fit: [70, 20] });
+        try {
+          doc.image(logoBuffer, ML, py, { fit: [70, 20] });
+        } catch (logoErr) {
+          console.error("Failed to render logo in PDF:", logoErr);
+        }
       }
 
       const headerRight = `${clampText(data.name || "Campaign", 40)}   •   ${data.serviceType || "Campaign"}   •   ${i + 1}/${totalPhotoPages}`;
@@ -340,18 +411,22 @@ export const GET: RequestHandler = async (request, { params }) => {
         .restore();
       ry = doc.y + 12;
 
-      // Mini map
-      const miniMapW = rightW;
-      const miniMapH = 180;
+      // Mini map (prefetched above, in parallel, for every photo entry)
       if (loc.latitude && loc.longitude) {
-        const mapUrl = singleMarkerMapUrl(Number(loc.latitude), Number(loc.longitude), Math.round(miniMapW), Math.round(miniMapH));
-        const mapBuffer = mapUrl ? await fetchImageBuffer(mapUrl) : null;
+        const mapBuffer = miniMapBuffers[i];
 
         if (mapBuffer) {
-          doc.save().roundedRect(rightX, ry, miniMapW, miniMapH, 8).clip();
-          doc.image(mapBuffer, rightX, ry, { width: miniMapW, height: miniMapH });
-          doc.restore();
-          strokeRect(doc, rightX, ry, miniMapW, miniMapH, C.border, 0.5);
+          try {
+            doc.save().roundedRect(rightX, ry, miniMapW, miniMapH, 8).clip();
+            doc.image(mapBuffer, rightX, ry, { width: miniMapW, height: miniMapH });
+            doc.restore();
+            strokeRect(doc, rightX, ry, miniMapW, miniMapH, C.border, 0.5);
+          } catch (mapErr) {
+            console.error("Failed to render mini map in PDF:", mapErr);
+            doc.restore();
+            fillRect(doc, rightX, ry, miniMapW, miniMapH, C.panel);
+            strokeRect(doc, rightX, ry, miniMapW, miniMapH, C.border, 0.5);
+          }
         } else {
           fillRect(doc, rightX, ry, miniMapW, miniMapH, C.panel);
           strokeRect(doc, rightX, ry, miniMapW, miniMapH, C.border, 0.5);
@@ -392,7 +467,11 @@ export const GET: RequestHandler = async (request, { params }) => {
     ty += 60;
     if (logoBuffer) {
       const logoW = 140;
-      doc.image(logoBuffer, ML + CW / 2 - logoW / 2, ty, { fit: [logoW, 40] });
+      try {
+        doc.image(logoBuffer, ML + CW / 2 - logoW / 2, ty, { fit: [logoW, 40] });
+      } catch (logoErr) {
+        console.error("Failed to render logo in PDF:", logoErr);
+      }
       ty += 60;
     }
 
@@ -405,20 +484,25 @@ export const GET: RequestHandler = async (request, { params }) => {
 
     doc.end();
 
-    // ── Collect buffer ────────────────────────────────────────────────────────
-    await new Promise<void>((resolve) => doc.on("end", resolve));
-    const pdfBuffer = Buffer.concat(chunks);
+    // ── Wait for the S3 multipart upload to finish draining the stream ──────────
+    await uploadPromise;
+    __log("s3 upload", __tUpload);
 
-    const slug     = (data.name || "campaign").replace(/[^a-zA-Z0-9]/g, "_");
-    const dateStr  = new Date().toISOString().split("T")[0];
-    const filename = `${slug}_report_${dateStr}.pdf`;
+    const downloadUrl = await getPresignedGetUrl(
+      s3Key,
+      3600,
+      `attachment; filename="${filename}"`,
+    );
+    if (!downloadUrl) {
+      return NextResponse.json(
+        { success: false, message: "Report was generated but the download link could not be created" },
+        { status: 500 },
+      );
+    }
 
-    return new NextResponse(pdfBuffer, {
-      headers: {
-        "Content-Type":        "application/pdf",
-        "Content-Disposition": `attachment; filename="${filename}"`,
-      },
-    });
+    __log("TOTAL request", __reqStart);
+
+    return NextResponse.json({ success: true, url: downloadUrl, filename });
   } catch (error) {
     console.error("Error generating PDF:", error);
     return NextResponse.json(

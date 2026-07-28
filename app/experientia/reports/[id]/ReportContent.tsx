@@ -276,13 +276,34 @@ const ReportContent = ({
     if (isExporting) return;
     setIsExporting("pdf");
     try {
-      await triggerDownload(
+      const token = localStorage.getItem("token");
+      const response = await fetch(
         `/api/campaigns/${campaignId}/export-pdf`,
-        "report.pdf",
+        { headers: { Authorization: `Bearer ${token}` } },
       );
+
+      const data = await response.json();
+      if (!response.ok || !data.success || !data.url) {
+        throw new Error(data.message || "Failed to generate the PDF report");
+      }
+
+      // The API stores the PDF in S3 and hands back a presigned, time-limited
+      // download URL (with Content-Disposition set) instead of streaming the
+      // file inline, since large reports can exceed the Lambda response size
+      // limit if returned directly.
+      const a = document.createElement("a");
+      a.href = data.url;
+      a.download = data.filename || "report.pdf";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     } catch (error) {
       console.error("Error exporting to PDF:", error);
-      setErrorMessage("Failed to generate the PDF report. Please try again.");
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to generate the PDF report. Please try again.",
+      );
     } finally {
       setIsExporting(false);
     }
