@@ -3,6 +3,35 @@ import { prisma } from "@/lib/prisma";
 import { authorize } from '@/lib/middleware';
 import { ROLES } from '@/lib/roles';
 import { response } from '@/utils/response';
+import { getPresignedGetUrl } from '@/utils/s3';
+
+// In-memory cache for presigned brand image URLs to avoid regenerating them on every request.
+// Each entry caches for 1 hour (presigned URLs are valid for 1 hour by default).
+const brandImageCache = new Map<string, { url: string; expiresAt: number }>();
+
+async function getCachedPresignedUrl(s3Key: string): Promise<string | null> {
+  const cached = brandImageCache.get(s3Key);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.url;
+  }
+  brandImageCache.delete(s3Key);
+
+  const url = await getPresignedGetUrl(s3Key, 3600);
+  if (url) {
+    brandImageCache.set(s3Key, { url, expiresAt: Date.now() + 3600000 });
+  }
+  return url;
+}
+
+async function signBrandImages(brands: any[]): Promise<void> {
+  await Promise.all(
+    brands.map(async (brand: any) => {
+      if (brand?.image) {
+        brand.image = (await getCachedPresignedUrl(brand.image)) ?? brand.image;
+      }
+    }),
+  );
+}
 
 type RequestHandler = (
   request: NextRequest
@@ -43,6 +72,8 @@ export const GET: RequestHandler = async (request) => {
       }),
       prisma.brand.count({ where }),
     ]);
+
+    await signBrandImages(brands);
 
     return NextResponse.json(
       response(true, 200, authToken, 'Brands fetched successfully', {
