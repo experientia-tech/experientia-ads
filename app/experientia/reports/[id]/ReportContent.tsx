@@ -68,6 +68,7 @@ const ReportContent = ({
   const [showAllMaps, setShowAllMaps] = useState(false);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [emailInput, setEmailInput] = useState("");
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const [campaignData, setCampaignData] = useState<any>(null);
 
@@ -303,14 +304,18 @@ const ReportContent = ({
         throw new Error(queueData.message || "Failed to queue PDF export");
       }
 
-      setErrorMessage(
-        queueData.message ||
-          "PDF is being generated. Check your email for the download link."
-      );
-
       if (email) {
+        setSuccessMessage(
+          queueData.message ||
+            "PDF is being generated. Check your email for the download link."
+        );
         return;
       }
+
+      setErrorMessage(
+        queueData.message ||
+          "PDF is being generated. Check back for the download link."
+      );
 
       const jobId = queueData.jobId;
 
@@ -673,6 +678,42 @@ const ReportContent = ({
           onClose={() => setSelectedTask(null)}
           onStatusUpdate={fetchTasks}
         />
+      )}
+
+      {successMessage && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <div className={styles.modalHeader}>
+              <h3>✓ PDF Export Queued</h3>
+              <button
+                onClick={() => setSuccessMessage(null)}
+                className={styles.closeButton}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className={styles.modalBody}>
+              <p style={{ color: "#16a34a", fontSize: "1.1rem", marginBottom: "1rem" }}>
+                Success! Your PDF is being generated.
+              </p>
+              <p>{successMessage}</p>
+              <p style={{ fontSize: "0.9rem", marginTop: "1rem", color: "#666" }}>
+                You will receive an email with the download link shortly.
+              </p>
+
+              <div className={styles.modalActions} style={{ marginTop: "1.5rem" }}>
+                <button
+                  onClick={() => setSuccessMessage(null)}
+                  className={`${styles.button} ${styles.confirmButton}`}
+                  style={{ width: "100%" }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {emailModalOpen && (
