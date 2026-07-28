@@ -89,6 +89,10 @@ importers:
       zustand:
         specifier: ^5.0.10
         version: 5.0.14(@types/react@19.2.17)(react@19.2.1)
+    optionalDependencies:
+      '@next/swc-darwin-arm64':
+        specifier: ^16.2.12
+        version: 16.2.12
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4
@@ -556,6 +560,12 @@ packages:
 
   '@next/swc-darwin-arm64@16.0.8':
     resolution: {integrity: sha512-yjVMvTQN21ZHOclQnhSFbjBTEizle+1uo4NV6L4rtS9WO3nfjaeJYw+H91G+nEf3Ef43TaEZvY5mPWfB/De7tA==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@next/swc-darwin-arm64@16.2.12':
+    resolution: {integrity: sha512-0W1R0teHWJrqKX0FH20IzzIWAOuGtBxPGuObrxy1lE8hQvCFj49KE8a3WUg0D7sq6rn6zkM4c7YGUnhudBS6oA==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [darwin]
@@ -3905,6 +3915,9 @@ snapshots:
       fast-glob: 3.3.1
 
   '@next/swc-darwin-arm64@16.0.8':
+    optional: true
+
+  '@next/swc-darwin-arm64@16.2.12':
     optional: true
 
   '@next/swc-darwin-x64@16.0.8':
