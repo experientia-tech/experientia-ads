@@ -137,5 +137,28 @@ model Brand {
   campaigns      Campaign[]
 }
 
+enum PDFJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model PDFJob {
+  id            String         @id @default(uuid()) @db.Uuid
+  campaignId    String         @db.Uuid
+  organizationId String        @db.Uuid
+  status        PDFJobStatus   @default(PENDING)
+  downloadUrl   String?        @db.Text
+  expiresAt     DateTime?      @db.Timestamptz
+  error         String?        @db.Text
+  createdAt     DateTime       @default(now()) @db.Timestamptz
+  updatedAt     DateTime       @default(now()) @db.Timestamptz
+  processedAt   DateTime?      @db.Timestamptz
+
+  @@index([status, createdAt])
+  @@index([campaignId])
+}
+
 
 

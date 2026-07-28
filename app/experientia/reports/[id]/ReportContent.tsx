@@ -275,28 +275,69 @@ const ReportContent = ({
   const handleExportToPdf = async () => {
     if (isExporting) return;
     setIsExporting("pdf");
+    const token = localStorage.getItem("token");
+
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
+      const queueResponse = await fetch(
         `/api/campaigns/${campaignId}/export-pdf`,
-        { headers: { Authorization: `Bearer ${token}` } },
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
 
-      const data = await response.json();
-      if (!response.ok || !data.success || !data.url) {
-        throw new Error(data.message || "Failed to generate the PDF report");
+      const queueData = await queueResponse.json();
+      if (!queueResponse.ok || !queueData.success || !queueData.jobId) {
+        throw new Error(queueData.message || "Failed to queue PDF export");
       }
 
-      // The API stores the PDF in S3 and hands back a presigned, time-limited
-      // download URL (with Content-Disposition set) instead of streaming the
-      // file inline, since large reports can exceed the Lambda response size
-      // limit if returned directly.
-      const a = document.createElement("a");
-      a.href = data.url;
-      a.download = data.filename || "report.pdf";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      const jobId = queueData.jobId;
+      setErrorMessage(`PDF is being generated (Job: ${jobId.slice(0, 8)}...)`);
+
+      // Poll for job completion
+      const maxAttempts = 360; // 30 minutes with 5-second intervals
+      let attempts = 0;
+
+      while (attempts < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait 5 seconds
+        attempts++;
+
+        const statusResponse = await fetch(`/api/jobs/${jobId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const statusData = await statusResponse.json();
+        if (!statusResponse.ok || !statusData.success) {
+          throw new Error(statusData.message || "Failed to check job status");
+        }
+
+        const { job } = statusData;
+        const progress = Math.round((attempts / maxAttempts) * 100);
+        setErrorMessage(`Generating PDF... ${Math.min(progress, 99)}%`);
+
+        if (job.status === "COMPLETED") {
+          if (!job.downloadUrl) {
+            throw new Error("PDF was generated but download URL is missing");
+          }
+
+          setErrorMessage(null);
+          const a = document.createElement("a");
+          a.href = job.downloadUrl;
+          a.download = `report_${Date.now()}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          return;
+        }
+
+        if (job.status === "FAILED") {
+          throw new Error(
+            job.error || "PDF generation failed. Please try again."
+          );
+        }
+      }
+
+      throw new Error("PDF generation timed out after 30 minutes");
     } catch (error) {
       console.error("Error exporting to PDF:", error);
       setErrorMessage(
