@@ -20,7 +20,41 @@ export async function POST(request: NextRequest) {
     }
 
     // Get data from request
-    const { fileName, fileType, contentType } = await request.json();
+    const body = await request.json();
+
+    // Check if it's a batch request
+    if (body.files && Array.isArray(body.files)) {
+      if (body.files.length === 0) {
+        return NextResponse.json({ urls: [] });
+      }
+
+      const urls = await Promise.all(
+        body.files.map(async (f: any) => {
+          if (!f.fileName || !f.contentType) {
+            throw new Error("Missing required fields: fileName and contentType in batch");
+          }
+
+          const extension = f.fileName.split(".").pop() || f.contentType.split("/")[1] || "jpg";
+          const key = `gig-management/executor/${randomUUID()}.${extension}`;
+          
+          const command = new PutObjectCommand({
+            Bucket: bucket,
+            Key: key,
+            ContentType: f.contentType,
+          });
+
+          const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+          const imageUrl = `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
+
+          return { uploadUrl, imageUrl };
+        })
+      );
+
+      return NextResponse.json({ urls });
+    }
+
+    // Single file mode (backward compatibility)
+    const { fileName, fileType, contentType } = body;
 
     // Validate required fields
     if (!fileName || !contentType) {

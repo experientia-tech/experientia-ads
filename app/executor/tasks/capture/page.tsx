@@ -10,7 +10,6 @@ import {
   FiMapPin,
 } from "react-icons/fi";
 import "./capture.scss";
-import { uploadFileToS3 } from "@/app/constants/upload";
 import PhotoReviewModal from "./PhotoReviewModal";
 import ErrorModal from "@/app/experientia/components/error_modal/ErrorModal";
 
@@ -171,7 +170,7 @@ const TaskCapture = () => {
       return;
     }
 
-    let debounceTimer: NodeJS.Timeout;
+    let debounceTimer: ReturnType<typeof setTimeout>;
     let lastCalculatedDistance: number | null = null;
 
     const debouncedDistanceCalculation = (
@@ -446,17 +445,7 @@ const TaskCapture = () => {
     }
   };
 
-  const dataURLtoFile = (dataurl: string, filename: string) => {
-    const arr = dataurl.split(",");
-    const mime = arr[0].match(/:(.*?);/)![1];
-    const bstr = atob(arr[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) {
-      u8arr[n] = bstr.charCodeAt(n);
-    }
-    return new File([u8arr], filename, { type: mime });
-  };
+
 
   // Just grabs a frame onto the canvas and hands it to the review modal — no
   // upload happens here, so retaking a blurry shot is instant and free.
@@ -496,54 +485,42 @@ const TaskCapture = () => {
     setPendingCapture(null);
   };
 
-  // Uploads the confirmed frame to S3 and commits it into capturedPhotos —
+  // Commits the confirmed frame into capturedPhotos (deferring S3 upload) —
   // either appended (new photo) or swapped in place (retake of a confirmed one).
   const confirmPendingCapture = async () => {
     if (!pendingCapture) return;
 
-    setIsUploading(true);
-    try {
-      const file = dataURLtoFile(pendingCapture.dataUrl, `capture-${Date.now()}.jpg`);
-      const s3Url = await uploadFileToS3(file);
+    const newPhoto: CapturedPhoto = {
+      dataUrl: pendingCapture.dataUrl,
+      timestamp: new Date(),
+      view: pendingCapture.view,
+    };
 
-      const newPhoto: CapturedPhoto = {
-        dataUrl: pendingCapture.dataUrl,
-        s3Url,
-        timestamp: new Date(),
-        view: pendingCapture.view,
-      };
+    const isReplace = pendingCapture.replaceIndex !== undefined;
 
-      const isReplace = pendingCapture.replaceIndex !== undefined;
-
-      setCapturedPhotos((prev) => {
-        if (isReplace) {
-          const next = [...prev];
-          next[pendingCapture.replaceIndex as number] = newPhoto;
-          return next;
-        }
-        return [...prev, newPhoto];
-      });
-
-      const totalAfter = capturedPhotos.length + 1;
-      setPendingCapture(null);
-      setRetakeTarget(null);
-
-      // Only auto-open the service-specific form the first time all required
-      // photos are gathered — not on a later retake of an already-confirmed one.
-      if (!isReplace && (needsAutoHoodForm() || needsGymForm()) && totalAfter === getRequiredPhotoCount()) {
-        setTimeout(() => {
-          if (needsAutoHoodForm()) {
-            setShowAutoHoodForm(true);
-          } else if (needsGymForm()) {
-            setShowGymForm(true);
-          }
-        }, 500);
+    setCapturedPhotos((prev) => {
+      if (isReplace) {
+        const next = [...prev];
+        next[pendingCapture.replaceIndex as number] = newPhoto;
+        return next;
       }
-    } catch (error) {
-      console.error("Error uploading photo:", error);
-      setErrorMessage("Failed to upload photo. Please try again.");
-    } finally {
-      setIsUploading(false);
+      return [...prev, newPhoto];
+    });
+
+    const totalAfter = isReplace ? capturedPhotos.length : capturedPhotos.length + 1;
+    setPendingCapture(null);
+    setRetakeTarget(null);
+
+    // Only auto-open the service-specific form the first time all required
+    // photos are gathered — not on a later retake of an already-confirmed one.
+    if (!isReplace && (needsAutoHoodForm() || needsGymForm()) && totalAfter === getRequiredPhotoCount()) {
+      setTimeout(() => {
+        if (needsAutoHoodForm()) {
+          setShowAutoHoodForm(true);
+        } else if (needsGymForm()) {
+          setShowGymForm(true);
+        }
+      }, 500);
     }
   };
 

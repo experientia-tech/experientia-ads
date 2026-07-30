@@ -1,10 +1,21 @@
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
+import { handler as localPdfProcessor } from "@/app/api/lambda/process-pdf/index";
 
 const lambdaClient = new LambdaClient({
   region: process.env.REGION_AWS,
 });
 
 export async function invokePDFProcessor(jobId: string, campaignId: string): Promise<void> {
+  // If running locally without SST (via npm run dev), execute the processor directly
+  if (process.env.NODE_ENV === "development" && !process.env.PDF_PROCESSOR_FUNCTION_NAME) {
+    console.log(`[Local Dev] Executing PDF processor directly for job ${jobId}`);
+    // Execute detached
+    localPdfProcessor({ jobId, campaignId }).catch((error) => {
+      console.error("[Local Dev] PDF processor failed:", error);
+    });
+    return;
+  }
+
   try {
     const functionName = process.env.PDF_PROCESSOR_FUNCTION_NAME || "pdf-processor";
 

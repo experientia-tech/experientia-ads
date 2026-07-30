@@ -28,17 +28,24 @@ export default $config({
     const authOtp = new sst.Secret("AuthOtp");
     const mapboxToken = new sst.Secret("MapboxToken");
     const s3BucketName = new sst.Secret("S3BucketName");
+    const smtpUser = new sst.Secret("SmtpUser");
+    const smtpPass = new sst.Secret("SmtpPass");
 
     // PDF Processor Lambda Function
     const pdfProcessor = new sst.aws.Function("PdfProcessor", {
       handler: "app/api/lambda/process-pdf/index.handler",
-      timeout: "300 seconds", // 5 minutes for PDF generation
-      memory: "2048 MB",
+      timeout: "600 seconds", // 10 minutes for chunked PDF generation
+      memory: "3008 MB", // Increased from 2048 for better performance
       environment: {
         DATABASE_URL: databaseUrl.value,
         REGION_AWS: "ap-south-1",
         S3_BUCKET_NAME: s3BucketName.value,
         NEXT_PUBLIC_MAPBOX_TOKEN: mapboxToken.value,
+        SMTP_HOST: process.env.SMTP_HOST || "smtp.gmail.com",
+        SMTP_PORT: process.env.SMTP_PORT || "465",
+        SMTP_USER: smtpUser.value,
+        SMTP_PASS: smtpPass.value,
+        SMTP_FROM: process.env.SMTP_FROM || "tech@experientia.media",
       },
       permissions: [
         {

@@ -5,6 +5,8 @@ import { FiChevronLeft, FiMapPin, FiCheck, FiRotateCcw } from "react-icons/fi";
 import dynamic from "next/dynamic";
 import "./location.scss";
 import SuccessModal from "@/app/experientia/components/success_modal/SuccessModal";
+import { uploadFilesToS3, uploadFileToS3, dataURLtoFile } from "@/app/constants/upload";
+
 
 const MapComponent = dynamic(() => import("./MapComponent"), {
   ssr: false,
@@ -224,9 +226,34 @@ const TaskLocation = () => {
         }
       }
 
+      // Concurrently upload any photos that don't have an s3Url yet using batch presigned URLs
+      const filesToUpload: File[] = [];
+      
+      capturedPhotos.forEach((photo, index) => {
+        if (!photo.s3Url) {
+          filesToUpload.push(dataURLtoFile(photo.dataUrl, `capture-${Date.now()}-${index}.jpg`));
+        }
+      });
+
+      let newlyUploadedUrls: string[] = [];
+      if (filesToUpload.length > 0) {
+        try {
+          newlyUploadedUrls = await uploadFilesToS3(filesToUpload);
+        } catch (uploadError) {
+          console.error(`Failed to upload photos:`, uploadError);
+          throw new Error(`Failed to upload photos`);
+        }
+      }
+
+      let newUploadIndex = 0;
+      const uploadedUrls = capturedPhotos.map((photo) => {
+        if (photo.s3Url) return photo.s3Url;
+        return newlyUploadedUrls[newUploadIndex++];
+      });
+
       const taskData = {
-        images: capturedPhotos.map((photo) => ({
-          url: photo.s3Url || photo.dataUrl,
+        images: uploadedUrls.map((url) => ({
+          url: url,
         })),
         latitude: location?.lat,
         longitude: location?.lng,

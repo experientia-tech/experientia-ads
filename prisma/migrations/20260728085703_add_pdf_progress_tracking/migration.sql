@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "PDFJob" ADD COLUMN     "failedTasks" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "lightPdfKey" TEXT,
+ADD COLUMN     "processedTasks" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "totalTasks" INTEGER NOT NULL DEFAULT 0;

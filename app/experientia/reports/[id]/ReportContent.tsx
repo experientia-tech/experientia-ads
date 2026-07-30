@@ -304,64 +304,11 @@ const ReportContent = ({
         throw new Error(queueData.message || "Failed to queue PDF export");
       }
 
-      if (email) {
-        setSuccessMessage(
-          queueData.message ||
-            "PDF is being generated. Check your email for the download link."
-        );
-        return;
-      }
-
-      setErrorMessage(
+      setSuccessMessage(
         queueData.message ||
-          "PDF is being generated. Check back for the download link."
+          "PDF is being generated. Check your email for the download link."
       );
-
-      const jobId = queueData.jobId;
-
-      const maxAttempts = 720;
-      let attempts = 0;
-
-      while (attempts < maxAttempts) {
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-        attempts++;
-
-        const statusResponse = await fetch(`/api/jobs/${jobId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const statusData = await statusResponse.json();
-        if (!statusResponse.ok || !statusData.success) {
-          throw new Error(statusData.message || "Failed to check job status");
-        }
-
-        const { job } = statusData;
-        const progress = Math.round((attempts / maxAttempts) * 100);
-        setErrorMessage(`Generating PDF... ${Math.min(progress, 99)}%`);
-
-        if (job.status === "COMPLETED") {
-          if (!job.downloadUrl) {
-            throw new Error("PDF was generated but download URL is missing");
-          }
-
-          setErrorMessage(null);
-          const a = document.createElement("a");
-          a.href = job.downloadUrl;
-          a.download = `report_${Date.now()}.pdf`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          return;
-        }
-
-        if (job.status === "FAILED") {
-          throw new Error(
-            job.error || "PDF generation failed. Please try again."
-          );
-        }
-      }
-
-      throw new Error("PDF generation timed out");
+      
     } catch (error) {
       console.error("Error exporting to PDF:", error);
       setErrorMessage(

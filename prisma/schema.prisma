@@ -149,7 +149,17 @@ model PDFJob {
   campaignId    String         @db.Uuid
   organizationId String        @db.Uuid
   status        PDFJobStatus   @default(PENDING)
+
+  // Progress tracking for full PDF
+  totalTasks    Int            @default(0)
+  processedTasks Int           @default(0)
+  failedTasks   Int            @default(0)
+
+  // URLs
   downloadUrl   String?        @db.Text
+  lightPdfKey   String?        @db.Text
+
+  // Metadata
   expiresAt     DateTime?      @db.Timestamptz
   error         String?        @db.Text
   userEmail     String?        @db.Text

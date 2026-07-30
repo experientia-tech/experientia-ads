@@ -14,11 +14,14 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // If already on /executor, /experientia, or /signin paths, let them through
+  // If already on /executor, /experientia, or /signin paths, let them through.
+  // /pdf-status is a standalone, domain-agnostic page linked from emails — it must
+  // not be rewritten under /experientia (that path doesn't exist and 404s).
   if (
     pathname.startsWith("/executor") ||
     pathname.startsWith("/experientia") ||
-    pathname.startsWith("/signin")
+    pathname.startsWith("/signin") ||
+    pathname.startsWith("/pdf-status")
   ) {
     return NextResponse.next();
   }
